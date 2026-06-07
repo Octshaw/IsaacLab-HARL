@@ -3,6 +3,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# python play.py --num_envs 1 --task "Isaac-Multi-Agent-Flat-Anymal-C-Direct-v0" --algorithm happo --dir "E:\Project\IsaacLab_HARL\scripts\reinforcement_learning\harl\results\isaaclab\Isaac-Multi-Agent-Flat-Anymal-C-Direct-v0\happo\multi_agent_anymal_harl\seed-00001-2026-05-26-11-57-46\best_model"
+
+# python E:\Project\IsaacLab_HARL\scripts\reinforcement_learning\harl\play.py --num_envs 1 --task "Isaac-Scan-Mobile-Manipulator-Direct-v0" --algorithm happo --dir "E:\Project\IsaacLab_HARL\results\isaaclab\Isaac-Scan-Mobile-Manipulator-Direct-v0\happo\scan_happo\seed-00001-2026-06-03-22-31-48\best_model"
+
 """Train an algorithm."""
 
 import argparse
@@ -86,6 +90,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     runner = RUNNER_REGISTRY[args["algo"]](args, algo_args, env_args)
 
     obs, _, _ = runner.env.reset()
+    agent_obs_keys = list(obs.keys()) if isinstance(obs, dict) else None
 
     max_action_space = 0
 
@@ -107,21 +112,27 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     masks = torch.ones(
         (args["num_envs"], runner.num_agents, 1),
         dtype=torch.float32,
+        device="cuda:0",
     )
 
     total_rewards = torch.zeros((args["num_envs"], runner.num_agents, 1), dtype=torch.float32, device="cuda:0")
 
+    for actor in runner.actor:
+        actor.prep_rollout()
+
     while simulation_app.is_running():
         with torch.inference_mode():
             for agent_id in range(runner.num_agents):
+                agent_obs = obs[agent_obs_keys[agent_id]] if agent_obs_keys is not None else obs[:, agent_id, :]
                 action, _, rnn_state = runner.actor[agent_id].get_actions(
-                    obs[:, agent_id, :], rnn_states[:, agent_id, :], masks[:, agent_id, :], None, None
+                    agent_obs, rnn_states[:, agent_id, :], masks[:, agent_id, :], None, True
                 )
                 action_space = action.shape[1]
                 actions[:, agent_id, :action_space] = action
                 rnn_states[:, agent_id, :] = rnn_state
 
             obs, _, rewards, dones, _, _ = runner.env.step(actions)
+            agent_obs_keys = list(obs.keys()) if isinstance(obs, dict) else None
 
             total_rewards += rewards
 
