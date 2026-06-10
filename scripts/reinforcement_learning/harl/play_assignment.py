@@ -220,7 +220,8 @@ def _load_assignment_actors(wrapper, algo_args: dict, model_dir: Path, device: t
         except RuntimeError as exc:
             raise RuntimeError(
                 f"Failed to load {checkpoint_path}. This path must contain assignment-mode "
-                "Discrete/Categorical actor weights, not an old 9D continuous checkpoint."
+                "Discrete/Categorical actor weights with the same fixed-N viewpoint count, "
+                "not an old 9D continuous checkpoint or a checkpoint trained with a different N."
             ) from exc
         actor.prep_rollout()
         actors.append(actor)
@@ -299,7 +300,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     if not args_cli.assignment_rl:
         print("[INFO]: play_assignment.py is assignment-only; proceeding in assignment mode.")
-    print("[WARN]: Do not use old 9D continuous checkpoints with this assignment play path.")
+    print(
+        "[WARN]: Do not use old 9D continuous checkpoints or assignment checkpoints trained with a different "
+        "fixed-N viewpoint count with this assignment play path."
+    )
 
     model_dir = Path(args_cli.dir).expanduser().resolve()
     if not model_dir.exists():

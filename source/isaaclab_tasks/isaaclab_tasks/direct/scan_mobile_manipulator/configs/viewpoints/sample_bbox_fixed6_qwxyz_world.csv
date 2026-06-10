@@ -1,0 +1,7 @@
+id,pose_type,coordinate_frame,units,quaternion_order,scanner_forward_axis,scanner_up_axis,viewpoint_quaternion_meaning,x,y,z,qw,qx,qy,qz
+0,scanner_pose_in_world,world,meters,"qw,qx,qy,qz",+X,+Z,scanner_frame_orientation_in_world,-2.0,-1.45,1.2,0.7071,0.0,0.0,0.7071
+1,scanner_pose_in_world,world,meters,"qw,qx,qy,qz",+X,+Z,scanner_frame_orientation_in_world,0.0,-1.45,1.4,0.7071,0.0,0.0,0.7071
+2,scanner_pose_in_world,world,meters,"qw,qx,qy,qz",+X,+Z,scanner_frame_orientation_in_world,2.0,-1.45,1.2,0.7071,0.0,0.0,0.7071
+3,scanner_pose_in_world,world,meters,"qw,qx,qy,qz",+X,+Z,scanner_frame_orientation_in_world,-2.0,1.45,1.2,0.7071,0.0,0.0,-0.7071
+4,scanner_pose_in_world,world,meters,"qw,qx,qy,qz",+X,+Z,scanner_frame_orientation_in_world,0.0,1.45,1.4,0.7071,0.0,0.0,-0.7071
+5,scanner_pose_in_world,world,meters,"qw,qx,qy,qz",+X,+Z,scanner_frame_orientation_in_world,2.0,1.45,1.2,0.7071,0.0,0.0,-0.7071

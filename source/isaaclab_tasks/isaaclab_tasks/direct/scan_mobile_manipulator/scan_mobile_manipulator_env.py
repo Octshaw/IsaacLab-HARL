@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import torch
 from collections.abc import Sequence
+from pathlib import Path
 
 from isaaclab.envs import DirectMARLEnv, DirectMARLEnvCfg
 from isaaclab.scene import InteractiveSceneCfg
@@ -21,6 +22,18 @@ from isaaclab.utils.math import (
     quat_mul,
     wrap_to_pi,
 )
+
+from .component_mesh import (
+    compute_base_center_alignment_translation,
+    compute_component_mesh_bounds,
+    load_obj_mesh,
+    transform_vertices,
+    validate_mesh_format,
+    validate_mesh_unit,
+    validate_orientation_format,
+)
+from .static_feasibility import generate_static_geometric_feasibility
+from .viewpoint_csv import VIEWPOINT_CSV_FORMAT, load_fixed_viewpoint_csv
 
 
 @configclass
@@ -62,10 +75,41 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     # be registered here later when the high-level task is replaced by a physical robot model.
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=64, env_spacing=12.0, replicate_physics=True)
 
-    # Temporary geometry proxy for the large component. Scanner range is measured from the scanner/viewpoint to this
-    # axis-aligned box surface until a real mesh/raycast coverage model is available.
-    component_center = (0.0, 0.0, 1.0)
-    component_half_extents = (3.0, 1.0, 1.0)
+    # Minimal Stage 1 component proxy support. Only bbox is supported for now; scanner range is measured from the
+    # scanner/viewpoint to this axis-aligned box surface until mesh/raycast coverage is introduced later.
+    component_proxy_type = "bbox"
+    component_proxy_center = (0.0, 0.0, 1.0)
+    component_proxy_half_extents = (3.0, 1.0, 1.0)
+    component_proxy_auto_from_mesh = False
+    component_proxy_padding = 0.0
+    component_proxy_visual_visible = True
+    # Legacy aliases kept so existing fixed-12 config readers do not break while the new proxy fields become canonical.
+    component_center = component_proxy_center
+    component_half_extents = component_proxy_half_extents
+
+    # Optional visual-only measured component mesh. OBJ units are explicit; the default millimeter scale converts raw
+    # OBJ coordinates to meters. The mesh does not participate in collision, raycast, IK, or coverage.
+    component_mesh_path = None
+    component_mesh_format = "obj"
+    component_mesh_unit = "mm"
+    component_mesh_scale = (0.001, 0.001, 0.001)
+    component_mesh_position = (0.0, 0.0, 0.0)
+    component_mesh_orientation = (1.0, 0.0, 0.0, 0.0)
+    component_mesh_orientation_format = "qwxyz"
+    component_mesh_visible = True
+    component_mesh_align_base_center_to_world_origin = False
+    component_mesh_base_center_before_translation = None
+    component_mesh_auto_translation_if_used = None
+    component_mesh_resolved_path = None
+    component_mesh_raw_bounds_obj_units_min = None
+    component_mesh_raw_bounds_obj_units_max = None
+    component_mesh_scaled_local_bounds_m_min = None
+    component_mesh_scaled_local_bounds_m_max = None
+    component_mesh_world_bounds_m_min = None
+    component_mesh_world_bounds_m_max = None
+    component_mesh_auto_proxy_center = None
+    component_mesh_auto_proxy_half_extents = None
+
     enable_usd_debug_visuals = True
     use_camera_light_in_gui = True
 
@@ -88,11 +132,22 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
         (1.9, 1.55, 1.4, 0.7071, 0.0, 0.0, -0.7071),
         (2.8, 1.45, 1.2, 0.7071, 0.0, 0.0, -0.7071),
     )
+    viewpoint_csv_path = None
+    viewpoint_csv_format = VIEWPOINT_CSV_FORMAT
+    viewpoint_source = "builtin_fixed_12"
+    viewpoint_ids = ()
+    enable_reset_diagnostics = True
+    reset_diagnostics_once = True
+    feasibility_generator_type = "static_geometric_v1"
+    require_each_viewpoint_feasible = True
     num_viewpoints_in_observation = 8
     # Fixed 12-viewpoint MVP scenario-level capability override. Bounded diagnostics showed robot_2 does not stably
     # satisfy the coverage gates for viewpoint 5 within the current high-level controller/tolerance setup. This is not a
     # generic arbitrary-viewpoint feasibility rule; remove or replace it when moving beyond the fixed MVP scenario.
     fixed_12_mvp_infeasible_agent_viewpoints = {"robot_2": (5,)}
+    fixed_12_mvp_level2_diagnostic_reasons = (
+        ("robot_2", 5, "level2_controller_diagnostic_position_rotation_gates_never_simultaneously_satisfied"),
+    )
 
     # Heterogeneous robot capability parameters. Tuple index 0/1/2 maps to robot_0/robot_1/robot_2 respectively.
     # These values affect action scaling, assignment feasibility, scan completion checks, and observation features.
@@ -127,16 +182,191 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     time_penalty = 0.002
 
 
+def _as_float_tuple(value, *, name: str, length: int) -> tuple[float, ...]:
+    try:
+        values = tuple(float(item) for item in value)
+    except TypeError as exc:
+        raise ValueError(f"{name} must be a sequence of {length} finite floats, got {value!r}.") from exc
+    if len(values) != length:
+        raise ValueError(f"{name} must contain {length} values, got {len(values)}: {value!r}.")
+    if not all(math.isfinite(item) for item in values):
+        raise ValueError(f"{name} must contain only finite values, got {value!r}.")
+    return values
+
+
+def _validate_viewpoint_pose_tuple(value, *, index: int) -> tuple[float, float, float, float, float, float, float]:
+    pose = _as_float_tuple(value, name=f"viewpoint_poses[{index}]", length=7)
+    quat_norm = math.sqrt(sum(item * item for item in pose[3:7]))
+    if quat_norm <= 1.0e-8:
+        raise ValueError(f"viewpoint_poses[{index}] quaternion must be non-zero.")
+    return pose
+
+
+def _prepare_component_mesh_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    mesh_path = getattr(cfg, "component_mesh_path", None)
+    cfg.component_mesh_format = validate_mesh_format(getattr(cfg, "component_mesh_format", "obj"))
+    cfg.component_mesh_unit = validate_mesh_unit(getattr(cfg, "component_mesh_unit", "mm"))
+    cfg.component_mesh_scale = _as_float_tuple(
+        getattr(cfg, "component_mesh_scale", (0.001, 0.001, 0.001)),
+        name="component_mesh_scale",
+        length=3,
+    )
+    if any(value <= 0.0 for value in cfg.component_mesh_scale):
+        raise ValueError(f"component_mesh_scale must contain positive values, got {cfg.component_mesh_scale!r}.")
+    cfg.component_mesh_position = _as_float_tuple(
+        getattr(cfg, "component_mesh_position", (0.0, 0.0, 0.0)),
+        name="component_mesh_position",
+        length=3,
+    )
+    cfg.component_mesh_orientation = _as_float_tuple(
+        getattr(cfg, "component_mesh_orientation", (1.0, 0.0, 0.0, 0.0)),
+        name="component_mesh_orientation",
+        length=4,
+    )
+    cfg.component_mesh_orientation_format = validate_orientation_format(
+        getattr(cfg, "component_mesh_orientation_format", "qwxyz")
+    )
+    cfg.component_mesh_visible = bool(getattr(cfg, "component_mesh_visible", True))
+    cfg.component_mesh_align_base_center_to_world_origin = bool(
+        getattr(cfg, "component_mesh_align_base_center_to_world_origin", False)
+    )
+    cfg.component_proxy_auto_from_mesh = bool(getattr(cfg, "component_proxy_auto_from_mesh", False))
+    cfg.component_proxy_padding = float(getattr(cfg, "component_proxy_padding", 0.0))
+    cfg.component_proxy_visual_visible = bool(getattr(cfg, "component_proxy_visual_visible", True))
+    if not math.isfinite(cfg.component_proxy_padding) or cfg.component_proxy_padding < 0.0:
+        raise ValueError(f"component_proxy_padding must be finite and non-negative, got {cfg.component_proxy_padding!r}.")
+
+    cfg.component_mesh_resolved_path = None
+    cfg.component_mesh_base_center_before_translation = None
+    cfg.component_mesh_auto_translation_if_used = None
+    cfg.component_mesh_raw_bounds_obj_units_min = None
+    cfg.component_mesh_raw_bounds_obj_units_max = None
+    cfg.component_mesh_scaled_local_bounds_m_min = None
+    cfg.component_mesh_scaled_local_bounds_m_max = None
+    cfg.component_mesh_world_bounds_m_min = None
+    cfg.component_mesh_world_bounds_m_max = None
+    cfg.component_mesh_auto_proxy_center = None
+    cfg.component_mesh_auto_proxy_half_extents = None
+
+    if not mesh_path:
+        if cfg.component_proxy_auto_from_mesh:
+            raise ValueError("component_proxy_auto_from_mesh=True requires component_mesh_path.")
+        if cfg.component_mesh_align_base_center_to_world_origin:
+            raise ValueError(
+                "component_mesh_align_base_center_to_world_origin=True requires component_mesh_path."
+            )
+        return
+
+    module_dir = Path(__file__).resolve().parent
+    if cfg.component_mesh_align_base_center_to_world_origin:
+        default_position = (0.0, 0.0, 0.0)
+        if any(abs(cfg.component_mesh_position[index] - default_position[index]) > 1.0e-12 for index in range(3)):
+            raise ValueError(
+                "component_mesh_align_base_center_to_world_origin=True cannot be combined with a non-zero "
+                "component_mesh_position. Use one world-origin convention at a time."
+            )
+        alignment = compute_base_center_alignment_translation(
+            mesh_path=mesh_path,
+            mesh_format=cfg.component_mesh_format,
+            mesh_unit=cfg.component_mesh_unit,
+            mesh_scale=cfg.component_mesh_scale,
+            mesh_orientation=cfg.component_mesh_orientation,
+            mesh_orientation_format=cfg.component_mesh_orientation_format,
+            search_roots=(module_dir,),
+        )
+        cfg.component_mesh_position = alignment.auto_translation
+        cfg.component_mesh_base_center_before_translation = alignment.base_center_before_translation
+        cfg.component_mesh_auto_translation_if_used = alignment.auto_translation
+
+    bounds = compute_component_mesh_bounds(
+        mesh_path=mesh_path,
+        mesh_format=cfg.component_mesh_format,
+        mesh_unit=cfg.component_mesh_unit,
+        mesh_scale=cfg.component_mesh_scale,
+        mesh_position=cfg.component_mesh_position,
+        mesh_orientation=cfg.component_mesh_orientation,
+        mesh_orientation_format=cfg.component_mesh_orientation_format,
+        component_proxy_padding=cfg.component_proxy_padding,
+        search_roots=(module_dir,),
+    )
+    cfg.component_mesh_path = bounds.mesh_path
+    cfg.component_mesh_resolved_path = bounds.mesh_path
+    cfg.component_mesh_scale = bounds.mesh_scale
+    cfg.component_mesh_position = bounds.mesh_position
+    cfg.component_mesh_orientation = bounds.mesh_orientation
+    cfg.component_mesh_raw_bounds_obj_units_min = bounds.raw_bounds_obj_units_min
+    cfg.component_mesh_raw_bounds_obj_units_max = bounds.raw_bounds_obj_units_max
+    cfg.component_mesh_scaled_local_bounds_m_min = bounds.scaled_local_bounds_m_min
+    cfg.component_mesh_scaled_local_bounds_m_max = bounds.scaled_local_bounds_m_max
+    cfg.component_mesh_world_bounds_m_min = bounds.world_bounds_m_min
+    cfg.component_mesh_world_bounds_m_max = bounds.world_bounds_m_max
+    cfg.component_mesh_auto_proxy_center = bounds.auto_component_proxy_center
+    cfg.component_mesh_auto_proxy_half_extents = bounds.auto_component_proxy_half_extents
+
+    if cfg.component_proxy_auto_from_mesh:
+        cfg.component_proxy_center = bounds.auto_component_proxy_center
+        cfg.component_proxy_half_extents = bounds.auto_component_proxy_half_extents
+
+
+def _prepare_component_proxy_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    proxy_type = str(getattr(cfg, "component_proxy_type", "bbox")).strip().lower()
+    if proxy_type != "bbox":
+        raise ValueError(f"Unsupported component_proxy_type={proxy_type!r}; only 'bbox' is supported in Stage 1.")
+
+    center = _as_float_tuple(cfg.component_proxy_center, name="component_proxy_center", length=3)
+    half_extents = _as_float_tuple(cfg.component_proxy_half_extents, name="component_proxy_half_extents", length=3)
+    if any(value <= 0.0 for value in half_extents):
+        raise ValueError(f"component_proxy_half_extents must all be positive, got {half_extents!r}.")
+
+    cfg.component_proxy_type = proxy_type
+    cfg.component_proxy_center = center
+    cfg.component_proxy_half_extents = half_extents
+    cfg.component_center = center
+    cfg.component_half_extents = half_extents
+
+
+def _prepare_viewpoint_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    csv_path = getattr(cfg, "viewpoint_csv_path", None)
+    if csv_path:
+        csv_format = str(getattr(cfg, "viewpoint_csv_format", VIEWPOINT_CSV_FORMAT)).strip()
+        if csv_format != VIEWPOINT_CSV_FORMAT:
+            raise ValueError(
+                f"Unsupported viewpoint_csv_format={csv_format!r}; only {VIEWPOINT_CSV_FORMAT!r} is supported."
+            )
+        module_dir = Path(__file__).resolve().parent
+        load_result = load_fixed_viewpoint_csv(csv_path, search_roots=(module_dir,))
+        cfg.viewpoint_poses = load_result.poses
+        cfg.viewpoint_ids = load_result.ids
+        cfg.viewpoint_source = f"csv:{load_result.path}"
+        return
+
+    poses = tuple(
+        _validate_viewpoint_pose_tuple(pose, index=index) for index, pose in enumerate(cfg.viewpoint_poses)
+    )
+    if not poses:
+        raise ValueError("viewpoint_poses must contain at least one viewpoint.")
+    cfg.viewpoint_poses = poses
+    cfg.viewpoint_ids = tuple(range(len(poses)))
+    cfg.viewpoint_source = "builtin_fixed_12"
+
+
 class ScanMobileManipulatorEnv(DirectMARLEnv):
     """DirectMARLEnv implementation for the high-level scan assignment skeleton."""
 
     cfg: ScanMobileManipulatorEnvCfg
 
     def __init__(self, cfg: ScanMobileManipulatorEnvCfg, render_mode: str | None = None, **kwargs):
+        _prepare_component_mesh_cfg(cfg)
+        _prepare_component_proxy_cfg(cfg)
+        _prepare_viewpoint_cfg(cfg)
         super().__init__(cfg, render_mode, **kwargs)
 
         self.num_agents_cfg = len(self.cfg.possible_agents)
         self.num_viewpoints = len(self.cfg.viewpoint_poses)
+        self.viewpoint_ids = tuple(int(value) for value in self.cfg.viewpoint_ids)
+        self.viewpoint_source = str(self.cfg.viewpoint_source)
+        self.noop_action_id = self.num_viewpoints
+        self._apply_fixed_12_mvp_override = self.viewpoint_source == "builtin_fixed_12" and self.num_viewpoints == 12
         self.agent_index = {agent: index for index, agent in enumerate(self.cfg.possible_agents)}
 
         # Static task data is copied to `self.device` once. Later steps stay in torch tensors and avoid CPU/numpy
@@ -144,9 +374,9 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         self.viewpoint_poses = torch.tensor(self.cfg.viewpoint_poses, dtype=torch.float32, device=self.device)
         self.viewpoint_pos_local = self.viewpoint_poses[:, :3]
         self.viewpoint_quat = normalize(self.viewpoint_poses[:, 3:7])
-        self.component_center = torch.tensor(self.cfg.component_center, dtype=torch.float32, device=self.device)
+        self.component_center = torch.tensor(self.cfg.component_proxy_center, dtype=torch.float32, device=self.device)
         self.component_half_extents = torch.tensor(
-            self.cfg.component_half_extents, dtype=torch.float32, device=self.device
+            self.cfg.component_proxy_half_extents, dtype=torch.float32, device=self.device
         )
 
         self.base_start_poses = torch.tensor(self.cfg.base_start_poses, dtype=torch.float32, device=self.device)
@@ -164,6 +394,8 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         self.max_base_yaw_step = torch.tensor(self.cfg.max_base_yaw_step, dtype=torch.float32, device=self.device)
         self.max_ee_xyz_step = torch.tensor(self.cfg.max_ee_xyz_step, dtype=torch.float32, device=self.device)
         self.max_ee_rpy_step = torch.tensor(self.cfg.max_ee_rpy_step, dtype=torch.float32, device=self.device)
+
+        self._build_static_feasibility()
 
         # High-level task-space state. These buffers are the current source of truth for robot and scanner pose until
         # real robot articulation state is wired in.
@@ -188,6 +420,8 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         self.last_duplicate_scans = torch.zeros(self.num_envs, self.num_agents_cfg, device=self.device)
         self.last_reach_violation = torch.zeros(self.num_envs, self.num_agents_cfg, device=self.device)
         self._usd_debug_dirty = True
+        self._reset_diagnostics_printed = False
+        self._log_static_configuration()
 
     def get_assignment_problem(self) -> dict:
         """Return the high-level viewpoint assignment problem for the current state.
@@ -202,33 +436,17 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         # environment dynamics by itself.
         cost_matrix = torch.norm(self.scanner_pos[:, :, None, :] - viewpoint_pos[:, None, :, :], dim=-1)
 
-        # Feasibility is deliberately mobile-base friendly. Since bases can move, assignment should not reject distant
-        # targets solely because the initial base position is far away. Instead, require height reachability and scanner
-        # range compatibility with the component proxy.
-        vertical_reach = torch.abs(self.base_pos[:, :, None, 2] - viewpoint_pos[:, None, :, 2])
-        arm_reachable = vertical_reach <= self.arm_reach.view(1, -1, 1)
-
-        viewpoint_to_box = torch.abs(viewpoint_pos - self.component_center.view(1, 1, 3))
-        viewpoint_to_box = torch.clamp(viewpoint_to_box - self.component_half_extents.view(1, 1, 3), min=0.0)
-        viewpoint_sensor_distance = torch.norm(viewpoint_to_box, dim=-1)
-        sensor_range_ok = (
-            (viewpoint_sensor_distance[:, None, :] >= self.scanner_min_range.view(1, -1, 1) - 1.0e-6)
-            & (viewpoint_sensor_distance[:, None, :] <= self.scanner_max_range.view(1, -1, 1) + 1.0e-6)
+        static_geometric_feasible_mask = self.static_geometric_feasible_mask.unsqueeze(0).expand(
+            self.num_envs, -1, -1
         )
-        feasible_mask = arm_reachable & sensor_range_ok
-        for agent_name, viewpoint_indices in self.cfg.fixed_12_mvp_infeasible_agent_viewpoints.items():
-            agent_index = self.agent_index.get(agent_name)
-            if agent_index is None:
-                continue
-            for viewpoint_index in viewpoint_indices:
-                if viewpoint_index < self.num_viewpoints:
-                    feasible_mask[:, agent_index, viewpoint_index] = False
+        feasible_mask = self.assignment_feasible_mask_base.unsqueeze(0).expand(self.num_envs, -1, -1)
         available_mask = feasible_mask & (~self.viewpoints_covered[:, None, :])
 
         return {
             "num_envs": self.num_envs,
             "num_agents": self.num_agents_cfg,
             "num_viewpoints": self.num_viewpoints,
+            "viewpoint_ids": self.viewpoint_ids,
             "base_pos": self.base_pos,
             "base_yaw": self.base_yaw,
             "scanner_pos": self.scanner_pos,
@@ -241,8 +459,52 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             "scanner_max_range": self.scanner_max_range,
             "scanner_fov_deg": self.scanner_fov_deg,
             "cost_matrix": cost_matrix,
+            "static_geometric_feasible_mask": static_geometric_feasible_mask,
             "feasible_mask": feasible_mask,
             "available_mask": available_mask,
+            "static_geometric_feasibility_rows": self.static_geometric_feasibility_rows,
+            "manual_feasibility_override_rows": self.manual_feasibility_override_rows,
+            "feasibility_diagnostic_rows": self.feasibility_diagnostic_rows,
+        }
+
+    def get_component_mesh_diagnostics(self) -> dict | None:
+        if not self.cfg.component_mesh_path:
+            return None
+        return {
+            "component_mesh_path": self.cfg.component_mesh_path,
+            "component_mesh_format": self.cfg.component_mesh_format,
+            "component_mesh_unit": self.cfg.component_mesh_unit,
+            "component_mesh_scale": list(self.cfg.component_mesh_scale),
+            "component_mesh_position": list(self.cfg.component_mesh_position),
+            "component_mesh_orientation": list(self.cfg.component_mesh_orientation),
+            "component_mesh_orientation_format": self.cfg.component_mesh_orientation_format,
+            "component_mesh_visible": bool(self.cfg.component_mesh_visible),
+            "component_mesh_align_base_center_to_world_origin": bool(
+                self.cfg.component_mesh_align_base_center_to_world_origin
+            ),
+            "component_mesh_base_center_before_translation": (
+                list(self.cfg.component_mesh_base_center_before_translation)
+                if self.cfg.component_mesh_base_center_before_translation is not None
+                else None
+            ),
+            "component_mesh_auto_translation_if_used": (
+                list(self.cfg.component_mesh_auto_translation_if_used)
+                if self.cfg.component_mesh_auto_translation_if_used is not None
+                else None
+            ),
+            "component_proxy_auto_from_mesh": bool(self.cfg.component_proxy_auto_from_mesh),
+            "component_proxy_padding": float(self.cfg.component_proxy_padding),
+            "component_proxy_visual_visible": bool(self.cfg.component_proxy_visual_visible),
+            "raw_mesh_bounds_obj_units_min": list(self.cfg.component_mesh_raw_bounds_obj_units_min),
+            "raw_mesh_bounds_obj_units_max": list(self.cfg.component_mesh_raw_bounds_obj_units_max),
+            "scaled_local_mesh_bounds_m_min": list(self.cfg.component_mesh_scaled_local_bounds_m_min),
+            "scaled_local_mesh_bounds_m_max": list(self.cfg.component_mesh_scaled_local_bounds_m_max),
+            "transformed_world_mesh_bounds_m_min": list(self.cfg.component_mesh_world_bounds_m_min),
+            "transformed_world_mesh_bounds_m_max": list(self.cfg.component_mesh_world_bounds_m_max),
+            "auto_component_proxy_center": list(self.cfg.component_mesh_auto_proxy_center),
+            "auto_component_proxy_half_extents": list(self.cfg.component_mesh_auto_proxy_half_extents),
+            "component_proxy_center": list(self.cfg.component_proxy_center),
+            "component_proxy_half_extents": list(self.cfg.component_proxy_half_extents),
         }
 
     def _setup_scene(self):
@@ -340,8 +602,34 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             set_transform(sphere.GetPrim(), pos, (1.0, 1.0, 1.0))
             UsdShade.MaterialBindingAPI(sphere.GetPrim()).Bind(material_cache[mat_name])
 
+        def add_component_obj_visual(path: str):
+            if not self.cfg.component_mesh_path or not self.cfg.component_mesh_visible:
+                return
+            mesh_data = load_obj_mesh(self.cfg.component_mesh_path)
+            if not mesh_data.faces:
+                print(
+                    "[WARN]: Component OBJ visual mesh has no faces; bbox proxy remains active but no mesh surface "
+                    f"visual was created for {self.cfg.component_mesh_path}."
+                )
+                return
+            # The transform is baked into the USD points to avoid depending on a GUI/USD conversion step. This prim is
+            # visual-only and intentionally has no collision or physics API applied.
+            world_vertices = transform_vertices(
+                mesh_data.vertices,
+                mesh_scale=self.cfg.component_mesh_scale,
+                mesh_position=self.cfg.component_mesh_position,
+                mesh_orientation=self.cfg.component_mesh_orientation,
+            )
+            mesh = UsdGeom.Mesh.Define(stage, path)
+            mesh.CreatePointsAttr([Gf.Vec3f(*vertex) for vertex in world_vertices])
+            mesh.CreateFaceVertexCountsAttr([len(face) for face in mesh_data.faces])
+            mesh.CreateFaceVertexIndicesAttr([index for face in mesh_data.faces for index in face])
+            mesh.CreateSubdivisionSchemeAttr("none")
+            UsdShade.MaterialBindingAPI(mesh.GetPrim()).Bind(material_cache["scan_component_mesh_gray"])
+
         # Keep the large component translucent and matte so robots behind it remain visible without specular glare.
         make_material("scan_component_blue", (0.2, 0.45, 0.9), opacity=0.35, roughness=1.0, specular_color=(0.0, 0.0, 0.0))
+        make_material("scan_component_mesh_gray", (0.62, 0.65, 0.68), opacity=1.0, roughness=0.8, specular_color=(0.02, 0.02, 0.02))
         make_material("scan_robot_red", (0.9, 0.2, 0.2))
         make_material("scan_robot_green", (0.2, 0.8, 0.3))
         make_material("scan_robot_yellow", (0.9, 0.75, 0.2))
@@ -353,13 +641,15 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         light = UsdLux.DistantLight.Define(stage, "/World/ScanDebugLight")
         light.CreateIntensityAttr(2500.0)
 
-        component_scale = tuple(2.0 * value for value in self.cfg.component_half_extents)
-        add_cube(
-            f"{root_path}/LargeComponentVisual",
-            self.cfg.component_center,
-            component_scale,
-            "scan_component_blue",
-        )
+        if self.cfg.component_proxy_visual_visible:
+            component_scale = tuple(2.0 * value for value in self.cfg.component_proxy_half_extents)
+            add_cube(
+                f"{root_path}/LargeComponentVisual",
+                self.cfg.component_proxy_center,
+                component_scale,
+                "scan_component_blue",
+            )
+        add_component_obj_visual(f"{root_path}/MeasuredComponentObjVisual")
 
         robot_materials = ("scan_robot_red", "scan_robot_green", "scan_robot_yellow")
         for index, pose in enumerate(self.cfg.base_start_poses):
@@ -660,3 +950,236 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             self.previous_actions[agent][env_ids] = 0.0
         self._usd_debug_dirty = True
         self._update_usd_debug_visuals()
+        self._run_reset_diagnostics()
+
+    def _log_static_configuration(self) -> None:
+        print(
+            "[INFO]: Scan component proxy "
+            f"type={self.cfg.component_proxy_type} center={self.cfg.component_proxy_center} "
+            f"half_extents={self.cfg.component_proxy_half_extents} "
+            f"visual_visible={self.cfg.component_proxy_visual_visible}"
+        )
+        if self.cfg.component_mesh_path:
+            print(
+                "[INFO]: Scan component visual mesh "
+                f"path={self.cfg.component_mesh_path} format={self.cfg.component_mesh_format} "
+                f"unit={self.cfg.component_mesh_unit} scale={self.cfg.component_mesh_scale} "
+                f"position={self.cfg.component_mesh_position} orientation={self.cfg.component_mesh_orientation} "
+                f"align_base_center_to_world_origin={self.cfg.component_mesh_align_base_center_to_world_origin}"
+            )
+            if self.cfg.component_mesh_align_base_center_to_world_origin:
+                print(
+                    "[INFO]: Scan component mesh base-center alignment "
+                    f"base_center_before_translation={self.cfg.component_mesh_base_center_before_translation} "
+                    f"auto_translation={self.cfg.component_mesh_auto_translation_if_used}"
+                )
+            print(
+                "[INFO]: Scan component mesh bounds "
+                f"raw_min={self.cfg.component_mesh_raw_bounds_obj_units_min} "
+                f"raw_max={self.cfg.component_mesh_raw_bounds_obj_units_max} "
+                f"world_min={self.cfg.component_mesh_world_bounds_m_min} "
+                f"world_max={self.cfg.component_mesh_world_bounds_m_max} "
+                f"auto_proxy_center={self.cfg.component_mesh_auto_proxy_center} "
+                f"auto_proxy_half_extents={self.cfg.component_mesh_auto_proxy_half_extents}"
+            )
+        print(
+            "[INFO]: Scan viewpoints loaded "
+            f"source={self.viewpoint_source} num_viewpoints={self.num_viewpoints} "
+            f"no-op id={self.noop_action_id} viewpoint_ids={list(self.viewpoint_ids)}"
+        )
+        print(
+            "[INFO]: Scan feasibility generator "
+            f"type={self.cfg.feasibility_generator_type} "
+            f"static_mask_shape={tuple(self.static_geometric_feasible_mask.shape)}"
+        )
+        if self.manual_feasibility_override_rows:
+            print(
+                "[WARN]: Fixed-12 manual feasibility overrides remain active; "
+                "these rows carry cached or required Level 2 controller diagnostics: "
+                f"{self.manual_feasibility_override_rows}"
+            )
+        if self.num_viewpoints != 12:
+            print(
+                "[WARN]: Fixed-N assignment checkpoints are only compatible with the same num_viewpoints "
+                f"and action-space width. Old fixed-12 checkpoints are incompatible with N={self.num_viewpoints}."
+            )
+
+    def _run_reset_diagnostics(self) -> None:
+        if not self.cfg.enable_reset_diagnostics:
+            return
+        if self.cfg.reset_diagnostics_once and self._reset_diagnostics_printed:
+            return
+
+        problem = self.get_assignment_problem()
+        feasible_mask = problem["feasible_mask"].to(dtype=torch.bool)
+        static_feasible_mask = problem["static_geometric_feasible_mask"].to(dtype=torch.bool)
+        env_has_feasible_agent = feasible_mask.any(dim=1)
+        missing_env_viewpoints = ~env_has_feasible_agent
+        permanently_unavailable = torch.nonzero(missing_env_viewpoints.any(dim=0), as_tuple=False).flatten()
+        permanently_unavailable_ids = [
+            self.viewpoint_ids[int(index.item())] for index in permanently_unavailable.detach().cpu()
+        ]
+
+        static_feasible_agents_per_viewpoint = {}
+        first_env_static_feasible = static_feasible_mask[0]
+        for viewpoint_index, viewpoint_id in enumerate(self.viewpoint_ids):
+            static_feasible_agents_per_viewpoint[int(viewpoint_id)] = [
+                agent
+                for agent, agent_index in self.agent_index.items()
+                if bool(first_env_static_feasible[agent_index, viewpoint_index].item())
+            ]
+
+        feasible_agents_per_viewpoint = {}
+        first_env_feasible = feasible_mask[0]
+        for viewpoint_index, viewpoint_id in enumerate(self.viewpoint_ids):
+            feasible_agents_per_viewpoint[int(viewpoint_id)] = [
+                agent
+                for agent, agent_index in self.agent_index.items()
+                if bool(first_env_feasible[agent_index, viewpoint_index].item())
+            ]
+
+        available_actions_shape = (self.num_envs, self.num_agents_cfg, self.num_viewpoints + 1)
+        print(
+            "[INFO]: Scan reset diagnostics "
+            f"num_envs={self.num_envs} num_agents={self.num_agents_cfg} "
+            f"num_viewpoints={self.num_viewpoints} no-op id={self.noop_action_id} "
+            f"available_actions shape={available_actions_shape}"
+        )
+        print(f"[INFO]: Scan reset diagnostics viewpoint ids={list(self.viewpoint_ids)}")
+        print(
+            "[INFO]: Scan reset diagnostics static geometric feasible agents per viewpoint="
+            f"{static_feasible_agents_per_viewpoint}"
+        )
+        print(f"[INFO]: Scan reset diagnostics final feasible agents per viewpoint={feasible_agents_per_viewpoint}")
+        mesh_diagnostics = self.get_component_mesh_diagnostics()
+        if mesh_diagnostics is not None:
+            print(f"[INFO]: Scan reset diagnostics component mesh={mesh_diagnostics}")
+        print(
+            "[INFO]: Scan reset diagnostics infeasible rows="
+            f"{[row for row in self.feasibility_diagnostic_rows if not row['feasible']]}"
+        )
+        print(f"[INFO]: Scan reset diagnostics permanently unavailable viewpoints={permanently_unavailable_ids}")
+
+        self._reset_diagnostics_printed = True
+        if permanently_unavailable_ids and self.cfg.require_each_viewpoint_feasible:
+            detail_rows = []
+            poses = self.viewpoint_poses.detach().cpu().tolist()
+            for viewpoint_index in permanently_unavailable.detach().cpu().tolist():
+                failed_envs = torch.nonzero(missing_env_viewpoints[:, viewpoint_index], as_tuple=False).flatten()
+                pair_rows = [
+                    row
+                    for row in self.feasibility_diagnostic_rows
+                    if row["viewpoint_index"] == int(viewpoint_index)
+                ]
+                detail_rows.append(
+                    {
+                        "viewpoint_id": self.viewpoint_ids[int(viewpoint_index)],
+                        "pose": poses[int(viewpoint_index)],
+                        "failed_envs": failed_envs.detach().cpu().tolist(),
+                        "agent_viewpoint_diagnostics": pair_rows,
+                    }
+                )
+            raise RuntimeError(
+                "Scan assignment feasibility failure: viewpoints have no feasible agent. "
+                f"permanently_unavailable_viewpoints={permanently_unavailable_ids} details={detail_rows}"
+            )
+
+    def _build_static_feasibility(self) -> None:
+        if self.cfg.feasibility_generator_type != "static_geometric_v1":
+            raise ValueError(
+                f"Unsupported feasibility_generator_type={self.cfg.feasibility_generator_type!r}; "
+                "only 'static_geometric_v1' is supported in Stage 3A."
+            )
+
+        result = generate_static_geometric_feasibility(
+            viewpoint_ids=self.viewpoint_ids,
+            viewpoint_pos=self.viewpoint_pos_local,
+            viewpoint_quat=self.viewpoint_quat,
+            component_center=self.component_center,
+            component_half_extents=self.component_half_extents,
+            agent_names=tuple(self.cfg.possible_agents),
+            base_start_poses=self.base_start_poses,
+            arm_reach=self.arm_reach,
+            scanner_min_range=self.scanner_min_range,
+            scanner_max_range=self.scanner_max_range,
+            scanner_fov_cos=self.scanner_fov_cos,
+            scanner_fov_deg=self.scanner_fov_deg,
+            scan_pos_tolerance=self.scan_pos_tolerance,
+            scan_rot_tolerance=self.scan_rot_tolerance,
+        )
+        self.static_geometric_feasible_mask = result.feasible_mask
+        self.static_geometric_feasibility_rows = result.diagnostic_rows
+        self.assignment_feasible_mask_base = self.static_geometric_feasible_mask.clone()
+        self.manual_feasibility_override_rows = []
+        if self._apply_fixed_12_mvp_override:
+            self._apply_fixed_12_manual_feasibility_override()
+        self.feasibility_diagnostic_rows = self._build_final_feasibility_rows()
+
+    def _apply_fixed_12_manual_feasibility_override(self) -> None:
+        for agent_name, viewpoint_indices in self.cfg.fixed_12_mvp_infeasible_agent_viewpoints.items():
+            agent_index = self.agent_index.get(agent_name)
+            if agent_index is None:
+                continue
+            for viewpoint_index in viewpoint_indices:
+                if viewpoint_index >= self.num_viewpoints:
+                    continue
+                static_feasible = bool(self.static_geometric_feasible_mask[agent_index, viewpoint_index].item())
+                level2_reason = None
+                for reason_agent, reason_viewpoint_index, reason_text in getattr(
+                    self.cfg, "fixed_12_mvp_level2_diagnostic_reasons", ()
+                ):
+                    if str(reason_agent) == str(agent_name) and int(reason_viewpoint_index) == int(viewpoint_index):
+                        level2_reason = str(reason_text)
+                        break
+                self.assignment_feasible_mask_base[agent_index, viewpoint_index] = False
+                self.manual_feasibility_override_rows.append(
+                    {
+                        "viewpoint_id": int(self.viewpoint_ids[viewpoint_index]),
+                        "viewpoint_index": int(viewpoint_index),
+                        "agent": str(agent_name),
+                        "agent_index": int(agent_index),
+                        "static_geometric_feasible": static_feasible,
+                        "manual_override": True,
+                        "level2_controller_diagnostic_required": static_feasible and level2_reason is None,
+                        "level2_controller_diagnostic_available": level2_reason is not None,
+                        "reason": (
+                            level2_reason
+                            if level2_reason is not None
+                            else "fixed_12_mvp_manual_override_requires_level2_controller_feasibility_diagnostic"
+                            if static_feasible
+                            else "fixed_12_mvp_manual_override_confirms_static_geometric_infeasible_pair"
+                        ),
+                    }
+                )
+
+    def _build_final_feasibility_rows(self) -> list[dict]:
+        rows = []
+        override_by_pair = {
+            (row["agent_index"], row["viewpoint_index"]): row for row in self.manual_feasibility_override_rows
+        }
+        final_mask_cpu = self.assignment_feasible_mask_base.detach().cpu()
+        for static_row in self.static_geometric_feasibility_rows:
+            row = dict(static_row)
+            key = (row["agent_index"], row["viewpoint_index"])
+            row["static_geometric_feasible"] = bool(static_row["feasible"])
+            row["manual_override"] = key in override_by_pair
+            row["level2_controller_diagnostic_required"] = False
+            row["level2_controller_diagnostic_available"] = False
+            row["feasible"] = bool(final_mask_cpu[key[0], key[1]].item())
+            if row["manual_override"]:
+                override_row = override_by_pair[key]
+                row["level2_controller_diagnostic_required"] = bool(
+                    override_row["level2_controller_diagnostic_required"]
+                )
+                row["level2_controller_diagnostic_available"] = bool(
+                    override_row.get("level2_controller_diagnostic_available", False)
+                )
+                override_reason = override_row["reason"]
+                if row["reason_if_false"]:
+                    row["reason_if_false"] = f"{row['reason_if_false']};{override_reason}"
+                else:
+                    row["reason_if_false"] = override_reason
+            elif not row["feasible"] and not row["reason_if_false"]:
+                row["reason_if_false"] = "static_geometric_feasibility_failed_without_specific_reason"
+            rows.append(row)
+        return rows

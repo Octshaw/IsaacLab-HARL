@@ -128,9 +128,15 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if args["assignment_rl"]:
         register_assignment_harl_runner(RUNNER_REGISTRY, args["algo"])
         print("[INFO]: --assignment_rl enabled for HARL training.")
-        print("[WARN]: Assignment RL uses Discrete/Categorical policies; old 9D continuous checkpoints are incompatible.")
+        print(
+            "[WARN]: Assignment RL uses Discrete/Categorical policies; old 9D continuous checkpoints and "
+            "assignment checkpoints trained with a different fixed-N viewpoint count are incompatible."
+        )
         if args["dir"] is not None:
-            print(f"[WARN]: --dir={args['dir']} must point to an assignment-RL checkpoint, not a 9D continuous checkpoint.")
+            print(
+                f"[WARN]: --dir={args['dir']} must point to an assignment-RL checkpoint with the same fixed-N "
+                "viewpoint count, not a 9D continuous checkpoint."
+            )
         if args["exp_name"] == "test":
             print("[WARN]: Consider using an assignment-specific --exp_name to avoid mixing continuous and assignment runs.")
 

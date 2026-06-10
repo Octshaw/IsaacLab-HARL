@@ -1,0 +1,33 @@
+scenario_name: real_component_bbox_sample_visual
+
+task: Isaac-Scan-Mobile-Manipulator-Direct-v0
+num_envs: 1
+max_steps: 300
+headless: false
+device: cuda:0
+
+component_mesh:
+  path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/Model/aircraft_skin_with_frame.obj
+  format: obj
+  unit: mm
+  scale: [0.001, 0.001, 0.001]
+  orientation: [1.0, 0.0, 0.0, 0.0]
+  orientation_format: qwxyz
+  align_base_center_to_world_origin: true
+  visible: true
+
+component_proxy:
+  type: bbox
+  auto_from_mesh: true
+  padding: 0.0
+  visual_visible: false
+
+viewpoints:
+  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/real_component_bbox_sample.csv
+  expect_num_viewpoints: 24
+  format: scanner_pose_world_quat_wxyz_v1
+  frame: world
+  units: meters
+
+output:
+  result_file: results/assignment_diagnostics/real_component_bbox_sample_visual_yaml_smoke.json

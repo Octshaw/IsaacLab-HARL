@@ -380,7 +380,7 @@ def _load_assignment_actors(wrapper, algo_args: dict, model_dir: Path, device: t
         except RuntimeError as exc:
             raise RuntimeError(
                 f"Failed to load {checkpoint_path}. Use an assignment-mode Discrete/Categorical checkpoint, "
-                "not an old 9D continuous checkpoint."
+                "not an old 9D continuous checkpoint or a checkpoint trained with a different fixed-N viewpoint count."
             ) from exc
         actor.prep_rollout()
 
