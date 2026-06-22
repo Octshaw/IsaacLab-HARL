@@ -10,8 +10,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+ISAACLAB_TASKS_SOURCE = REPO_ROOT / "source" / "isaaclab_tasks"
+SCAN_TASK_SOURCE = (
+    REPO_ROOT
+    / "source"
+    / "isaaclab_tasks"
+    / "isaaclab_tasks"
+    / "direct"
+    / "scan_mobile_manipulator"
+)
+for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
+    if str(source_path) not in sys.path:
+        sys.path.insert(0, str(source_path))
+
+from scenario_config import load_scenario_config, smoke_defaults_from_config, validate_smoke_args
 
 from isaaclab.app import AppLauncher
 
@@ -30,7 +47,14 @@ def _parse_pair(text: str) -> tuple[str, int]:
     return agent, viewpoint_id
 
 
+pre_parser = argparse.ArgumentParser(add_help=False)
+pre_parser.add_argument("--scenario_config", type=str, default=None, help="Optional scenario YAML/JSON config.")
+pre_args, _ = pre_parser.parse_known_args()
+SCENARIO_CONFIG = load_scenario_config(pre_args.scenario_config, repo_root=REPO_ROOT)
+SCENARIO_DEFAULTS = smoke_defaults_from_config(SCENARIO_CONFIG)
+
 parser = argparse.ArgumentParser(
+    parents=[pre_parser],
     description="Run bounded controller feasibility diagnostics for assignment agent-viewpoint pairs."
 )
 parser.add_argument("--task", type=str, default="Isaac-Scan-Mobile-Manipulator-Direct-v0")
@@ -38,8 +62,23 @@ parser.add_argument("--num_envs", type=int, default=1)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--max_steps", type=int, default=160)
 parser.add_argument("--pair", action="append", type=_parse_pair, default=None)
+parser.add_argument("--viewpoint_ids", nargs="+", type=int, default=None)
+parser.add_argument("--agent_ids", nargs="+", type=int, default=None)
 parser.add_argument("--viewpoint_csv_path", type=str, default=None)
 parser.add_argument("--expect_num_viewpoints", type=int, default=None)
+parser.add_argument("--component_mesh_path", type=str, default=None)
+parser.add_argument("--component_mesh_format", type=str, default=None)
+parser.add_argument("--component_mesh_unit", type=str, default=None)
+parser.add_argument("--component_mesh_scale", nargs=3, type=float, default=None)
+parser.add_argument("--component_mesh_position", nargs=3, type=float, default=None)
+parser.add_argument("--component_mesh_orientation", nargs=4, type=float, default=None)
+parser.add_argument("--component_mesh_orientation_format", type=str, default=None)
+parser.add_argument("--component_mesh_visible", action=argparse.BooleanOptionalAction, default=None)
+parser.add_argument("--align_base_center_to_world_origin", action=argparse.BooleanOptionalAction, default=False)
+parser.add_argument("--component_proxy_type", type=str, default=None)
+parser.add_argument("--component_proxy_auto_from_mesh", action=argparse.BooleanOptionalAction, default=None)
+parser.add_argument("--component_proxy_padding", type=float, default=None)
+parser.add_argument("--component_proxy_visual_visible", action=argparse.BooleanOptionalAction, default=None)
 parser.add_argument(
     "--output_json",
     type=str,
@@ -57,19 +96,20 @@ parser.add_argument(
 )
 
 AppLauncher.add_app_launcher_args(parser)
+parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli = parser.parse_args()
+validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
+print(
+    "[controller-feasibility] "
+    f"scenario_config={SCENARIO_CONFIG.get('_scenario_config_path')} "
+    f"viewpoint_ids={args_cli.viewpoint_ids} agent_ids={args_cli.agent_ids}",
+    flush=True,
+)
 
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-import sys  # noqa: E402
-
 import torch  # noqa: E402
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-ISAACLAB_TASKS_SOURCE = REPO_ROOT / "source" / "isaaclab_tasks"
-if str(ISAACLAB_TASKS_SOURCE) not in sys.path:
-    sys.path.insert(0, str(ISAACLAB_TASKS_SOURCE))
 
 import isaaclab_tasks  # noqa: F401, E402
 from isaaclab.utils.math import quat_apply, quat_error_magnitude  # noqa: E402
@@ -102,6 +142,30 @@ def _agent_index(env_unwrapped: Any, agent_name: str) -> int:
         return agent_names.index(agent_name)
     except ValueError as exc:
         raise ValueError(f"Unknown agent {agent_name!r}; available agents: {agent_names}") from exc
+
+
+def _requested_pairs(env_unwrapped: Any) -> list[tuple[str, int]]:
+    if args_cli.pair is not None:
+        return list(args_cli.pair)
+
+    if args_cli.viewpoint_ids is None:
+        if args_cli.agent_ids is not None:
+            raise ValueError("--agent_ids requires --viewpoint_ids when --pair is not used")
+        return [("robot_2", 5)]
+
+    agent_names = _agent_names(env_unwrapped)
+    if args_cli.agent_ids is None:
+        agent_ids = list(range(len(agent_names)))
+    else:
+        agent_ids = [int(agent_id) for agent_id in args_cli.agent_ids]
+
+    pairs: list[tuple[str, int]] = []
+    for viewpoint_id in args_cli.viewpoint_ids:
+        for agent_id in agent_ids:
+            if agent_id < 0 or agent_id >= len(agent_names):
+                raise ValueError(f"Unknown agent_id {agent_id}; valid ids are 0..{len(agent_names) - 1}")
+            pairs.append((agent_names[agent_id], int(viewpoint_id)))
+    return pairs
 
 
 def _viewpoint_index(env_unwrapped: Any, viewpoint_id: int) -> int:
@@ -192,6 +256,7 @@ def _collect_step_row(
         "viewpoint_id": viewpoint_id,
         "scanner_position": [_tensor_value(v) for v in scanner_pos.detach().cpu()],
         "target_viewpoint_position": [_tensor_value(v) for v in target_pos.detach().cpu()],
+        "target_viewpoint_quaternion_wxyz": [_tensor_value(v) for v in target_quat.detach().cpu()],
         "position_error": _tensor_value(position_error),
         "rotation_error": _tensor_value(rotation_error),
         "scanner_target_distance": _tensor_value(scanner_target_distance),
@@ -269,6 +334,7 @@ def _diagnose_pair(wrapper: Any, agent_name: str, viewpoint_id: int) -> dict[str
     best_position_error = min(row["position_error"] for row in rows) if rows else None
     best_rotation_error = min(row["rotation_error"] for row in rows) if rows else None
     best_range_margin = max(row["range_margin"] for row in rows) if rows else None
+    final_row = rows[-1] if rows else {}
 
     if first_covered_step is not None:
         most_likely_failure_reason = "covered"
@@ -303,18 +369,26 @@ def _diagnose_pair(wrapper: Any, agent_name: str, viewpoint_id: int) -> dict[str
         manual_override_recommendation = "not_a_manual_override_pair"
 
     result = {
+        "agent_id": agent_idx,
+        "agent_name": agent_name,
         "assigned_agent": agent_name,
         "viewpoint_id": viewpoint_id,
         "viewpoint_index": viewpoint_idx,
+        "viewpoint_pose": {
+            "position": list(final_row.get("target_viewpoint_position", [])),
+            "quaternion_wxyz": list(final_row.get("target_viewpoint_quaternion_wxyz", [])),
+        },
         "max_steps": args_cli.max_steps,
         "steps_executed": len(rows),
+        "num_steps": len(rows),
         "target_static_geometric_feasible": static_feasible,
         "target_final_feasible_before_diagnostic_bypass": final_feasible_before,
         "target_final_feasible_after_diagnostic_bypass": final_feasible_after,
         "manual_override_bypassed_for_diagnostic": manual_override_bypassed,
         "other_agents_assignment": "noop",
         "last_target_agent_action": last_action,
-        "controller_converged": ever_position_gate_ok and ever_rotation_gate_ok,
+        "controller_converged": ever_position_rotation_gate_ok,
+        "controller_reached_position_and_rotation_individually": ever_position_gate_ok and ever_rotation_gate_ok,
         "ever_position_gate_ok": ever_position_gate_ok,
         "ever_rotation_gate_ok": ever_rotation_gate_ok,
         "ever_range_ok": ever_range_ok,
@@ -324,10 +398,14 @@ def _diagnose_pair(wrapper: Any, agent_name: str, viewpoint_id: int) -> dict[str
         "ever_pose_range_arm_gate_ok": ever_pose_range_arm_gate_ok,
         "ever_all_coverage_gates_ok": ever_all_coverage_gates_ok,
         "first_covered_step": first_covered_step,
+        "covered": first_covered_step is not None,
         "target_viewpoint_covered": first_covered_step is not None,
         "best_position_error": best_position_error,
         "best_rotation_error": best_rotation_error,
         "best_range_margin": best_range_margin,
+        "final_position_error": final_row.get("position_error"),
+        "final_rotation_error": final_row.get("rotation_error"),
+        "final_range_margin": final_row.get("range_margin"),
         "most_likely_failure_reason": most_likely_failure_reason,
         "manual_override_recommendation": manual_override_recommendation,
         "step_rows": rows,
@@ -335,24 +413,58 @@ def _diagnose_pair(wrapper: Any, agent_name: str, viewpoint_id: int) -> dict[str
     return result
 
 
-def main() -> None:
-    pairs = args_cli.pair or [("robot_2", 5)]
+def _apply_args_to_env_cfg(env_cfg: Any) -> Any:
+    env_cfg.scene.num_envs = args_cli.num_envs
+    if hasattr(env_cfg, "sim") and hasattr(env_cfg.sim, "device"):
+        env_cfg.sim.device = args_cli.device
+    if hasattr(env_cfg, "sim") and hasattr(env_cfg.sim, "use_fabric"):
+        env_cfg.sim.use_fabric = not bool(getattr(args_cli, "disable_fabric", False))
+    if args_cli.seed is not None:
+        env_cfg.seed = args_cli.seed
+    if args_cli.viewpoint_csv_path is not None:
+        env_cfg.viewpoint_csv_path = args_cli.viewpoint_csv_path
+    if args_cli.component_mesh_path is not None:
+        env_cfg.component_mesh_path = args_cli.component_mesh_path
+    if args_cli.component_mesh_format is not None:
+        env_cfg.component_mesh_format = args_cli.component_mesh_format
+    if args_cli.component_mesh_unit is not None:
+        env_cfg.component_mesh_unit = args_cli.component_mesh_unit
+    if args_cli.component_mesh_scale is not None:
+        env_cfg.component_mesh_scale = tuple(args_cli.component_mesh_scale)
+    if args_cli.component_mesh_position is not None:
+        env_cfg.component_mesh_position = tuple(args_cli.component_mesh_position)
+    if args_cli.component_mesh_orientation is not None:
+        env_cfg.component_mesh_orientation = tuple(args_cli.component_mesh_orientation)
+    if args_cli.component_mesh_orientation_format is not None:
+        env_cfg.component_mesh_orientation_format = args_cli.component_mesh_orientation_format
+    if args_cli.component_mesh_visible is not None:
+        env_cfg.component_mesh_visible = bool(args_cli.component_mesh_visible)
+    if args_cli.align_base_center_to_world_origin:
+        env_cfg.component_mesh_align_base_center_to_world_origin = True
+    if args_cli.component_proxy_type is not None:
+        env_cfg.component_proxy_type = args_cli.component_proxy_type
+    if args_cli.component_proxy_auto_from_mesh is not None:
+        env_cfg.component_proxy_auto_from_mesh = bool(args_cli.component_proxy_auto_from_mesh)
+    if args_cli.component_proxy_padding is not None:
+        env_cfg.component_proxy_padding = float(args_cli.component_proxy_padding)
+    if args_cli.component_proxy_visual_visible is not None:
+        env_cfg.component_proxy_visual_visible = bool(args_cli.component_proxy_visual_visible)
+    return env_cfg
 
+
+def main() -> None:
     env_cfg = parse_env_cfg(
         args_cli.task,
         device=args_cli.device,
         num_envs=args_cli.num_envs,
         use_fabric=not args_cli.disable_fabric,
     )
+    env_cfg = _apply_args_to_env_cfg(env_cfg)
     env_cfg.enable_reset_diagnostics = False
-    if args_cli.viewpoint_csv_path:
-        env_cfg.viewpoint_csv_path = args_cli.viewpoint_csv_path
-
-    if args_cli.seed is not None:
-        env_cfg.seed = args_cli.seed
 
     wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
     try:
+        pairs = _requested_pairs(wrapper.unwrapped)
         if args_cli.expect_num_viewpoints is not None:
             actual_num_viewpoints = int(wrapper.unwrapped.num_viewpoints)
             if actual_num_viewpoints != args_cli.expect_num_viewpoints:
@@ -367,11 +479,22 @@ def main() -> None:
             raise
         payload = {
             "task": args_cli.task,
+            "scenario_config_path": SCENARIO_CONFIG.get("_scenario_config_path"),
+            "scenario_name": SCENARIO_CONFIG.get("scenario_name"),
             "num_envs": args_cli.num_envs,
             "viewpoint_source": wrapper.unwrapped.viewpoint_source,
+            "viewpoint_csv_path": getattr(wrapper.unwrapped.cfg, "viewpoint_csv_path", None),
             "num_viewpoints": int(wrapper.unwrapped.num_viewpoints),
             "viewpoint_ids": [int(v) for v in wrapper.unwrapped.viewpoint_ids],
             "noop_action_id": int(wrapper.unwrapped.noop_action_id),
+            "available_actions_shape": list(wrapper.make_available_actions().shape),
+            "target_viewpoint_ids": [int(value) for value in args_cli.viewpoint_ids]
+            if args_cli.viewpoint_ids is not None
+            else None,
+            "target_agent_ids": [int(value) for value in args_cli.agent_ids] if args_cli.agent_ids is not None else None,
+            "component_mesh_path": getattr(wrapper.unwrapped.cfg, "component_mesh_path", None),
+            "component_proxy_center": list(getattr(wrapper.unwrapped.cfg, "component_proxy_center", ())),
+            "component_proxy_half_extents": list(getattr(wrapper.unwrapped.cfg, "component_proxy_half_extents", ())),
             "bypass_manual_override_for_diagnostic": bool(args_cli.bypass_manual_override_for_diagnostic),
             "results": results,
         }

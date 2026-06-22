@@ -59,6 +59,7 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     _put(defaults, "headless", config.get("headless"))
     _put(defaults, "device", config.get("device"))
     _put(defaults, "disable_fabric", config.get("disable_fabric"))
+    _put(defaults, "viewpoint_candidate_top_k", config.get("viewpoint_candidate_top_k"))
 
     mesh = _mapping(config.get("component_mesh"), "component_mesh", required=False)
     _put(defaults, "component_mesh_path", mesh.get("path"))
@@ -80,6 +81,10 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     viewpoints = _mapping(config.get("viewpoints"), "viewpoints", required=False)
     _put(defaults, "viewpoint_csv_path", viewpoints.get("csv_path"))
     _put(defaults, "expect_num_viewpoints", viewpoints.get("expect_num_viewpoints"))
+    _put(defaults, "viewpoint_candidate_top_k", viewpoints.get("candidate_top_k"))
+
+    assignment = _mapping(config.get("assignment"), "assignment", required=False)
+    _put(defaults, "viewpoint_candidate_top_k", assignment.get("viewpoint_candidate_top_k"))
 
     output = _mapping(config.get("output"), "output", required=False)
     _put(defaults, "result_file", output.get("result_file"))

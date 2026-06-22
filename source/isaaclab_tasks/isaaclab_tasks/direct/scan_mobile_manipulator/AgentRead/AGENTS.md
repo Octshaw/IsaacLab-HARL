@@ -321,6 +321,48 @@ source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YY
 2. Rewrite `TASK_PROGRESS.md` as a concise current handoff summary.
 3. Add the archive path under `Detailed reports / archives`.
 
+### Daily planning and archive folder rule
+
+All newly created plan, report, design-note, investigation, and phase-summary markdown files must be placed under a date-named folder:
+
+```text
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMMDD/
+```
+
+Use the current local date in `YYYYMMDD` format.
+
+Do not place new long-form plan/report documents directly under the top-level `AgentRead/` folder unless the user explicitly requests it.
+
+The top-level `AgentRead/` folder should keep only the current concise handoff files that are meant to be read first, especially:
+
+```text
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md
+```
+
+Every time `TASK_PROGRESS.md` is condensed, rewritten, or substantially shortened, first create a backup of the current full version under the current date folder.
+
+Use a descriptive archive filename, for example:
+
+```text
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMMDD/TASK_PROGRESS_ARCHIVE_BEFORE_<short_description>_YYYYMMDD.md
+```
+
+Then rewrite the top-level `TASK_PROGRESS.md` as a concise current handoff.
+
+After creating a plan/report/archive file, add its path under the `Detailed reports / archives` section of the current `TASK_PROGRESS.md`.
+
+Example structure:
+
+```text
+AgentRead/
+  TASK_PROGRESS.md
+  20260610/
+    TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md
+    STAGE4_REAL_COMPONENT_FIXEDN_EVALUATION_PLAN.md
+```
+
+When a task is documentation-only, report clearly which documentation files were created or modified, and confirm that no code, training, simulation logic, HARL files, or installed `site-packages` files were changed.
+
 ### Detailed reports
 
 Detailed investigations, design notes, long command outputs, and phase-specific reports should be written as separate files under `AgentRead/YYYYMMDD/`, for example:
