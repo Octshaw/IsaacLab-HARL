@@ -22,6 +22,12 @@ except ImportError:  # Allows direct script imports after SCAN_TASK_SOURCE is ad
 SUPPORTED_MESH_UNITS = {"mm"}
 SUPPORTED_MESH_FORMATS = {"obj"}
 SUPPORTED_ORIENTATION_FORMAT = "qwxyz"
+SUPPORTED_ROBOT_VISUAL_MODES = {"mesh", "debug_marker", "none"}
+SUPPORTED_COMPONENT_VISUAL_MODES = {"mesh", "bbox", "none"}
+SUPPORTED_OBSTACLE_DIAGNOSTIC_MODES = {"diagnostics_only"}
+SUPPORTED_OBSTACLE_SOURCES = {"component_mesh_footprint"}
+SUPPORTED_OBSTACLE_DEBUG_LINE_SOURCES = {"mesh_footprint_intersections"}
+SUPPORTED_OBSTACLE_DEBUG_LINE_Z_MODES = {"fixed", "max_endpoint"}
 
 
 def load_scenario_config(config_path: str | Path | None, *, repo_root: Path) -> dict[str, Any]:
@@ -52,6 +58,9 @@ def load_scenario_config(config_path: str | Path | None, *, repo_root: Path) -> 
 
 def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     defaults: dict[str, Any] = {}
+    _put(defaults, "scenario_config_path", config.get("_scenario_config_path"))
+    _put(defaults, "scenario_name", config.get("scenario_name"))
+    _put(defaults, "scenario_type", config.get("scenario_type"))
     _put(defaults, "task", config.get("task"))
     _put(defaults, "num_envs", config.get("num_envs"))
     _put(defaults, "max_steps", config.get("max_steps"))
@@ -60,6 +69,10 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     _put(defaults, "device", config.get("device"))
     _put(defaults, "disable_fabric", config.get("disable_fabric"))
     _put(defaults, "viewpoint_candidate_top_k", config.get("viewpoint_candidate_top_k"))
+
+    visualization = _mapping(config.get("visualization"), "visualization", required=False)
+    _put(defaults, "robot_visual_mode", visualization.get("robot_visual_mode"))
+    _put(defaults, "component_visual_mode", visualization.get("component_visual_mode"))
 
     mesh = _mapping(config.get("component_mesh"), "component_mesh", required=False)
     _put(defaults, "component_mesh_path", mesh.get("path"))
@@ -83,8 +96,43 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     _put(defaults, "expect_num_viewpoints", viewpoints.get("expect_num_viewpoints"))
     _put(defaults, "viewpoint_candidate_top_k", viewpoints.get("candidate_top_k"))
 
+    robots = _mapping(config.get("robots"), "robots", required=False)
+    _put(defaults, "robot_config_path", robots.get("config_path"))
+
+    capabilities = _mapping(config.get("capabilities"), "capabilities", required=False)
+    _put(defaults, "capability_config_path", capabilities.get("config_path"))
+
     assignment = _mapping(config.get("assignment"), "assignment", required=False)
     _put(defaults, "viewpoint_candidate_top_k", assignment.get("viewpoint_candidate_top_k"))
+
+    obstacle = _mapping(config.get("obstacle_diagnostics"), "obstacle_diagnostics", required=False)
+    _put(defaults, "obstacle_diagnostics_enabled", obstacle.get("enabled"))
+    _put(defaults, "obstacle_diagnostics_mode", obstacle.get("mode"))
+    _put(defaults, "obstacle_source", obstacle.get("obstacle_source"))
+    _put(defaults, "obstacle_footprint_resolution", obstacle.get("footprint_resolution"))
+    _put(defaults, "obstacle_footprint_inflation_radius", obstacle.get("footprint_inflation_radius"))
+    _put(defaults, "obstacle_line_sample_step", obstacle.get("line_sample_step"))
+    _put(defaults, "obstacle_blocked_path_penalty", obstacle.get("blocked_path_penalty"))
+
+    obstacle_debug = _mapping(
+        config.get("obstacle_debug_visualization"),
+        "obstacle_debug_visualization",
+        required=False,
+    )
+    _put(defaults, "obstacle_debug_visualization_enabled", obstacle_debug.get("enabled"))
+    _put(defaults, "obstacle_debug_visualization_draw_in_headless", obstacle_debug.get("draw_in_headless"))
+    _put(defaults, "obstacle_debug_visualization_line_source", obstacle_debug.get("line_source"))
+    _put(defaults, "obstacle_debug_visualization_max_lines_per_robot", obstacle_debug.get("max_lines_per_robot"))
+    _put(defaults, "obstacle_debug_visualization_max_total_lines", obstacle_debug.get("max_total_lines"))
+    _put(
+        defaults,
+        "obstacle_debug_visualization_prefer_shortest_blocked_pairs",
+        obstacle_debug.get("prefer_shortest_blocked_pairs"),
+    )
+    _put(defaults, "obstacle_debug_visualization_line_z_mode", obstacle_debug.get("line_z_mode"))
+    _put(defaults, "obstacle_debug_visualization_line_z_value", obstacle_debug.get("line_z_value"))
+    _put(defaults, "obstacle_debug_visualization_line_z_offset", obstacle_debug.get("line_z_offset"))
+    _put(defaults, "obstacle_debug_visualization_line_width", obstacle_debug.get("line_width"))
 
     output = _mapping(config.get("output"), "output", required=False)
     _put(defaults, "result_file", output.get("result_file"))
@@ -131,6 +179,21 @@ def viewpoint_generation_defaults_from_config(config: Mapping[str, Any]) -> dict
 def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str, Any] | None = None) -> None:
     if config:
         _validate_viewpoint_metadata(config)
+        _validate_robot_config_metadata(config, repo_root=repo_root)
+        _validate_capability_config_metadata(config, repo_root=repo_root)
+        _validate_visualization_metadata(config)
+        _validate_obstacle_diagnostics_metadata(config)
+        _validate_obstacle_debug_visualization_metadata(config)
+    _validate_visual_mode_arg(
+        getattr(args, "robot_visual_mode", None),
+        label="visualization.robot_visual_mode",
+        allowed=SUPPORTED_ROBOT_VISUAL_MODES,
+    )
+    _validate_visual_mode_arg(
+        getattr(args, "component_visual_mode", None),
+        label="visualization.component_visual_mode",
+        allowed=SUPPORTED_COMPONENT_VISUAL_MODES,
+    )
     proxy_type = getattr(args, "component_proxy_type", None)
     if proxy_type is not None and str(proxy_type).strip().lower() != "bbox":
         raise ValueError(f"Unsupported component_proxy.type={proxy_type!r}; only 'bbox' is supported.")
@@ -160,6 +223,12 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
                 )
     elif expect_num_viewpoints is not None:
         raise ValueError("expect_num_viewpoints requires viewpoint_csv_path; built-in fixed-12 has no CSV file.")
+    robot_config_path = getattr(args, "robot_config_path", None)
+    if robot_config_path is not None:
+        resolve_path(robot_config_path, repo_root=repo_root, must_exist=True, label="robots.config_path")
+    capability_config_path = getattr(args, "capability_config_path", None)
+    if capability_config_path is not None:
+        resolve_path(capability_config_path, repo_root=repo_root, must_exist=True, label="capabilities.config_path")
     _ensure_output_parent(getattr(args, "result_file", None), repo_root=repo_root, label="output.result_file")
 
 
@@ -260,6 +329,141 @@ def _validate_viewpoint_metadata(config: Mapping[str, Any]) -> None:
         actual = viewpoints.get(key)
         if actual is not None and str(actual).strip() != expected_value:
             raise ValueError(f"Unsupported viewpoints.{key}={actual!r}; expected {expected_value!r}.")
+
+
+def _validate_robot_config_metadata(config: Mapping[str, Any], *, repo_root: Path) -> None:
+    robots = _mapping(config.get("robots"), "robots", required=False)
+    config_path = robots.get("config_path")
+    if config_path is not None:
+        if not isinstance(config_path, (str, Path)):
+            raise ValueError(f"robots.config_path must be a string path, got {config_path!r}.")
+        resolve_path(config_path, repo_root=repo_root, must_exist=True, label="robots.config_path")
+
+
+def _validate_visualization_metadata(config: Mapping[str, Any]) -> None:
+    visualization = _mapping(config.get("visualization"), "visualization", required=False)
+    _validate_visual_mode_arg(
+        visualization.get("robot_visual_mode"),
+        label="visualization.robot_visual_mode",
+        allowed=SUPPORTED_ROBOT_VISUAL_MODES,
+    )
+    _validate_visual_mode_arg(
+        visualization.get("component_visual_mode"),
+        label="visualization.component_visual_mode",
+        allowed=SUPPORTED_COMPONENT_VISUAL_MODES,
+    )
+
+
+def _validate_visual_mode_arg(value: Any, *, label: str, allowed: set[str]) -> None:
+    if value is None:
+        return
+    mode = str(value).strip().lower()
+    if mode not in allowed:
+        allowed_text = ", ".join(sorted(allowed))
+        raise ValueError(f"Unsupported {label}={value!r}; expected one of {{{allowed_text}}}.")
+
+
+def _validate_capability_config_metadata(config: Mapping[str, Any], *, repo_root: Path) -> None:
+    capabilities = _mapping(config.get("capabilities"), "capabilities", required=False)
+    config_path = capabilities.get("config_path")
+    if config_path is not None:
+        if not isinstance(config_path, (str, Path)):
+            raise ValueError(f"capabilities.config_path must be a string path, got {config_path!r}.")
+        resolve_path(config_path, repo_root=repo_root, must_exist=True, label="capabilities.config_path")
+
+
+def _validate_obstacle_diagnostics_metadata(config: Mapping[str, Any]) -> None:
+    obstacle = _mapping(config.get("obstacle_diagnostics"), "obstacle_diagnostics", required=False)
+    if not obstacle:
+        return
+    enabled = obstacle.get("enabled", False)
+    if not isinstance(enabled, bool):
+        raise ValueError(f"obstacle_diagnostics.enabled must be boolean, got {enabled!r}.")
+    mode = obstacle.get("mode")
+    if enabled:
+        if str(mode).strip().lower() not in SUPPORTED_OBSTACLE_DIAGNOSTIC_MODES:
+            raise ValueError(
+                f"Unsupported obstacle_diagnostics.mode={mode!r}; expected one of "
+                f"{sorted(SUPPORTED_OBSTACLE_DIAGNOSTIC_MODES)!r}."
+            )
+        source = obstacle.get("obstacle_source")
+        if str(source).strip().lower() not in SUPPORTED_OBSTACLE_SOURCES:
+            raise ValueError(
+                f"Unsupported obstacle_diagnostics.obstacle_source={source!r}; expected one of "
+                f"{sorted(SUPPORTED_OBSTACLE_SOURCES)!r}."
+            )
+        component_mesh = _mapping(config.get("component_mesh"), "component_mesh", required=False)
+        if component_mesh.get("path") is None:
+            raise ValueError(
+                "obstacle_diagnostics with obstacle_source=component_mesh_footprint requires component_mesh.path."
+            )
+    for key, positive in (
+        ("footprint_resolution", True),
+        ("footprint_inflation_radius", False),
+        ("line_sample_step", True),
+        ("blocked_path_penalty", False),
+    ):
+        value = obstacle.get(key)
+        if value is None:
+            continue
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"obstacle_diagnostics.{key} must be numeric, got {value!r}.") from exc
+        if not math.isfinite(numeric):
+            raise ValueError(f"obstacle_diagnostics.{key} must be finite, got {value!r}.")
+        if positive and numeric <= 0.0:
+            raise ValueError(f"obstacle_diagnostics.{key} must be positive, got {value!r}.")
+        if not positive and numeric < 0.0:
+            raise ValueError(f"obstacle_diagnostics.{key} must be non-negative, got {value!r}.")
+
+
+def _validate_obstacle_debug_visualization_metadata(config: Mapping[str, Any]) -> None:
+    debug = _mapping(
+        config.get("obstacle_debug_visualization"),
+        "obstacle_debug_visualization",
+        required=False,
+    )
+    if not debug:
+        return
+    for key in ("enabled", "draw_in_headless", "prefer_shortest_blocked_pairs"):
+        value = debug.get(key)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"obstacle_debug_visualization.{key} must be boolean, got {value!r}.")
+    source = debug.get("line_source")
+    if source is not None and str(source).strip().lower() not in SUPPORTED_OBSTACLE_DEBUG_LINE_SOURCES:
+        raise ValueError(
+            f"Unsupported obstacle_debug_visualization.line_source={source!r}; expected one of "
+            f"{sorted(SUPPORTED_OBSTACLE_DEBUG_LINE_SOURCES)!r}."
+        )
+    z_mode = debug.get("line_z_mode")
+    if z_mode is not None and str(z_mode).strip().lower() not in SUPPORTED_OBSTACLE_DEBUG_LINE_Z_MODES:
+        raise ValueError(
+            f"Unsupported obstacle_debug_visualization.line_z_mode={z_mode!r}; expected one of "
+            f"{sorted(SUPPORTED_OBSTACLE_DEBUG_LINE_Z_MODES)!r}."
+        )
+    for key in ("max_lines_per_robot", "max_total_lines"):
+        value = debug.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, int) or value < 0:
+            raise ValueError(f"obstacle_debug_visualization.{key} must be a non-negative integer, got {value!r}.")
+    for key, positive in (("line_z_value", False), ("line_z_offset", False), ("line_width", True)):
+        value = debug.get(key)
+        if value is None:
+            continue
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"obstacle_debug_visualization.{key} must be numeric, got {value!r}.") from exc
+        if not math.isfinite(numeric):
+            raise ValueError(f"obstacle_debug_visualization.{key} must be finite, got {value!r}.")
+        if positive and numeric <= 0.0:
+            raise ValueError(f"obstacle_debug_visualization.{key} must be positive, got {value!r}.")
+        if not positive and key == "line_z_offset" and numeric < 0.0:
+            raise ValueError(
+                f"obstacle_debug_visualization.{key} must be finite and non-negative, got {value!r}."
+            )
 
 
 def _validate_finite_sequence(value: Any, *, length: int, label: str, positive: bool) -> tuple[float, ...]:

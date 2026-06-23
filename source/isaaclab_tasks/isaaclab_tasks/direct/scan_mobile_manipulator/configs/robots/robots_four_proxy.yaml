@@ -1,0 +1,36 @@
+# Robot Config MVP Phase 3 four-proxy smoke setup.
+#
+# initial_pose_world uses [x, y, z, qw, qx, qy, qz].
+# Quaternion ordering is qwxyz.
+robots:
+  - name: robot_0
+    enabled: true
+    model_type: task_space_proxy
+    initial_pose_world: [0.0, -1.5, 0.0, 1.0, 0.0, 0.0, 0.0]
+    capability_profile: mobile_scanner_a
+    speed_weight: 1.0
+    cost_weight: 1.0
+
+  - name: robot_1
+    enabled: true
+    model_type: task_space_proxy
+    initial_pose_world: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+    capability_profile: mobile_scanner_b
+    speed_weight: 1.0
+    cost_weight: 1.0
+
+  - name: robot_2
+    enabled: true
+    model_type: task_space_proxy
+    initial_pose_world: [0.0, 1.5, 0.0, 1.0, 0.0, 0.0, 0.0]
+    capability_profile: mobile_scanner_c
+    speed_weight: 1.0
+    cost_weight: 1.0
+
+  - name: robot_3
+    enabled: true
+    model_type: task_space_proxy
+    initial_pose_world: [0.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+    capability_profile: mobile_scanner_c
+    speed_weight: 1.0
+    cost_weight: 1.0

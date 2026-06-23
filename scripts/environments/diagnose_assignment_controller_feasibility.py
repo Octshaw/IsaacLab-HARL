@@ -66,6 +66,7 @@ parser.add_argument("--viewpoint_ids", nargs="+", type=int, default=None)
 parser.add_argument("--agent_ids", nargs="+", type=int, default=None)
 parser.add_argument("--viewpoint_csv_path", type=str, default=None)
 parser.add_argument("--expect_num_viewpoints", type=int, default=None)
+parser.add_argument("--robot_config_path", type=str, default=None)
 parser.add_argument("--component_mesh_path", type=str, default=None)
 parser.add_argument("--component_mesh_format", type=str, default=None)
 parser.add_argument("--component_mesh_unit", type=str, default=None)
@@ -423,6 +424,8 @@ def _apply_args_to_env_cfg(env_cfg: Any) -> Any:
         env_cfg.seed = args_cli.seed
     if args_cli.viewpoint_csv_path is not None:
         env_cfg.viewpoint_csv_path = args_cli.viewpoint_csv_path
+    if args_cli.robot_config_path is not None:
+        env_cfg.robot_config_path = args_cli.robot_config_path
     if args_cli.component_mesh_path is not None:
         env_cfg.component_mesh_path = args_cli.component_mesh_path
     if args_cli.component_mesh_format is not None:
@@ -484,6 +487,12 @@ def main() -> None:
             "num_envs": args_cli.num_envs,
             "viewpoint_source": wrapper.unwrapped.viewpoint_source,
             "viewpoint_csv_path": getattr(wrapper.unwrapped.cfg, "viewpoint_csv_path", None),
+            "robot_config_path": getattr(wrapper.unwrapped.cfg, "robot_config_path", None),
+            "robot_config_diagnostics": (
+                wrapper.unwrapped.get_robot_config_diagnostics()
+                if hasattr(wrapper.unwrapped, "get_robot_config_diagnostics")
+                else None
+            ),
             "num_viewpoints": int(wrapper.unwrapped.num_viewpoints),
             "viewpoint_ids": [int(v) for v in wrapper.unwrapped.viewpoint_ids],
             "noop_action_id": int(wrapper.unwrapped.noop_action_id),

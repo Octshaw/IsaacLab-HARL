@@ -4,200 +4,147 @@ Compact handoff for the assignment-based scan-mobile-manipulator work.
 
 ## Current Status
 
-Stage 4A fixed-N evaluator support is implemented and metric-correct. The evaluator supports scenario YAML input and
-external fixed-N viewpoint CSVs for baseline-only evaluation with `random`, `nearest`, and `greedy`. The fixed-12 default
-path remains available as a regression path.
+Phase 7B-2.5 obstacle diagnostic GUI validation and GUI-safe pause are complete.
 
-Stage 4B generated real-component N=24 diagnostics are now paused. The temporary CSV:
+The user manually confirmed that the red debug lines are visible and reasonable. The project is ready for Phase 7B-3:
+longer diagnostic-only obstacle-aware candidate comparisons.
+
+Current milestone:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/real_component_bbox_sample.csv
+mesh-footprint obstacle diagnostics
+obstacle-aware candidate comparison
+GUI red-line debug visualization
+BasisCurves visibility fix
+GUI-safe timed inspection pause
 ```
-
-is pipeline sanity / smoke data only. It is useful for validating scenario loading, evaluator outputs, visualization,
-assignment-history diagnostics, and controller trace plumbing, but it is not final viewpoint planning output and must not
-be treated as a final algorithm-performance benchmark.
-
-Recent Stage 4B findings on this temporary sample:
-
-- Generated N=24 scenario loads with `N=24`, `noop_id=24`, `available_actions_shape=[num_envs, 3, 25]`.
-- Initial nearest/greedy bounded baseline reached `17/24`.
-- Level 2 diagnostics showed all originally uncovered target viewpoints were coverable by at least one robot.
-- Pair-level Level 2 filtering improved nearest/greedy to `19/24`.
-- Retry/fallback made previously skipped target ids assigned, but coverage remained `19/24`.
-- Full-episode controller-state trace showed remaining failures are mainly controller/gate/orientation timing issues in
-  the temporary bbox sample.
-
-Decision: do not continue optimizing or deeply diagnosing controller gates against `real_component_bbox_sample.csv`
-unless explicitly requested. The final real planned viewpoint CSV is intentionally out of scope until the simulation
-environment, robot configuration interface, assignment interface, and evaluator are validated. Its absence is not a
-blocker for Robot Config MVP or simulation-readiness validation. Current progress should continue with fixed/default,
-temporary, and synthetic viewpoint sets.
 
 ## Latest Completed Work
 
-Documentation-only planning correction completed:
+Created a clean checkpoint summary and next-stage plan for continuing in a new conversation/window.
 
-- Updated the next-stage task plan to clarify that Robot Config MVP remains the immediate target and the final real CSV
-  is reserved for later final validation:
-  `source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260622/NEXT_STAGE_ROBOT_CONFIG_MVP_PLAN.md`
-- Updated this handoff with the corrected pre-real-CSV validation policy.
-- Existing archive remains available:
-  `source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_ROBOT_CONFIG_MVP_HANDOFF_20260622.md`
+Added:
 
-No code, simulation logic, reward, controller, HARL core, training path, or installed `site-packages` files were changed
-for this documentation-only correction.
+```text
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/PHASE7B_OBSTACLE_DIAGNOSTICS_CHECKPOINT_SUMMARY.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/NEXT_PHASE_7B3_LONG_DIAGNOSTIC_COMPARISON_PLAN.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B_CHECKPOINT_20260623.md
+```
+
+Modified:
+
+```text
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md
+```
+
+No Python code was changed by this checkpoint task.
 
 ## Active Architecture / Implementation Path
 
-Current assignment path remains:
+Obstacle diagnostics are still diagnostic-only:
 
 ```text
-train.py --assignment_rl
-  -> AssignmentOnPolicyHARunner
-  -> AssignmentIsaacLabEnv
-  -> AssignmentHarlWrapper
-  -> Discrete(num_viewpoints + 1)
-  -> available_actions mask
-  -> scalar discrete action
-  -> assignment
-  -> viewpoint_assignment_to_actions()
-  -> unchanged scan env.step(9D action dict)
+component OBJ -> approximate XY mesh footprint -> diagnostic line-intersection tensors
 ```
 
-Current fixed-N invariant:
+Important active fields:
 
 ```text
-N = loaded viewpoints
-noop_id = N
-action width = N + 1
-available_actions shape = [num_envs, num_agents, N + 1]
+straight_line_cost_matrix
+mesh_footprint_intersection_mask
+mesh_footprint_penalty_matrix
+mesh_footprint_aware_cost_matrix
 ```
 
-Next-stage target invariant:
+`mesh_footprint_aware_cost_matrix` is not promoted into live solver inputs.
 
-```text
-N = loaded viewpoints
-M = enabled robots from robots.yaml
-noop_id = N
-available_actions shape = [num_envs, M, N + 1]
-```
+The component bbox remains metadata/debug only and is not used as hard obstacle blocking.
 
-## Key Files
-
-Current handoff:
-
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/AGENTS.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260622/NEXT_STAGE_ROBOT_CONFIG_MVP_PLAN.md
-```
-
-Relevant implementation files:
-
-```text
-scripts/environments/evaluate_assignment_methods.py
-scripts/environments/diagnose_assignment_controller_feasibility.py
-scripts/environments/analyze_assignment_history_with_level2.py
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scenario_config.py
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scan_mobile_manipulator_env.py
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_controller.py
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_wrapper.py
-```
-
-Temporary generated real-component sample files:
-
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/real_component_bbox_sample_headless.yaml
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/real_component_bbox_sample.csv
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/Model/aircraft_skin_with_frame.obj
-```
+Red obstacle debug lines are direct robot-base-XY to viewpoint-XY diagnostic segments, not planned robot paths. Robot
+motion may differ from red lines; this is expected.
 
 ## Latest Verification
 
-Documentation-only task. No Python code was changed and no simulation/evaluator smoke was run.
+Checkpoint verification:
 
-Verification performed:
+```text
+conda run -p C:\isaacenvs\isaac45_harl python -c "import sys; print(sys.executable)"
+git diff --check
+git status
+```
 
-- Read `AGENTS.md`.
-- Read `TASK_PROGRESS.md`.
-- Read `source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260622/NEXT_STAGE_ROBOT_CONFIG_MVP_PLAN.md`.
-- Updated documentation only.
-- Ran `git status --short` to inspect the worktree.
-- Ran `git diff -- ...` for the two edited documentation files.
-- Ran `rg -n` over the two edited documentation files for stale real-CSV blocker wording and new section markers.
+Results should be checked at the end of this checkpoint task. No syntax checks are required for this documentation-only
+checkpoint unless Python files are modified.
 
-## Known Issues / Blockers
+Most recent Phase 7B smoke state before this checkpoint:
 
-- Final real planned viewpoint CSV is intentionally reserved for later final validation; its absence is not a blocker for
-  Robot Config MVP or simulation-readiness validation.
-- Current progress should continue with fixed/default, temporary, and synthetic viewpoint sets.
-- `real_component_bbox_sample.csv` is temporary bbox-side pipeline sanity data, not final viewpoint planning output.
-- Stage 4B diagnostics on the temporary sample exposed controller/gate/orientation timing issues, but these should not be
-  optimized as if they were final benchmark failures.
-- Assignment-RL should not be trained or evaluated for external `N` until the baseline/interface path is accepted and a
-  later validation stage explicitly selects the dataset.
-- Current robot count is still effectively a 3-robot task-space proxy setup; next stage should make this YAML-driven and
-  M-ready.
+```text
+N=50, M=3, noop_id=50
+available_actions=[1, 3, 51]
+available_mask=[1, 3, 50]
+cost_matrix=[1, 3, 50]
+mesh_footprint_intersection_count=54
+obstacle debug lines visible and reasonable in manual GUI
+GUI-safe pause uses simulation_app.update()
+```
+
+## Known Issues / Limitations
+
+- Phase 7B-3 has not yet run longer diagnostic comparisons.
+- Current short candidate-comparison smoke is not benchmark evidence.
+- Synthetic N=50 viewpoints remain smoke/interface data only.
+- Mesh footprint is approximate XY diagnostic geometry, not 3D collision.
+- Red debug lines are direct diagnostic segments, not planned robot paths.
+- Current hybrid scenario keeps obstacle debug visualization enabled for manual GUI inspection; set it false for
+  smoke-only runs if desired.
 
 ## Do Not Do
 
-- Do not train assignment-RL.
-- Do not add assignment-RL evaluation.
-- Do not modify HARL core or installed `site-packages`.
-- Do not change reward.
-- Do not change `assignment_controller.py`.
-- Do not change controller math or the 9D action path.
-- Do not add full real robot articulation yet.
-- Do not add IK, collision, joint limits, or raycast coverage yet.
-- Do not wait for final real CSV.
-- Do not require real CSV for Robot Config MVP.
-- Do not use real CSV availability as a blocker for simulation-interface validation.
-- Do not treat `real_component_bbox_sample.csv` as final viewpoint planning output.
-- Do not treat temporary/synthetic CSV results as final benchmark evidence.
-- Do not tune controller/gate/orientation behavior specifically to temporary or synthetic CSV samples.
-- Do not continue deep controller-gate diagnostics on the temporary bbox sample unless explicitly requested.
+- Do not promote `mesh_footprint_aware_cost_matrix` into solver inputs yet.
+- Do not replace `cost_matrix`.
+- Do not change `available_mask`, `feasible_mask`, or `static_geometric_feasible_mask`.
+- Do not change solver default behavior, reward, controller, `assignment_controller.py`, HARL, or training.
+- Do not add RL evaluation.
+- Do not add bbox hard blocking or mesh-footprint hard blocking.
+- Do not add inter-robot conflict avoidance or dynamic reassignment yet.
+- Do not add real robot articulation, IK, collision, joint limits, or raycast coverage.
+- Do not require or use the final real planned CSV.
+- Do not treat temporary/synthetic CSVs as final benchmark evidence.
 
 ## Next Step
 
-Recommended next Codex implementation task:
+Recommended next task:
 
 ```text
-Start Robot Config MVP: add a YAML robot config schema/loader and scenario YAML reference path, initially for three
-enabled task-space proxy robots but with code structured around M = len(enabled_robots).
+Phase 7B-3: Longer Diagnostic-Only Obstacle-Aware Candidate Comparisons
 ```
 
-First minimal slice:
-
-1. Add `robot_config.py`.
-2. Add `configs/robots/robots_three_proxy.yaml`.
-3. Add scenario YAML support for referencing `robots.yaml`.
-4. Load, validate, and expose enabled robot diagnostics.
-5. Do not yet add IK, collision, real robot articulation, assignment-RL training, reward changes, or controller changes.
-
-After the loader is verified, wire enabled robot count into the task-space proxy environment and evaluator so:
+Start with:
 
 ```text
-M=3, M=2, and M=4 smoke configs produce available_actions shape [num_envs, M, N+1].
+scenario = algorithm_proxy_component_mesh.yaml
+methods = random nearest greedy
+num_envs = 1
+num_episodes = 3
+max_steps = 50
+compare_obstacle_aware_candidates = true
 ```
 
-These smoke checks can use fixed/default, temporary, or synthetic viewpoint CSVs. No final real planned viewpoint CSV is
-required for Robot Config MVP. After Robot Config MVP, the next documentation/implementation target should be
-simulation-readiness validation using fixed/default, temporary, and synthetic viewpoint CSVs, not the real CSV.
+Then review whether baseline selected-intersection rates and candidate selected-intersection rates justify a later
+gated solver-cost experiment.
 
 ## Detailed Reports / Archives
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260622/NEXT_STAGE_ROBOT_CONFIG_MVP_PLAN.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_ROBOT_CONFIG_MVP_HANDOFF_20260622.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_BASELINE_ISSUE_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_UNCOVERED_LEVEL2_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_ASSIGNMENT_HISTORY_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_TOPK_ABLATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_ASSIGNMENT_LEVEL2_JOIN_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_PAIR_FILTER_ABLATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_PAIR_FILTER_RETRY_FALLBACK_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260615/STAGE4B_REAL_COMPONENT_N24_CONTROLLER_STATE_TRACE_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260610/STAGE4_REAL_COMPONENT_FIXEDN_EVALUATION_PLAN.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260610/REAL_COMPONENT_SCENARIO_CONFIG_USAGE.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/PHASE7B_OBSTACLE_DIAGNOSTICS_CHECKPOINT_SUMMARY.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/NEXT_PHASE_7B3_LONG_DIAGNOSTIC_COMPARISON_PLAN.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B_CHECKPOINT_20260623.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/GUI_SAFE_INSPECTION_PAUSE_PATCH_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/GUI_INSPECTION_PAUSE_PATCH_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/OBSTACLE_DEBUG_LINE_VISIBILITY_PATCH_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/OBSTACLE_DIAGNOSTIC_GUI_LINE_VISUALIZATION_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/OBSTACLE_AWARE_CANDIDATE_COMPARISON_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/MESH_FOOTPRINT_OBSTACLE_DIAGNOSTICS_MVP_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/HYBRID_ALGORITHM_COMPONENT_MESH_SCENARIO_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/ALGORITHM_SCENARIO_DECOUPLING_REPORT.md
 ```

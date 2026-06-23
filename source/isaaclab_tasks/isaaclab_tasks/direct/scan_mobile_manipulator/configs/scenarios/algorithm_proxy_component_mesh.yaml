@@ -1,0 +1,67 @@
+scenario_name: algorithm_proxy_component_mesh
+scenario_type: algorithm_visual_debug
+
+task: Isaac-Scan-Mobile-Manipulator-Direct-v0
+num_envs: 1
+max_steps: 1
+headless: false
+device: cuda:0
+
+robots:
+  config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/robots/robots_real_proxy.yaml
+
+capabilities:
+  config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/capabilities/mobile_scanner_profiles.yaml
+
+visualization:
+  robot_visual_mode: debug_marker
+  component_visual_mode: mesh
+
+component_mesh:
+  path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/Model/aircraft_skin_with_frame.obj
+  format: obj
+  unit: mm
+  scale: [0.001, 0.001, 0.001]
+  orientation: [1.0, 0.0, 0.0, 0.0]
+  orientation_format: qwxyz
+  align_base_center_to_world_origin: true
+  visible: true
+
+component_proxy:
+  type: bbox
+  auto_from_mesh: false
+  padding: 0.0
+  visual_visible: false
+
+obstacle_diagnostics:
+  enabled: true
+  mode: diagnostics_only
+  obstacle_source: component_mesh_footprint
+  footprint_resolution: 0.10
+  footprint_inflation_radius: 0.30
+  line_sample_step: 0.10
+  blocked_path_penalty: 100.0
+
+obstacle_debug_visualization:
+  # Currently enabled for manual GUI inspection of mesh-footprint debug lines.
+  # Set enabled: false for smoke-only runs that should not author line prims.
+  enabled: true
+  draw_in_headless: false
+  line_source: mesh_footprint_intersections
+  max_lines_per_robot: 5
+  max_total_lines: 20
+  prefer_shortest_blocked_pairs: true
+  line_z_mode: fixed
+  line_z_value: 0.20
+  line_z_offset: 0.05
+  line_width: 0.03
+
+viewpoints:
+  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/synthetic_smoke_n50.csv
+  expect_num_viewpoints: 50
+  format: scanner_pose_world_quat_wxyz_v1
+  frame: world
+  units: meters
+
+output:
+  result_file: results/assignment_diagnostics/algorithm_proxy_component_mesh_phase7a3_smoke.json

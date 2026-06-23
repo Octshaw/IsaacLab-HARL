@@ -1,0 +1,34 @@
+scenario_name: algorithm_proxy_bbox
+scenario_type: algorithm
+
+task: Isaac-Scan-Mobile-Manipulator-Direct-v0
+num_envs: 1
+max_steps: 1
+headless: true
+device: cuda:0
+
+robots:
+  config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/robots/robots_real_proxy.yaml
+
+capabilities:
+  config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/capabilities/mobile_scanner_profiles.yaml
+
+visualization:
+  robot_visual_mode: debug_marker
+  component_visual_mode: bbox
+
+component_proxy:
+  type: bbox
+  auto_from_mesh: false
+  padding: 0.0
+  visual_visible: true
+
+viewpoints:
+  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/synthetic_smoke_n50.csv
+  expect_num_viewpoints: 50
+  format: scanner_pose_world_quat_wxyz_v1
+  frame: world
+  units: meters
+
+output:
+  result_file: results/assignment_diagnostics/algorithm_proxy_bbox_phase7a2_smoke.json

@@ -1,0 +1,50 @@
+# Scene Assembly MVP real-layout task-space proxy setup.
+#
+# These are still task-space proxy robots, not real robot articulations.
+# initial_pose_world uses [x, y, z, qw, qx, qy, qz].
+# Quaternion ordering is qwxyz.
+# visual_usd_path entries are optional scene metadata only; the Phase 6S-3
+# environment does not spawn robot USD assets or articulations from them.
+# visual_mesh_* entries are display-only OBJ visual inspection parameters.
+robots:
+  - name: robot_0
+    enabled: true
+    model_type: task_space_proxy
+    initial_pose_world: [-4.0, -2.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+    capability_profile: mobile_scanner_a
+    speed_weight: 1.0
+    cost_weight: 1.0
+    visual_usd_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assets/scene/robots/robot_0_visual.usd
+    visual_mesh_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assets/scene/robots/robot_visual/ScanRobot.obj
+    visual_mesh_scale: [0.001, 0.001, 0.001]
+    visual_mesh_position_offset: [0.0, 0.0, 0.0]
+    visual_mesh_yaw_offset: 0.0
+    visual_mesh_align_bottom_to_proxy_z: true
+
+  - name: robot_1
+    enabled: true
+    model_type: task_space_proxy
+    initial_pose_world: [0.0, 3.5, 0.0, 0.70710678, 0.0, 0.0, -0.70710678]
+    capability_profile: mobile_scanner_b
+    speed_weight: 1.0
+    cost_weight: 1.0
+    visual_usd_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assets/scene/robots/robot_1_visual.usd
+    visual_mesh_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assets/scene/robots/robot_visual/ScanRobot.obj
+    visual_mesh_scale: [0.001, 0.001, 0.001]
+    visual_mesh_position_offset: [0.0, 0.0, 0.0]
+    visual_mesh_yaw_offset: 0.0
+    visual_mesh_align_bottom_to_proxy_z: true
+
+  - name: robot_2
+    enabled: true
+    model_type: task_space_proxy
+    initial_pose_world: [4.0, -2.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    capability_profile: mobile_scanner_c
+    speed_weight: 1.0
+    cost_weight: 1.0
+    visual_usd_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assets/scene/robots/robot_2_visual.usd
+    visual_mesh_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assets/scene/robots/robot_visual/ScanRobot.obj
+    visual_mesh_scale: [0.001, 0.001, 0.001]
+    visual_mesh_position_offset: [0.0, 0.0, 0.0]
+    visual_mesh_yaw_offset: 0.0
+    visual_mesh_align_bottom_to_proxy_z: true

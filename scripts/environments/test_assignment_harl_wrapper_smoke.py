@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -48,7 +49,36 @@ parser.add_argument("--max_steps", type=int, default=2, help="Maximum number of 
 parser.add_argument("--seed", type=int, default=None, help="Optional environment seed.")
 parser.add_argument("--viewpoint_csv_path", type=str, default=None, help="Optional fixed-N viewpoint CSV path.")
 parser.add_argument("--expect_num_viewpoints", type=int, default=None, help="Assert the loaded viewpoint count.")
+parser.add_argument("--robot_config_path", type=str, default=None, help="Optional Robot Config MVP YAML path.")
+parser.add_argument("--capability_config_path", type=str, default=None, help="Optional capability profile YAML path.")
+parser.add_argument(
+    "--robot_visual_mode",
+    type=str,
+    choices=("mesh", "debug_marker", "none"),
+    default=None,
+    help="Robot visual mode: mesh, debug_marker, or none.",
+)
+parser.add_argument(
+    "--component_visual_mode",
+    type=str,
+    choices=("mesh", "bbox", "none"),
+    default=None,
+    help="Component visual mode: mesh, bbox, or none.",
+)
 parser.add_argument("--result_file", type=str, default=None, help="Optional JSON file for smoke diagnostics.")
+parser.add_argument(
+    "--pause_after_setup",
+    "--gui_pause",
+    action="store_true",
+    default=False,
+    help="Run a GUI-safe timed pause after reset and initial diagnostics.",
+)
+parser.add_argument(
+    "--pause_after_setup_seconds",
+    type=float,
+    default=0.0,
+    help="GUI-safe setup inspection pause duration. If <= 0 with --pause_after_setup, defaults to 300 seconds.",
+)
 parser.add_argument("--component_mesh_path", type=str, default=None, help="Optional visual-only component OBJ path.")
 parser.add_argument("--component_mesh_format", type=str, default=None, help="Component mesh format; currently obj.")
 parser.add_argument("--component_mesh_unit", type=str, default=None, help="Explicit component mesh unit; currently mm.")
@@ -110,6 +140,7 @@ import torch
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import make_assignment_harl_env
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_state import status_counts
 from isaaclab_tasks.utils import parse_env_cfg
 
 
@@ -178,10 +209,149 @@ def _selected_valid_count(wrapper) -> float:
     return float(selected_available.to(dtype=torch.float32).sum().item())
 
 
-def _reset_diagnostics(wrapper, available_actions: torch.Tensor, completed_steps: int) -> dict:
+def _resolve_pause_after_setup() -> tuple[bool, bool, float, str]:
+    requested_seconds = max(0.0, float(getattr(args_cli, "pause_after_setup_seconds", 0.0)))
+    requested = bool(args_cli.pause_after_setup or requested_seconds > 0.0)
+    if not requested:
+        return False, False, 0.0, "disabled"
+    if bool(getattr(args_cli, "headless", False)):
+        return True, False, requested_seconds, "headless_skip"
+    pause_seconds = requested_seconds if requested_seconds > 0.0 else 300.0
+    return True, True, pause_seconds, "timed_app_update"
+
+
+def _run_gui_safe_setup_pause(pause_seconds: float) -> None:
+    print(f"[PAUSE] GUI inspection pause for {pause_seconds:.1f} seconds.")
+    print("The GUI should remain responsive.")
+    print("Inspect:")
+    print("  /World/envs/env_0/ObstacleDebugLines")
+    print("  /World/envs/env_0/ObstacleDebugLines/BlockedPath_000")
+    print("Use Frame Selected in the Stage panel.")
+    print("The smoke run will continue automatically when the timer expires.")
+
+    deadline = time.monotonic() + pause_seconds
+    next_status_time = time.monotonic() + 30.0
+    while time.monotonic() < deadline:
+        simulation_app.update()
+        now = time.monotonic()
+        if now >= next_status_time:
+            remaining = max(0.0, deadline - now)
+            print(f"[PAUSE] GUI inspection pause remaining: {remaining:.0f} seconds.")
+            next_status_time += 30.0
+
+    print("[PAUSE-END] GUI inspection pause finished; continuing smoke run.")
+
+
+def _obstacle_diagnostics_summary(problem: dict, *, agents: list[str], viewpoint_ids: list[int]) -> dict:
+    summary = {
+        "obstacle_diagnostics_enabled": bool(problem.get("obstacle_diagnostics_enabled", False)),
+        "obstacle_source": problem.get("obstacle_source"),
+        "obstacle_diagnostics_mode": problem.get("obstacle_diagnostics_mode"),
+    }
+    footprint = problem.get("component_obstacle_footprint_diagnostics")
+    if footprint:
+        summary["component_obstacle_footprint_diagnostics"] = footprint
+        for key in (
+            "footprint_resolution",
+            "footprint_inflation_radius",
+            "line_sample_step",
+            "footprint_bounds_xy",
+            "footprint_grid_shape",
+            "occupied_cell_count",
+            "inflated_occupied_cell_count",
+        ):
+            if key in footprint:
+                summary[key] = footprint[key]
+
+    intersection_mask = problem.get("mesh_footprint_intersection_mask")
+    aware_cost = problem.get("mesh_footprint_aware_cost_matrix")
+    penalty_matrix = problem.get("mesh_footprint_penalty_matrix")
+    straight_line_cost = problem.get("straight_line_cost_matrix")
+    if isinstance(intersection_mask, torch.Tensor):
+        mask = intersection_mask.to(dtype=torch.bool)
+        summary["mesh_footprint_intersection_shape"] = list(mask.shape)
+        summary["mesh_footprint_intersection_count"] = int(mask.sum().item())
+        blocked_pairs = []
+        for index in torch.nonzero(mask, as_tuple=False)[:10].detach().cpu().tolist():
+            env_id, agent_id, viewpoint_index = [int(value) for value in index]
+            pair = {
+                "env_id": env_id,
+                "robot_name": agents[agent_id] if agent_id < len(agents) else str(agent_id),
+                "viewpoint_id": viewpoint_ids[viewpoint_index]
+                if viewpoint_index < len(viewpoint_ids)
+                else viewpoint_index,
+            }
+            if isinstance(straight_line_cost, torch.Tensor):
+                pair["straight_line_cost"] = float(straight_line_cost[env_id, agent_id, viewpoint_index].item())
+            if isinstance(aware_cost, torch.Tensor):
+                pair["obstacle_aware_cost"] = float(aware_cost[env_id, agent_id, viewpoint_index].item())
+            blocked_pairs.append(pair)
+        summary["blocked_pairs_sample"] = blocked_pairs
+    if isinstance(straight_line_cost, torch.Tensor):
+        summary["straight_line_cost_matrix_shape"] = list(straight_line_cost.shape)
+    if isinstance(penalty_matrix, torch.Tensor):
+        summary["mesh_footprint_penalty_matrix_shape"] = list(penalty_matrix.shape)
+    if isinstance(aware_cost, torch.Tensor):
+        summary["mesh_footprint_aware_cost_shape"] = list(aware_cost.shape)
+    for key in (
+        "obstacle_debug_visualization_enabled",
+        "obstacle_debug_visualization_draw_in_headless",
+        "obstacle_debug_visualization_line_source",
+        "obstacle_debug_visualization_max_lines_per_robot",
+        "obstacle_debug_visualization_max_total_lines",
+        "obstacle_debug_visualization_prefer_shortest_blocked_pairs",
+        "obstacle_debug_visualization_line_z_mode",
+        "obstacle_debug_visualization_line_z_value",
+        "obstacle_debug_visualization_line_z_offset",
+        "obstacle_debug_visualization_line_width",
+        "obstacle_debug_visualization_drawn_line_count",
+        "obstacle_debug_visualization_skipped_reason",
+        "obstacle_debug_visualization_pairs_sample",
+        "obstacle_debug_visualization_line_prim_paths_sample",
+    ):
+        if key in problem:
+            summary[key] = problem[key]
+    return summary
+
+
+def _reset_diagnostics(
+    wrapper,
+    available_actions: torch.Tensor,
+    completed_steps: int,
+    *,
+    pause_after_setup_requested: bool = False,
+    pause_after_setup_applied: bool = False,
+    pause_after_setup_seconds: float = 0.0,
+    pause_after_setup_mode: str = "disabled",
+) -> dict:
     problem = wrapper.unwrapped.get_assignment_problem()
     feasible = problem["feasible_mask"].to(dtype=torch.bool)
+    available_mask = problem["available_mask"].to(dtype=torch.bool)
+    cost_matrix = problem["cost_matrix"]
     static_feasible = problem.get("static_geometric_feasible_mask", feasible).to(dtype=torch.bool)
+    task_status = problem["task_status"].to(dtype=torch.long)
+    robot_status = problem["robot_status"].to(dtype=torch.long)
+    expected_assignment_shape = (wrapper.num_envs, wrapper.num_agents, wrapper.num_viewpoints)
+    expected_task_status_shape = (wrapper.num_envs, wrapper.num_viewpoints)
+    expected_robot_status_shape = (wrapper.num_envs, wrapper.num_agents)
+    if tuple(available_mask.shape) != expected_assignment_shape:
+        raise AssertionError(
+            f"available_mask shape mismatch: expected {expected_assignment_shape}, got {tuple(available_mask.shape)}"
+        )
+    if tuple(cost_matrix.shape) != expected_assignment_shape:
+        raise AssertionError(
+            f"cost_matrix shape mismatch: expected {expected_assignment_shape}, got {tuple(cost_matrix.shape)}"
+        )
+    if tuple(task_status.shape) != expected_task_status_shape:
+        raise AssertionError(
+            f"task_status shape mismatch: expected {expected_task_status_shape}, got {tuple(task_status.shape)}"
+        )
+    if tuple(robot_status.shape) != expected_robot_status_shape:
+        raise AssertionError(
+            f"robot_status shape mismatch: expected {expected_robot_status_shape}, got {tuple(robot_status.shape)}"
+        )
+    task_status_names = problem.get("task_status_names", {})
+    robot_status_names = problem.get("robot_status_names", {})
     viewpoint_ids = list(problem.get("viewpoint_ids", range(wrapper.num_viewpoints)))
 
     def _agents_per_viewpoint(mask: torch.Tensor) -> dict:
@@ -203,6 +373,16 @@ def _reset_diagnostics(wrapper, available_actions: torch.Tensor, completed_steps
     mesh_diagnostics = None
     if hasattr(wrapper.unwrapped, "get_component_mesh_diagnostics"):
         mesh_diagnostics = wrapper.unwrapped.get_component_mesh_diagnostics()
+    scenario_diagnostics = problem.get("scenario_diagnostics", {})
+    if not scenario_diagnostics and hasattr(wrapper.unwrapped, "get_scenario_diagnostics"):
+        scenario_diagnostics = wrapper.unwrapped.get_scenario_diagnostics()
+    robot_config_diagnostics = None
+    if hasattr(wrapper.unwrapped, "get_robot_config_diagnostics"):
+        robot_config_diagnostics = wrapper.unwrapped.get_robot_config_diagnostics()
+    robot_visual_diagnostics = problem.get("robot_visual_diagnostics", {})
+    capability_diagnostics = problem.get("capability_diagnostics", {})
+    if not capability_diagnostics and hasattr(wrapper.unwrapped, "get_capability_diagnostics"):
+        capability_diagnostics = wrapper.unwrapped.get_capability_diagnostics()
     infeasible_rows = [row for row in final_rows if not row.get("feasible", False)]
     infeasible_rows_missing_reason = [row for row in infeasible_rows if not row.get("reason_if_false")]
     if infeasible_rows_missing_reason:
@@ -220,7 +400,25 @@ def _reset_diagnostics(wrapper, available_actions: torch.Tensor, completed_steps
         "num_agents": wrapper.num_agents,
         "num_viewpoints": wrapper.num_viewpoints,
         "noop_id": wrapper.noop_action_id,
+        "scenario_config_path": scenario_diagnostics.get("scenario_config_path"),
+        "scenario_name": scenario_diagnostics.get("scenario_name"),
+        "scenario_type": scenario_diagnostics.get("scenario_type"),
+        "robot_visual_mode": scenario_diagnostics.get("robot_visual_mode"),
+        "component_visual_mode": scenario_diagnostics.get("component_visual_mode"),
+        "robot_visual_mesh_enabled": scenario_diagnostics.get("robot_visual_mesh_enabled"),
+        "component_mesh_enabled": scenario_diagnostics.get("component_mesh_enabled"),
+        "component_proxy_type": scenario_diagnostics.get("component_proxy_type"),
+        "component_proxy_center": scenario_diagnostics.get("component_proxy_center"),
+        "component_proxy_half_extents": scenario_diagnostics.get("component_proxy_half_extents"),
         "available_actions_shape": list(available_actions.shape),
+        "available_mask_shape": list(available_mask.shape),
+        "cost_matrix_shape": list(cost_matrix.shape),
+        "task_status_shape": list(task_status.shape),
+        "robot_status_shape": list(robot_status.shape),
+        "task_status_counts": status_counts(task_status, task_status_names),
+        "robot_status_counts": status_counts(robot_status, robot_status_names),
+        "task_status_names": task_status_names,
+        "robot_status_names": robot_status_names,
         "viewpoint_csv_path": getattr(wrapper.unwrapped.cfg, "viewpoint_csv_path", None),
         "viewpoint_ids": viewpoint_ids,
         "static_geometric_feasible_agents_per_viewpoint": static_feasible_agents_per_viewpoint,
@@ -231,9 +429,22 @@ def _reset_diagnostics(wrapper, available_actions: torch.Tensor, completed_steps
         "feasibility_diagnostic_rows": final_rows,
         "infeasible_rows": infeasible_rows,
         "completed_steps": completed_steps,
+        "pause_after_setup_requested": bool(pause_after_setup_requested),
+        "pause_after_setup_applied": bool(pause_after_setup_applied),
+        "pause_after_setup_seconds": float(pause_after_setup_seconds),
+        "pause_after_setup_mode": pause_after_setup_mode,
     }
+    if scenario_diagnostics:
+        result["scenario_diagnostics"] = scenario_diagnostics
     if mesh_diagnostics is not None:
         result.update(mesh_diagnostics)
+    if robot_config_diagnostics:
+        result["robot_config_diagnostics"] = robot_config_diagnostics
+    if robot_visual_diagnostics:
+        result["robot_visual_diagnostics"] = robot_visual_diagnostics
+    if capability_diagnostics:
+        result["capability_diagnostics"] = capability_diagnostics
+    result.update(_obstacle_diagnostics_summary(problem, agents=list(wrapper.agents), viewpoint_ids=viewpoint_ids))
     return result
 
 
@@ -256,8 +467,20 @@ def main() -> None:
     )
     if args_cli.seed is not None:
         env_cfg.seed = args_cli.seed
+    for attr in ("scenario_config_path", "scenario_name", "scenario_type"):
+        value = getattr(args_cli, attr, None)
+        if value is not None:
+            setattr(env_cfg, attr, value)
     if args_cli.viewpoint_csv_path is not None:
         env_cfg.viewpoint_csv_path = args_cli.viewpoint_csv_path
+    if args_cli.robot_config_path is not None:
+        env_cfg.robot_config_path = args_cli.robot_config_path
+    if args_cli.capability_config_path is not None:
+        env_cfg.capability_config_path = args_cli.capability_config_path
+    if args_cli.robot_visual_mode is not None:
+        env_cfg.robot_visual_mode = args_cli.robot_visual_mode
+    if args_cli.component_visual_mode is not None:
+        env_cfg.component_visual_mode = args_cli.component_visual_mode
     if args_cli.component_mesh_path is not None:
         env_cfg.component_mesh_path = args_cli.component_mesh_path
     if args_cli.component_mesh_format is not None:
@@ -284,8 +507,36 @@ def main() -> None:
         env_cfg.component_proxy_padding = float(args_cli.component_proxy_padding)
     if args_cli.component_proxy_visual_visible is not None:
         env_cfg.component_proxy_visual_visible = bool(args_cli.component_proxy_visual_visible)
+    for attr in (
+        "obstacle_diagnostics_enabled",
+        "obstacle_diagnostics_mode",
+        "obstacle_source",
+        "obstacle_footprint_resolution",
+        "obstacle_footprint_inflation_radius",
+        "obstacle_line_sample_step",
+        "obstacle_blocked_path_penalty",
+        "obstacle_debug_visualization_enabled",
+        "obstacle_debug_visualization_draw_in_headless",
+        "obstacle_debug_visualization_line_source",
+        "obstacle_debug_visualization_max_lines_per_robot",
+        "obstacle_debug_visualization_max_total_lines",
+        "obstacle_debug_visualization_prefer_shortest_blocked_pairs",
+        "obstacle_debug_visualization_line_z_mode",
+        "obstacle_debug_visualization_line_z_value",
+        "obstacle_debug_visualization_line_z_offset",
+        "obstacle_debug_visualization_line_width",
+    ):
+        value = getattr(args_cli, attr, None)
+        if value is not None:
+            setattr(env_cfg, attr, value)
 
     wrapper = None
+    (
+        pause_after_setup_requested,
+        pause_after_setup_applied,
+        pause_after_setup_seconds,
+        pause_after_setup_mode,
+    ) = _resolve_pause_after_setup()
     try:
         wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
         if args_cli.expect_num_viewpoints is not None and wrapper.num_viewpoints != args_cli.expect_num_viewpoints:
@@ -323,6 +574,21 @@ def main() -> None:
             f"noop_count={noop_count.detach().cpu().tolist()}"
         )
 
+        if pause_after_setup_requested:
+            if not pause_after_setup_applied:
+                print("[PAUSE-SKIP] --pause_after_setup requested but the run is headless.")
+            else:
+                _reset_diagnostics(
+                    wrapper,
+                    available_actions,
+                    completed_steps=0,
+                    pause_after_setup_requested=pause_after_setup_requested,
+                    pause_after_setup_applied=pause_after_setup_applied,
+                    pause_after_setup_seconds=pause_after_setup_seconds,
+                    pause_after_setup_mode=pause_after_setup_mode,
+                )
+                _run_gui_safe_setup_pause(pause_after_setup_seconds)
+
         completed_steps = 0
         for step_id in range(args_cli.max_steps):
             obs, shared_obs, rewards, dones, info, available_actions = wrapper.step(discrete_actions)
@@ -353,7 +619,15 @@ def main() -> None:
             )
 
         if args_cli.result_file is not None:
-            result = _reset_diagnostics(wrapper, available_actions, completed_steps)
+            result = _reset_diagnostics(
+                wrapper,
+                available_actions,
+                completed_steps,
+                pause_after_setup_requested=pause_after_setup_requested,
+                pause_after_setup_applied=pause_after_setup_applied,
+                pause_after_setup_seconds=pause_after_setup_seconds,
+                pause_after_setup_mode=pause_after_setup_mode,
+            )
             result_path = Path(args_cli.result_file)
             result_path.parent.mkdir(parents=True, exist_ok=True)
             result_path.write_text(json.dumps(result, indent=2), encoding="utf-8")

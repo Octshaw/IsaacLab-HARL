@@ -1,0 +1,36 @@
+scenario_name: real_scene_proxy_headless
+
+task: Isaac-Scan-Mobile-Manipulator-Direct-v0
+num_envs: 1
+max_steps: 1
+headless: false
+device: cuda:0
+
+robots:
+  config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/robots/robots_real_proxy.yaml
+
+component_mesh:
+  path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/Model/aircraft_skin_with_frame.obj
+  format: obj
+  unit: mm
+  scale: [0.001, 0.001, 0.001]
+  orientation: [1.0, 0.0, 0.0, 0.0]
+  orientation_format: qwxyz
+  align_base_center_to_world_origin: true
+  visible: true
+
+component_proxy:
+  type: bbox
+  auto_from_mesh: false
+  padding: 0.0
+  visual_visible: false
+
+viewpoints:
+  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/synthetic_smoke_n50.csv
+  expect_num_viewpoints: 50
+  format: scanner_pose_world_quat_wxyz_v1
+  frame: world
+  units: meters
+
+output:
+  result_file: results/assignment_diagnostics/scene_assembly_phase6s_real_scene_proxy_smoke.json

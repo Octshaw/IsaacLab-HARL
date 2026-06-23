@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 import torch
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from isaaclab.envs import DirectMARLEnv, DirectMARLEnvCfg
@@ -32,8 +32,29 @@ from .component_mesh import (
     validate_mesh_unit,
     validate_orientation_format,
 )
+from .component_obstacle_footprint import ComponentObstacleFootprint, build_component_obstacle_footprint
+from .assignment_state import (
+    ROBOT_IDLE,
+    ROBOT_STATUS_NAMES,
+    TASK_COMPLETED,
+    TASK_STATUS_NAMES,
+    TASK_UNASSIGNED,
+)
 from .static_feasibility import generate_static_geometric_feasibility
 from .viewpoint_csv import VIEWPOINT_CSV_FORMAT, load_fixed_viewpoint_csv
+from .robot_config import RobotConfig, RobotSpec, load_robot_config
+from .capability_config import CapabilityConfig, CapabilityProfile, load_capability_profiles
+
+
+ROBOT_ACTION_DIM = 9
+BASE_OBSERVATION_DIM_WITHOUT_OTHER_SCANNERS = 90
+LEGACY_ROBOT_CONFIG_PATH = Path("<builtin_legacy_three_proxy>")
+ROBOT_VISUAL_MESH_SCALE = (0.001, 0.001, 0.001)
+ROBOT_VISUAL_MESH_POSITION_OFFSET = (0.0, 0.0, 0.0)
+ROBOT_VISUAL_MESH_YAW_OFFSET = 0.0
+ROBOT_VISUAL_MODES = ("mesh", "debug_marker", "none")
+COMPONENT_VISUAL_MODES = ("mesh", "bbox", "none")
+LEGACY_CAPABILITY_PROFILES = ("mobile_scanner_a", "mobile_scanner_b", "mobile_scanner_c")
 
 
 @configclass
@@ -57,16 +78,29 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
 
     # Every robot is exposed as one HARL agent. The 9D action is shared structurally, while per-robot step sizes below
     # make the agents heterogeneous in practice.
-    action_spaces = {"robot_0": 9, "robot_1": 9, "robot_2": 9}
+    action_spaces = {"robot_0": ROBOT_ACTION_DIM, "robot_1": ROBOT_ACTION_DIM, "robot_2": ROBOT_ACTION_DIM}
 
-    # Observation dimensions must match the concatenation layout in `_get_observations()`. Update both places together
-    # if new observation terms are added.
+    # Observation dimensions must match `_get_observations()`. Three legacy robots produce the original 96D layout;
+    # Robot Config MVP paths update this to account for the enabled robot count before DirectMARLEnv initializes.
     observation_spaces = {"robot_0": 96, "robot_1": 96, "robot_2": 96}
 
     # `state_space = -1` asks DirectMARLEnv to build the shared state by concatenating all agent observations.
     state_space = -1
     state_spaces = {f"robot_{i}": 0 for i in range(3)}
     possible_agents = ["robot_0", "robot_1", "robot_2"]
+
+    # Optional Robot Config MVP YAML. When omitted, the legacy three task-space proxy setup is preserved.
+    scenario_config_path = None
+    scenario_name = None
+    scenario_type = None
+    robot_config_path = None
+    robot_config_diagnostics = None
+    # Optional capability profile YAML. When omitted, configs/capabilities/mobile_scanner_profiles.yaml is used.
+    capability_config_path = None
+    capability_config_diagnostics = None
+    # Visual mode controls let algorithm scenarios avoid loading large visual-only assets while preserving GUI demos.
+    robot_visual_mode = "mesh"
+    component_visual_mode = "mesh"
 
     # Simulation config is still needed by Isaac Lab even though this skeleton does not spawn real robot articulations.
     sim: SimulationCfg = SimulationCfg(dt=1 / 60, render_interval=decimation)
@@ -110,6 +144,31 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     component_mesh_auto_proxy_center = None
     component_mesh_auto_proxy_half_extents = None
 
+    # Optional diagnostic-only obstacle footprint. These fields report straight-line path crossings against an inflated
+    # component OBJ footprint and do not alter cost_matrix, masks, reward, controller logic, or solver behavior.
+    obstacle_diagnostics_enabled = False
+    obstacle_diagnostics_mode = "disabled"
+    obstacle_source = None
+    obstacle_footprint_resolution = 0.10
+    obstacle_footprint_inflation_radius = 0.30
+    obstacle_line_sample_step = 0.10
+    obstacle_blocked_path_penalty = 100.0
+    component_obstacle_footprint = None
+    component_obstacle_footprint_diagnostics = None
+
+    # Optional visual-only debug lines for obstacle diagnostics. These draw a small sample of robot-to-viewpoint
+    # segments that already intersect the diagnostic mesh footprint. They do not alter assignment costs or masks.
+    obstacle_debug_visualization_enabled = False
+    obstacle_debug_visualization_draw_in_headless = False
+    obstacle_debug_visualization_line_source = "mesh_footprint_intersections"
+    obstacle_debug_visualization_max_lines_per_robot = 5
+    obstacle_debug_visualization_max_total_lines = 20
+    obstacle_debug_visualization_prefer_shortest_blocked_pairs = True
+    obstacle_debug_visualization_line_z_mode = "max_endpoint"
+    obstacle_debug_visualization_line_z_value = 0.20
+    obstacle_debug_visualization_line_z_offset = 0.05
+    obstacle_debug_visualization_line_width = 0.03
+
     enable_usd_debug_visuals = True
     use_camera_light_in_gui = True
 
@@ -149,7 +208,7 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
         ("robot_2", 5, "level2_controller_diagnostic_position_rotation_gates_never_simultaneously_satisfied"),
     )
 
-    # Heterogeneous robot capability parameters. Tuple index 0/1/2 maps to robot_0/robot_1/robot_2 respectively.
+    # Legacy heterogeneous robot capability parameters. Tuple index 0/1/2 maps to robot_0/robot_1/robot_2 respectively.
     # These values affect action scaling, assignment feasibility, scan completion checks, and observation features.
     base_start_poses = (
         (-4.0, -3.0, 0.15, 0.0),
@@ -194,12 +253,386 @@ def _as_float_tuple(value, *, name: str, length: int) -> tuple[float, ...]:
     return values
 
 
+def _positive_finite(value, *, name: str) -> float:
+    numeric = float(value)
+    if not math.isfinite(numeric) or numeric <= 0.0:
+        raise ValueError(f"{name} must be positive and finite, got {value!r}.")
+    return numeric
+
+
+def _non_negative_finite(value, *, name: str) -> float:
+    numeric = float(value)
+    if not math.isfinite(numeric) or numeric < 0.0:
+        raise ValueError(f"{name} must be finite and non-negative, got {value!r}.")
+    return numeric
+
+
 def _validate_viewpoint_pose_tuple(value, *, index: int) -> tuple[float, float, float, float, float, float, float]:
     pose = _as_float_tuple(value, name=f"viewpoint_poses[{index}]", length=7)
     quat_norm = math.sqrt(sum(item * item for item in pose[3:7]))
     if quat_norm <= 1.0e-8:
         raise ValueError(f"viewpoint_poses[{index}] quaternion must be non-zero.")
     return pose
+
+
+def _observation_dim_for_num_agents(num_agents: int) -> int:
+    return BASE_OBSERVATION_DIM_WITHOUT_OTHER_SCANNERS + 3 * max(num_agents - 1, 0)
+
+
+def _yaw_to_quat_wxyz(yaw: float) -> tuple[float, float, float, float]:
+    half_yaw = 0.5 * float(yaw)
+    return (math.cos(half_yaw), 0.0, 0.0, math.sin(half_yaw))
+
+
+def _robot_visual_pose_from_proxy(
+    base_pos: Sequence[float],
+    base_yaw: float,
+    position_offset: Sequence[float],
+    yaw_offset: float,
+) -> tuple[tuple[float, float, float], float]:
+    base_x, base_y, base_z = _as_float_tuple(base_pos, name="robot_visual_base_pos", length=3)
+    offset_x, offset_y, offset_z = _as_float_tuple(
+        position_offset,
+        name="robot_visual_position_offset",
+        length=3,
+    )
+    yaw = float(base_yaw)
+    cos_yaw = math.cos(yaw)
+    sin_yaw = math.sin(yaw)
+    visual_pos = (
+        base_x + cos_yaw * offset_x - sin_yaw * offset_y,
+        base_y + sin_yaw * offset_x + cos_yaw * offset_y,
+        base_z + offset_z,
+    )
+    return visual_pos, yaw + float(yaw_offset)
+
+
+def _quat_wxyz_to_yaw(quat: Sequence[float], *, name: str) -> float:
+    qw, qx, qy, qz = _as_float_tuple(quat, name=name, length=4)
+    quat_norm = math.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
+    if quat_norm <= 1.0e-8:
+        raise ValueError(f"{name} quaternion must be non-zero.")
+    qw, qx, qy, qz = (qw / quat_norm, qx / quat_norm, qy / quat_norm, qz / quat_norm)
+    return math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
+
+
+def _safe_usd_prim_name(value: str) -> str:
+    safe = "".join(char if char.isalnum() or char == "_" else "_" for char in str(value).strip())
+    return safe or "robot"
+
+
+def _asset_search_roots() -> tuple[Path, ...]:
+    module_dir = Path(__file__).resolve().parent
+    return (module_dir, *module_dir.parents)
+
+
+def _resolve_optional_existing_asset_path(path_value: str | Path | None) -> str | None:
+    if not path_value:
+        return None
+    raw_path = Path(path_value).expanduser()
+    if raw_path.is_absolute():
+        candidates = [raw_path]
+    else:
+        candidates = [Path.cwd() / raw_path]
+        candidates.extend(root / raw_path for root in _asset_search_roots())
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if resolved.exists() and resolved.is_file():
+            return str(resolved)
+    return None
+
+
+def _augment_visual_asset_diagnostics(diagnostics: dict[str, object]) -> dict[str, object]:
+    enabled_names = list(diagnostics.get("enabled_robot_names", []))
+    visual_usd_paths = dict(diagnostics.get("visual_usd_path_by_robot", {}) or {})
+    visual_mesh_paths = dict(diagnostics.get("visual_mesh_path_by_robot", {}) or {})
+    visual_mesh_scales = dict(diagnostics.get("visual_mesh_scale_by_robot", {}) or {})
+    visual_mesh_position_offsets = dict(diagnostics.get("visual_mesh_position_offset_by_robot", {}) or {})
+    visual_mesh_yaw_offsets = dict(diagnostics.get("visual_mesh_yaw_offset_by_robot", {}) or {})
+    visual_mesh_align_bottom = dict(
+        diagnostics.get("visual_mesh_align_bottom_to_proxy_z_by_robot", {}) or {}
+    )
+
+    visual_usd_resolved = {}
+    visual_usd_exists = {}
+    visual_usd_spawned = {}
+    visual_mesh_resolved = {}
+    visual_mesh_exists = {}
+    visual_mesh_spawned = {}
+    visual_mesh_prim_paths = {}
+    visual_follow_enabled = {}
+    visual_mesh_error = {}
+    visual_mesh_local_min_z = {}
+    visual_mesh_auto_bottom_offset_z = {}
+    visual_mesh_effective_position_offsets = {}
+
+    for name in enabled_names:
+        usd_path = visual_usd_paths.get(name)
+        usd_resolved = _resolve_optional_existing_asset_path(usd_path)
+        visual_usd_resolved[name] = usd_resolved
+        visual_usd_exists[name] = usd_resolved is not None
+        visual_usd_spawned[name] = False
+
+        mesh_path = visual_mesh_paths.get(name)
+        mesh_resolved = _resolve_optional_existing_asset_path(mesh_path)
+        mesh_scale_value = visual_mesh_scales.get(name)
+        mesh_position_offset_value = visual_mesh_position_offsets.get(name)
+        mesh_yaw_offset_value = visual_mesh_yaw_offsets.get(name)
+        mesh_scale = _as_float_tuple(
+            mesh_scale_value if mesh_scale_value is not None else ROBOT_VISUAL_MESH_SCALE,
+            name=f"visual_mesh_scale_by_robot[{name}]",
+            length=3,
+        )
+        mesh_position_offset = _as_float_tuple(
+            mesh_position_offset_value
+            if mesh_position_offset_value is not None
+            else ROBOT_VISUAL_MESH_POSITION_OFFSET,
+            name=f"visual_mesh_position_offset_by_robot[{name}]",
+            length=3,
+        )
+        mesh_yaw_offset = (
+            float(mesh_yaw_offset_value)
+            if mesh_yaw_offset_value is not None
+            else ROBOT_VISUAL_MESH_YAW_OFFSET
+        )
+        if not math.isfinite(mesh_yaw_offset):
+            raise ValueError(f"visual_mesh_yaw_offset_by_robot[{name}] must be finite.")
+        visual_mesh_scales[name] = list(mesh_scale)
+        visual_mesh_position_offsets[name] = list(mesh_position_offset)
+        visual_mesh_yaw_offsets[name] = mesh_yaw_offset
+        visual_mesh_align_bottom[name] = bool(visual_mesh_align_bottom.get(name, False))
+        visual_mesh_local_min_z[name] = None
+        visual_mesh_auto_bottom_offset_z[name] = None
+        visual_mesh_effective_position_offsets[name] = list(mesh_position_offset)
+        visual_mesh_resolved[name] = mesh_resolved
+        visual_mesh_exists[name] = mesh_resolved is not None
+        visual_mesh_spawned[name] = False
+        visual_mesh_prim_paths[name] = None
+        visual_follow_enabled[name] = False
+        visual_mesh_error[name] = None
+
+    diagnostics["visual_usd_resolved_path_by_robot"] = visual_usd_resolved
+    diagnostics["visual_usd_exists_by_robot"] = visual_usd_exists
+    diagnostics["visual_usd_spawned_by_robot"] = visual_usd_spawned
+    diagnostics["visual_mesh_scale_by_robot"] = visual_mesh_scales
+    diagnostics["visual_mesh_position_offset_by_robot"] = visual_mesh_position_offsets
+    diagnostics["visual_mesh_yaw_offset_by_robot"] = visual_mesh_yaw_offsets
+    diagnostics["visual_mesh_align_bottom_to_proxy_z_by_robot"] = visual_mesh_align_bottom
+    diagnostics["visual_mesh_local_min_z_by_robot"] = visual_mesh_local_min_z
+    diagnostics["visual_mesh_auto_bottom_offset_z_by_robot"] = visual_mesh_auto_bottom_offset_z
+    diagnostics["visual_mesh_effective_position_offset_by_robot"] = visual_mesh_effective_position_offsets
+    diagnostics["visual_mesh_resolved_path_by_robot"] = visual_mesh_resolved
+    diagnostics["visual_mesh_exists_by_robot"] = visual_mesh_exists
+    diagnostics["visual_mesh_spawned_by_robot"] = visual_mesh_spawned
+    diagnostics["visual_mesh_prim_path_by_robot"] = visual_mesh_prim_paths
+    diagnostics["visual_follow_enabled_by_robot"] = visual_follow_enabled
+    diagnostics["visual_mesh_error_by_robot"] = visual_mesh_error
+    return diagnostics
+
+
+def _apply_robot_visual_mode_diagnostics(
+    cfg: ScanMobileManipulatorEnvCfg,
+    diagnostics: dict[str, object],
+) -> dict[str, object]:
+    enabled_names = list(diagnostics.get("enabled_robot_names", []))
+    robot_visual_mode = str(getattr(cfg, "robot_visual_mode", "mesh")).strip().lower()
+    mesh_enabled = robot_visual_mode == "mesh"
+    diagnostics["robot_visual_mode"] = robot_visual_mode
+    diagnostics["robot_visual_mesh_enabled"] = mesh_enabled
+    diagnostics["visual_mesh_enabled_by_robot"] = {name: mesh_enabled for name in enabled_names}
+    return diagnostics
+
+
+def _validate_visual_mode(value: object, *, field_name: str, allowed_modes: Sequence[str]) -> str:
+    mode = str(value if value is not None else "").strip().lower()
+    if mode not in allowed_modes:
+        allowed = ", ".join(allowed_modes)
+        raise ValueError(f"{field_name} must be one of {{{allowed}}}, got {value!r}.")
+    return mode
+
+
+def _prepare_visualization_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    cfg.robot_visual_mode = _validate_visual_mode(
+        getattr(cfg, "robot_visual_mode", "mesh"),
+        field_name="robot_visual_mode",
+        allowed_modes=ROBOT_VISUAL_MODES,
+    )
+    cfg.component_visual_mode = _validate_visual_mode(
+        getattr(cfg, "component_visual_mode", "mesh"),
+        field_name="component_visual_mode",
+        allowed_modes=COMPONENT_VISUAL_MODES,
+    )
+    if cfg.component_visual_mode != "mesh":
+        cfg.component_mesh_visible = False
+        if not bool(getattr(cfg, "component_proxy_auto_from_mesh", False)):
+            cfg.component_mesh_path = None
+    if cfg.component_visual_mode == "none":
+        cfg.component_proxy_visual_visible = False
+
+
+def _legacy_robot_config_from_cfg(cfg: ScanMobileManipulatorEnvCfg) -> RobotConfig:
+    robots = []
+    for index, agent_name in enumerate(cfg.possible_agents):
+        pose = _as_float_tuple(cfg.base_start_poses[index], name=f"base_start_poses[{index}]", length=4)
+        quat = _yaw_to_quat_wxyz(pose[3])
+        profile = LEGACY_CAPABILITY_PROFILES[index] if index < len(LEGACY_CAPABILITY_PROFILES) else "mobile_scanner_a"
+        robots.append(
+            RobotSpec(
+                name=str(agent_name),
+                enabled=True,
+                model_type="task_space_proxy",
+                initial_pose_world=(pose[0], pose[1], pose[2], *quat),
+                capability_profile=profile,
+                speed_weight=1.0,
+                cost_weight=1.0,
+                source_index=index,
+            )
+        )
+    robots_tuple = tuple(robots)
+    return RobotConfig(
+        config_path=LEGACY_ROBOT_CONFIG_PATH,
+        robots=robots_tuple,
+        enabled_robots=robots_tuple,
+        agent_id_by_name={robot.name: index for index, robot in enumerate(robots_tuple)},
+    )
+
+
+def _profile_values(robot: RobotSpec, profiles: Mapping[str, CapabilityProfile]) -> dict[str, object]:
+    profile = profiles.get(robot.capability_profile)
+    if profile is None:
+        known = ", ".join(profiles.keys())
+        raise ValueError(
+            f"Unsupported capability_profile={robot.capability_profile!r} for robot {robot.name!r}. "
+            f"Known YAML capability profiles: {known}."
+        )
+    return profile.to_dict()
+
+
+def _apply_capability_profiles_to_cfg(
+    cfg: ScanMobileManipulatorEnvCfg,
+    enabled_robots: Sequence[RobotSpec],
+    profile_values: Sequence[Mapping[str, object]],
+) -> None:
+    cfg.scanner_start_offsets = tuple(profile["scanner_start_offset"] for profile in profile_values)
+    cfg.arm_reach = tuple(profile["arm_reach"] for profile in profile_values)
+    cfg.scanner_min_range = tuple(profile["scanner_min_range"] for profile in profile_values)
+    cfg.scanner_max_range = tuple(profile["scanner_max_range"] for profile in profile_values)
+    cfg.scanner_fov_deg = tuple(profile["scanner_fov_deg"] for profile in profile_values)
+    cfg.scan_pos_tolerance = tuple(profile["scan_pos_tolerance"] for profile in profile_values)
+    cfg.scan_rot_tolerance = tuple(profile["scan_rot_tolerance"] for profile in profile_values)
+    cfg.max_base_xy_step = tuple(profile["max_base_xy_step"] for profile in profile_values)
+    cfg.max_base_yaw_step = tuple(profile["max_base_yaw_step"] for profile in profile_values)
+    cfg.max_ee_xyz_step = tuple(profile["max_ee_xyz_step"] for profile in profile_values)
+    cfg.max_ee_rpy_step = tuple(profile["max_ee_rpy_step"] for profile in profile_values)
+
+
+def _capability_diagnostics(
+    capability_config: CapabilityConfig,
+    enabled_robots: Sequence[RobotSpec],
+    profile_values: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    diagnostics = capability_config.to_diagnostics()
+    diagnostics["capability_profile_by_robot"] = {
+        robot.name: robot.capability_profile for robot in enabled_robots
+    }
+    diagnostics["capability_profiles_by_robot"] = {
+        robot.name: dict(profile) for robot, profile in zip(enabled_robots, profile_values, strict=True)
+    }
+    return diagnostics
+
+
+def _validate_agent_config_shapes(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    agents = tuple(str(agent) for agent in cfg.possible_agents)
+    if not agents:
+        raise ValueError("possible_agents must contain at least one enabled robot.")
+    expected_agent_keys = set(agents)
+    for field_name in ("action_spaces", "observation_spaces", "state_spaces"):
+        mapping = getattr(cfg, field_name)
+        if set(mapping.keys()) != expected_agent_keys:
+            raise ValueError(
+                f"{field_name} keys must match possible_agents={list(agents)}, got {list(mapping.keys())}."
+            )
+
+    per_agent_fields = (
+        ("base_start_poses", 4),
+        ("scanner_start_offsets", 3),
+    )
+    for field_name, tuple_length in per_agent_fields:
+        values = tuple(getattr(cfg, field_name))
+        if len(values) != len(agents):
+            raise ValueError(f"{field_name} must have {len(agents)} entries, got {len(values)}.")
+        for index, value in enumerate(values):
+            _as_float_tuple(value, name=f"{field_name}[{index}]", length=tuple_length)
+
+    scalar_fields = (
+        "arm_reach",
+        "scanner_min_range",
+        "scanner_max_range",
+        "scanner_fov_deg",
+        "scan_pos_tolerance",
+        "scan_rot_tolerance",
+        "max_base_xy_step",
+        "max_base_yaw_step",
+        "max_ee_xyz_step",
+        "max_ee_rpy_step",
+    )
+    for field_name in scalar_fields:
+        values = _as_float_tuple(getattr(cfg, field_name), name=field_name, length=len(agents))
+        if field_name != "scan_rot_tolerance" and any(value <= 0.0 for value in values):
+            raise ValueError(f"{field_name} values must be positive, got {values!r}.")
+
+
+def _prepare_robot_config_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    module_dir = Path(__file__).resolve().parent
+    capability_config_path = getattr(cfg, "capability_config_path", None)
+    capability_config = load_capability_profiles(capability_config_path, base_dir=module_dir)
+
+    robot_config_path = getattr(cfg, "robot_config_path", None)
+    if robot_config_path:
+        robot_config = load_robot_config(robot_config_path, base_dir=module_dir)
+        enabled_robots = robot_config.enabled_robots
+        if not enabled_robots:
+            raise ValueError(f"robot config has no enabled robots: {robot_config.config_path}")
+
+        agents = [robot.name for robot in enabled_robots]
+        cfg.possible_agents = agents
+        cfg.action_spaces = {agent: ROBOT_ACTION_DIM for agent in agents}
+        observation_dim = _observation_dim_for_num_agents(len(agents))
+        cfg.observation_spaces = {agent: observation_dim for agent in agents}
+        cfg.state_spaces = {agent: 0 for agent in agents}
+        cfg.base_start_poses = tuple(
+            (
+                robot.initial_pose_world[0],
+                robot.initial_pose_world[1],
+                robot.initial_pose_world[2],
+                _quat_wxyz_to_yaw(robot.initial_pose_world[3:7], name=f"{robot.name}.initial_pose_world[3:7]"),
+            )
+            for robot in enabled_robots
+        )
+        cfg.robot_config_path = str(robot_config.config_path)
+    else:
+        robot_config = _legacy_robot_config_from_cfg(cfg)
+        enabled_robots = robot_config.enabled_robots
+
+    profile_values = [_profile_values(robot, capability_config.profiles) for robot in enabled_robots]
+    _apply_capability_profiles_to_cfg(cfg, enabled_robots, profile_values)
+
+    cfg.capability_config_path = str(capability_config.config_path)
+    cfg.capability_config_diagnostics = _capability_diagnostics(
+        capability_config,
+        enabled_robots,
+        profile_values,
+    )
+    cfg.robot_config_diagnostics = _apply_robot_visual_mode_diagnostics(
+        cfg,
+        _augment_visual_asset_diagnostics(robot_config.to_diagnostics()),
+    )
+    _validate_agent_config_shapes(cfg)
 
 
 def _prepare_component_mesh_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
@@ -325,6 +758,117 @@ def _prepare_component_proxy_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
     cfg.component_half_extents = half_extents
 
 
+def _prepare_obstacle_diagnostics_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    enabled = bool(getattr(cfg, "obstacle_diagnostics_enabled", False))
+    cfg.obstacle_diagnostics_enabled = enabled
+    cfg.component_obstacle_footprint = None
+    cfg.component_obstacle_footprint_diagnostics = None
+
+    if not enabled:
+        cfg.obstacle_diagnostics_mode = "disabled"
+        cfg.obstacle_source = None
+        return
+
+    mode = str(getattr(cfg, "obstacle_diagnostics_mode", "diagnostics_only")).strip().lower()
+    if mode != "diagnostics_only":
+        raise ValueError(
+            f"Unsupported obstacle_diagnostics_mode={mode!r}; only 'diagnostics_only' is supported."
+        )
+    source = str(getattr(cfg, "obstacle_source", "component_mesh_footprint")).strip().lower()
+    if source != "component_mesh_footprint":
+        raise ValueError(
+            f"Unsupported obstacle_source={source!r}; only 'component_mesh_footprint' is supported."
+        )
+
+    cfg.obstacle_diagnostics_mode = mode
+    cfg.obstacle_source = source
+    cfg.obstacle_footprint_resolution = _positive_finite(
+        getattr(cfg, "obstacle_footprint_resolution", 0.10),
+        name="obstacle_footprint_resolution",
+    )
+    cfg.obstacle_footprint_inflation_radius = _non_negative_finite(
+        getattr(cfg, "obstacle_footprint_inflation_radius", 0.30),
+        name="obstacle_footprint_inflation_radius",
+    )
+    cfg.obstacle_line_sample_step = _positive_finite(
+        getattr(cfg, "obstacle_line_sample_step", 0.10),
+        name="obstacle_line_sample_step",
+    )
+    cfg.obstacle_blocked_path_penalty = _non_negative_finite(
+        getattr(cfg, "obstacle_blocked_path_penalty", 100.0),
+        name="obstacle_blocked_path_penalty",
+    )
+    if not getattr(cfg, "component_mesh_path", None):
+        raise ValueError(
+            "obstacle_source=component_mesh_footprint requires component_mesh_path; "
+            "bbox proxies are intentionally not used as hard obstacle blockers."
+        )
+
+    module_dir = Path(__file__).resolve().parent
+    footprint = build_component_obstacle_footprint(
+        mesh_path=cfg.component_mesh_path,
+        mesh_scale=cfg.component_mesh_scale,
+        mesh_position=cfg.component_mesh_position,
+        mesh_orientation=cfg.component_mesh_orientation,
+        mesh_orientation_format=cfg.component_mesh_orientation_format,
+        footprint_resolution=cfg.obstacle_footprint_resolution,
+        footprint_inflation_radius=cfg.obstacle_footprint_inflation_radius,
+        line_sample_step=cfg.obstacle_line_sample_step,
+        search_roots=(module_dir,),
+    )
+    cfg.component_obstacle_footprint = footprint
+    cfg.component_obstacle_footprint_diagnostics = footprint.to_diagnostics()
+
+
+def _prepare_obstacle_debug_visualization_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    enabled = bool(getattr(cfg, "obstacle_debug_visualization_enabled", False))
+    cfg.obstacle_debug_visualization_enabled = enabled
+    cfg.obstacle_debug_visualization_draw_in_headless = bool(
+        getattr(cfg, "obstacle_debug_visualization_draw_in_headless", False)
+    )
+    line_source = str(
+        getattr(cfg, "obstacle_debug_visualization_line_source", "mesh_footprint_intersections")
+    ).strip().lower()
+    if line_source != "mesh_footprint_intersections":
+        raise ValueError(
+            f"Unsupported obstacle_debug_visualization_line_source={line_source!r}; "
+            "only 'mesh_footprint_intersections' is supported."
+        )
+    cfg.obstacle_debug_visualization_line_source = line_source
+
+    for attr in (
+        "obstacle_debug_visualization_max_lines_per_robot",
+        "obstacle_debug_visualization_max_total_lines",
+    ):
+        value = int(getattr(cfg, attr, 0))
+        if value < 0:
+            raise ValueError(f"{attr} must be non-negative, got {value!r}.")
+        setattr(cfg, attr, value)
+    cfg.obstacle_debug_visualization_prefer_shortest_blocked_pairs = bool(
+        getattr(cfg, "obstacle_debug_visualization_prefer_shortest_blocked_pairs", True)
+    )
+    line_z_mode = str(getattr(cfg, "obstacle_debug_visualization_line_z_mode", "max_endpoint")).strip().lower()
+    if line_z_mode not in ("fixed", "max_endpoint"):
+        raise ValueError(
+            f"Unsupported obstacle_debug_visualization_line_z_mode={line_z_mode!r}; "
+            "expected 'fixed' or 'max_endpoint'."
+        )
+    cfg.obstacle_debug_visualization_line_z_mode = line_z_mode
+    cfg.obstacle_debug_visualization_line_z_value = float(
+        getattr(cfg, "obstacle_debug_visualization_line_z_value", 0.20)
+    )
+    if not math.isfinite(cfg.obstacle_debug_visualization_line_z_value):
+        raise ValueError("obstacle_debug_visualization_line_z_value must be finite.")
+    cfg.obstacle_debug_visualization_line_z_offset = _non_negative_finite(
+        getattr(cfg, "obstacle_debug_visualization_line_z_offset", 0.05),
+        name="obstacle_debug_visualization_line_z_offset",
+    )
+    cfg.obstacle_debug_visualization_line_width = _positive_finite(
+        getattr(cfg, "obstacle_debug_visualization_line_width", 0.03),
+        name="obstacle_debug_visualization_line_width",
+    )
+
+
 def _prepare_viewpoint_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
     csv_path = getattr(cfg, "viewpoint_csv_path", None)
     if csv_path:
@@ -356,12 +900,18 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
     cfg: ScanMobileManipulatorEnvCfg
 
     def __init__(self, cfg: ScanMobileManipulatorEnvCfg, render_mode: str | None = None, **kwargs):
+        _prepare_visualization_cfg(cfg)
+        _prepare_robot_config_cfg(cfg)
         _prepare_component_mesh_cfg(cfg)
         _prepare_component_proxy_cfg(cfg)
+        _prepare_obstacle_diagnostics_cfg(cfg)
+        _prepare_obstacle_debug_visualization_cfg(cfg)
         _prepare_viewpoint_cfg(cfg)
         super().__init__(cfg, render_mode, **kwargs)
 
         self.num_agents_cfg = len(self.cfg.possible_agents)
+        self.robot_config_diagnostics = self.get_robot_config_diagnostics()
+        self.capability_diagnostics = self.get_capability_diagnostics()
         self.num_viewpoints = len(self.cfg.viewpoint_poses)
         self.viewpoint_ids = tuple(int(value) for value in self.cfg.viewpoint_ids)
         self.viewpoint_source = str(self.cfg.viewpoint_source)
@@ -420,8 +970,59 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         self.last_duplicate_scans = torch.zeros(self.num_envs, self.num_agents_cfg, device=self.device)
         self.last_reach_violation = torch.zeros(self.num_envs, self.num_agents_cfg, device=self.device)
         self._usd_debug_dirty = True
+        self._obstacle_debug_line_prim_paths = set()
+        self._obstacle_debug_visualization_last_diagnostics = self._obstacle_debug_visualization_base_diagnostics(
+            drawn_line_count=0,
+            skipped_reason="not_drawn_yet",
+            pairs_sample=[],
+            line_prim_paths_sample=[],
+        )
         self._reset_diagnostics_printed = False
         self._log_static_configuration()
+
+    def _mesh_footprint_obstacle_fields(self, cost_matrix: torch.Tensor, viewpoint_pos: torch.Tensor) -> dict:
+        enabled = bool(getattr(self.cfg, "obstacle_diagnostics_enabled", False))
+        fields: dict[str, object] = {
+            "obstacle_diagnostics_enabled": enabled,
+            "obstacle_diagnostics_mode": getattr(self.cfg, "obstacle_diagnostics_mode", "disabled"),
+            "obstacle_source": getattr(self.cfg, "obstacle_source", None),
+            "component_obstacle_footprint_diagnostics": self.get_component_obstacle_footprint_diagnostics(),
+        }
+        if not enabled:
+            return fields
+
+        footprint: ComponentObstacleFootprint | None = getattr(self.cfg, "component_obstacle_footprint", None)
+        if footprint is None:
+            raise RuntimeError("obstacle diagnostics are enabled but no component obstacle footprint was built.")
+
+        intersection_mask = torch.zeros_like(cost_matrix, dtype=torch.bool)
+        base_xy = self.base_pos[:, :, :2].detach().cpu().tolist()
+        viewpoint_xy = viewpoint_pos[:, :, :2].detach().cpu().tolist()
+        for env_id in range(self.num_envs):
+            for agent_id in range(self.num_agents_cfg):
+                start_xy = base_xy[env_id][agent_id]
+                for viewpoint_index in range(self.num_viewpoints):
+                    end_xy = viewpoint_xy[env_id][viewpoint_index]
+                    if footprint.intersects_segment(start_xy, end_xy):
+                        intersection_mask[env_id, agent_id, viewpoint_index] = True
+
+        straight_line_cost_matrix = cost_matrix.clone()
+        penalty_value = float(getattr(self.cfg, "obstacle_blocked_path_penalty", 100.0))
+        mesh_footprint_penalty_matrix = torch.where(
+            intersection_mask,
+            torch.full_like(cost_matrix, penalty_value),
+            torch.zeros_like(cost_matrix),
+        )
+        mesh_footprint_aware_cost_matrix = straight_line_cost_matrix + mesh_footprint_penalty_matrix
+        fields.update(
+            {
+                "straight_line_cost_matrix": straight_line_cost_matrix,
+                "mesh_footprint_intersection_mask": intersection_mask,
+                "mesh_footprint_penalty_matrix": mesh_footprint_penalty_matrix,
+                "mesh_footprint_aware_cost_matrix": mesh_footprint_aware_cost_matrix,
+            }
+        )
+        return fields
 
     def get_assignment_problem(self) -> dict:
         """Return the high-level viewpoint assignment problem for the current state.
@@ -441,12 +1042,34 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         )
         feasible_mask = self.assignment_feasible_mask_base.unsqueeze(0).expand(self.num_envs, -1, -1)
         available_mask = feasible_mask & (~self.viewpoints_covered[:, None, :])
+        task_status = torch.full(
+            (self.num_envs, self.num_viewpoints),
+            TASK_UNASSIGNED,
+            dtype=torch.long,
+            device=self.device,
+        )
+        task_status = torch.where(
+            self.viewpoints_covered,
+            torch.full_like(task_status, TASK_COMPLETED),
+            task_status,
+        )
+        robot_status = torch.full(
+            (self.num_envs, self.num_agents_cfg),
+            ROBOT_IDLE,
+            dtype=torch.long,
+            device=self.device,
+        )
 
-        return {
+        problem = {
             "num_envs": self.num_envs,
             "num_agents": self.num_agents_cfg,
+            "agent_names": tuple(self.cfg.possible_agents),
             "num_viewpoints": self.num_viewpoints,
             "viewpoint_ids": self.viewpoint_ids,
+            "scenario_diagnostics": self.get_scenario_diagnostics(),
+            "robot_config_diagnostics": self.robot_config_diagnostics,
+            "robot_visual_diagnostics": self.get_robot_visual_diagnostics(),
+            "capability_diagnostics": self.capability_diagnostics,
             "base_pos": self.base_pos,
             "base_yaw": self.base_yaw,
             "scanner_pos": self.scanner_pos,
@@ -462,9 +1085,129 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             "static_geometric_feasible_mask": static_geometric_feasible_mask,
             "feasible_mask": feasible_mask,
             "available_mask": available_mask,
+            "task_status": task_status,
+            "robot_status": robot_status,
+            "task_status_names": dict(TASK_STATUS_NAMES),
+            "robot_status_names": dict(ROBOT_STATUS_NAMES),
             "static_geometric_feasibility_rows": self.static_geometric_feasibility_rows,
             "manual_feasibility_override_rows": self.manual_feasibility_override_rows,
             "feasibility_diagnostic_rows": self.feasibility_diagnostic_rows,
+        }
+        problem.update(self._mesh_footprint_obstacle_fields(cost_matrix, viewpoint_pos))
+        problem.update(self.get_obstacle_debug_visualization_diagnostics())
+        return problem
+
+    def get_robot_config_diagnostics(self) -> dict:
+        return dict(getattr(self.cfg, "robot_config_diagnostics", {}) or {})
+
+    def get_capability_diagnostics(self) -> dict:
+        return dict(getattr(self.cfg, "capability_config_diagnostics", {}) or {})
+
+    def get_component_obstacle_footprint_diagnostics(self) -> dict | None:
+        diagnostics = getattr(self.cfg, "component_obstacle_footprint_diagnostics", None)
+        return dict(diagnostics) if diagnostics else None
+
+    def _obstacle_debug_visualization_base_diagnostics(
+        self,
+        *,
+        drawn_line_count: int,
+        skipped_reason: str | None,
+        pairs_sample: list[dict],
+        line_prim_paths_sample: list[str],
+    ) -> dict:
+        return {
+            "obstacle_debug_visualization_enabled": bool(
+                getattr(self.cfg, "obstacle_debug_visualization_enabled", False)
+            ),
+            "obstacle_debug_visualization_draw_in_headless": bool(
+                getattr(self.cfg, "obstacle_debug_visualization_draw_in_headless", False)
+            ),
+            "obstacle_debug_visualization_line_source": getattr(
+                self.cfg,
+                "obstacle_debug_visualization_line_source",
+                "mesh_footprint_intersections",
+            ),
+            "obstacle_debug_visualization_max_lines_per_robot": int(
+                getattr(self.cfg, "obstacle_debug_visualization_max_lines_per_robot", 0)
+            ),
+            "obstacle_debug_visualization_max_total_lines": int(
+                getattr(self.cfg, "obstacle_debug_visualization_max_total_lines", 0)
+            ),
+            "obstacle_debug_visualization_prefer_shortest_blocked_pairs": bool(
+                getattr(self.cfg, "obstacle_debug_visualization_prefer_shortest_blocked_pairs", True)
+            ),
+            "obstacle_debug_visualization_line_z_mode": getattr(
+                self.cfg,
+                "obstacle_debug_visualization_line_z_mode",
+                "max_endpoint",
+            ),
+            "obstacle_debug_visualization_line_z_value": float(
+                getattr(self.cfg, "obstacle_debug_visualization_line_z_value", 0.20)
+            ),
+            "obstacle_debug_visualization_line_z_offset": float(
+                getattr(self.cfg, "obstacle_debug_visualization_line_z_offset", 0.05)
+            ),
+            "obstacle_debug_visualization_line_width": float(
+                getattr(self.cfg, "obstacle_debug_visualization_line_width", 0.03)
+            ),
+            "obstacle_debug_visualization_drawn_line_count": int(drawn_line_count),
+            "obstacle_debug_visualization_skipped_reason": skipped_reason,
+            "obstacle_debug_visualization_pairs_sample": pairs_sample,
+            "obstacle_debug_visualization_line_prim_paths_sample": line_prim_paths_sample[:10],
+        }
+
+    def get_obstacle_debug_visualization_diagnostics(self) -> dict:
+        diagnostics = getattr(self, "_obstacle_debug_visualization_last_diagnostics", None)
+        if diagnostics is None:
+            diagnostics = self._obstacle_debug_visualization_base_diagnostics(
+                drawn_line_count=0,
+                skipped_reason="not_drawn_yet",
+                pairs_sample=[],
+                line_prim_paths_sample=[],
+            )
+        return dict(diagnostics)
+
+    def get_scenario_diagnostics(self) -> dict:
+        component_mesh_enabled = bool(
+            getattr(self.cfg, "component_visual_mode", "mesh") == "mesh"
+            and getattr(self.cfg, "component_mesh_path", None)
+            and getattr(self.cfg, "component_mesh_visible", False)
+        )
+        robot_visual_mesh_enabled = bool(getattr(self.cfg, "robot_visual_mode", "mesh") == "mesh")
+        return {
+            "scenario_config_path": getattr(self.cfg, "scenario_config_path", None),
+            "scenario_name": getattr(self.cfg, "scenario_name", None),
+            "scenario_type": getattr(self.cfg, "scenario_type", None),
+            "robot_visual_mode": getattr(self.cfg, "robot_visual_mode", "mesh"),
+            "component_visual_mode": getattr(self.cfg, "component_visual_mode", "mesh"),
+            "robot_visual_mesh_enabled": robot_visual_mesh_enabled,
+            "component_mesh_enabled": component_mesh_enabled,
+            "component_proxy_type": self.cfg.component_proxy_type,
+            "component_proxy_center": list(self.cfg.component_proxy_center),
+            "component_proxy_half_extents": list(self.cfg.component_proxy_half_extents),
+            "component_proxy_visual_visible": bool(self.cfg.component_proxy_visual_visible),
+            "robot_config_path": getattr(self.cfg, "robot_config_path", None),
+            "capability_config_path": getattr(self.cfg, "capability_config_path", None),
+            "viewpoint_source": getattr(self, "viewpoint_source", getattr(self.cfg, "viewpoint_source", None)),
+            "viewpoint_csv_path": getattr(self.cfg, "viewpoint_csv_path", None),
+            "obstacle_diagnostics_enabled": bool(getattr(self.cfg, "obstacle_diagnostics_enabled", False)),
+            "obstacle_diagnostics_mode": getattr(self.cfg, "obstacle_diagnostics_mode", "disabled"),
+            "obstacle_source": getattr(self.cfg, "obstacle_source", None),
+            "obstacle_footprint_resolution": float(getattr(self.cfg, "obstacle_footprint_resolution", 0.10)),
+            "obstacle_footprint_inflation_radius": float(
+                getattr(self.cfg, "obstacle_footprint_inflation_radius", 0.30)
+            ),
+            "obstacle_line_sample_step": float(getattr(self.cfg, "obstacle_line_sample_step", 0.10)),
+            "obstacle_blocked_path_penalty": float(getattr(self.cfg, "obstacle_blocked_path_penalty", 100.0)),
+            **self.get_obstacle_debug_visualization_diagnostics(),
+        }
+
+    def get_robot_visual_diagnostics(self) -> dict:
+        diagnostics = self.get_robot_config_diagnostics()
+        return {
+            key: value
+            for key, value in diagnostics.items()
+            if key.startswith("visual_") or key in ("robot_visual_mode", "robot_visual_mesh_enabled")
         }
 
     def get_component_mesh_diagnostics(self) -> dict | None:
@@ -627,12 +1370,142 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             mesh.CreateSubdivisionSchemeAttr("none")
             UsdShade.MaterialBindingAPI(mesh.GetPrim()).Bind(material_cache["scan_component_mesh_gray"])
 
+        robot_visual_mesh_cache = {}
+
+        def _robot_visual_mesh_payload(
+            resolved_path: str,
+            mesh_scale: tuple[float, float, float],
+        ):
+            cache_key = (resolved_path, mesh_scale)
+            if cache_key in robot_visual_mesh_cache:
+                return robot_visual_mesh_cache[cache_key]
+            mesh_data = load_obj_mesh(resolved_path)
+            if not mesh_data.faces:
+                raise ValueError(f"robot visual OBJ has no faces: {resolved_path}")
+            local_vertices = transform_vertices(
+                mesh_data.vertices,
+                mesh_scale=mesh_scale,
+                mesh_position=(0.0, 0.0, 0.0),
+                mesh_orientation=(1.0, 0.0, 0.0, 0.0),
+            )
+            local_min_z = min(vertex[2] for vertex in local_vertices)
+            payload = (
+                [Gf.Vec3f(*vertex) for vertex in local_vertices],
+                [len(face) for face in mesh_data.faces],
+                [index for face in mesh_data.faces for index in face],
+                local_min_z,
+            )
+            robot_visual_mesh_cache[cache_key] = payload
+            return payload
+
+        def add_robot_obj_visual(robot_name: str, agent_index: int):
+            diagnostics = self.cfg.robot_config_diagnostics or {}
+            mesh_resolved_by_robot = diagnostics.get("visual_mesh_resolved_path_by_robot", {}) or {}
+            mesh_scale_by_robot = diagnostics.get("visual_mesh_scale_by_robot", {}) or {}
+            mesh_position_offset_by_robot = diagnostics.get("visual_mesh_position_offset_by_robot", {}) or {}
+            mesh_yaw_offset_by_robot = diagnostics.get("visual_mesh_yaw_offset_by_robot", {}) or {}
+            mesh_align_bottom_by_robot = (
+                diagnostics.get("visual_mesh_align_bottom_to_proxy_z_by_robot", {}) or {}
+            )
+            mesh_local_min_z_by_robot = diagnostics.get("visual_mesh_local_min_z_by_robot", {}) or {}
+            mesh_auto_bottom_offset_z_by_robot = (
+                diagnostics.get("visual_mesh_auto_bottom_offset_z_by_robot", {}) or {}
+            )
+            mesh_effective_position_offset_by_robot = (
+                diagnostics.get("visual_mesh_effective_position_offset_by_robot", {}) or {}
+            )
+            mesh_spawned_by_robot = diagnostics.get("visual_mesh_spawned_by_robot", {}) or {}
+            mesh_prim_path_by_robot = diagnostics.get("visual_mesh_prim_path_by_robot", {}) or {}
+            follow_enabled_by_robot = diagnostics.get("visual_follow_enabled_by_robot", {}) or {}
+            mesh_error_by_robot = diagnostics.get("visual_mesh_error_by_robot", {}) or {}
+            mesh_enabled_by_robot = diagnostics.get("visual_mesh_enabled_by_robot", {}) or {}
+
+            visual_root_path = f"{root_path}/RobotVisuals"
+            UsdGeom.Xform.Define(stage, visual_root_path)
+            mesh_path = mesh_resolved_by_robot.get(robot_name)
+            prim_path = f"{visual_root_path}/{_safe_usd_prim_name(robot_name)}_visual"
+            mesh_prim_path_by_robot[robot_name] = prim_path
+            if not bool(mesh_enabled_by_robot.get(robot_name, True)):
+                mesh_spawned_by_robot[robot_name] = False
+                follow_enabled_by_robot[robot_name] = False
+                mesh_error_by_robot[robot_name] = None
+                return
+            if not mesh_path:
+                mesh_spawned_by_robot[robot_name] = False
+                follow_enabled_by_robot[robot_name] = False
+                mesh_error_by_robot[robot_name] = None
+                return
+
+            try:
+                mesh_scale = _as_float_tuple(
+                    mesh_scale_by_robot.get(robot_name, ROBOT_VISUAL_MESH_SCALE),
+                    name=f"visual_mesh_scale_by_robot[{robot_name}]",
+                    length=3,
+                )
+                position_offset = _as_float_tuple(
+                    mesh_position_offset_by_robot.get(robot_name, ROBOT_VISUAL_MESH_POSITION_OFFSET),
+                    name=f"visual_mesh_position_offset_by_robot[{robot_name}]",
+                    length=3,
+                )
+                yaw_offset = float(mesh_yaw_offset_by_robot.get(robot_name, ROBOT_VISUAL_MESH_YAW_OFFSET))
+                if not math.isfinite(yaw_offset):
+                    raise ValueError(f"visual_mesh_yaw_offset_by_robot[{robot_name}] must be finite.")
+                points, face_counts, face_indices, local_min_z = _robot_visual_mesh_payload(
+                    str(mesh_path), mesh_scale
+                )
+                align_bottom = bool(mesh_align_bottom_by_robot.get(robot_name, False))
+                auto_bottom_offset_z = -local_min_z if align_bottom else 0.0
+                effective_position_offset = (
+                    position_offset[0],
+                    position_offset[1],
+                    position_offset[2] + auto_bottom_offset_z,
+                )
+                mesh_local_min_z_by_robot[robot_name] = local_min_z
+                mesh_auto_bottom_offset_z_by_robot[robot_name] = auto_bottom_offset_z
+                mesh_effective_position_offset_by_robot[robot_name] = list(effective_position_offset)
+                mesh = UsdGeom.Mesh.Define(stage, prim_path)
+                mesh.CreatePointsAttr(points)
+                mesh.CreateFaceVertexCountsAttr(face_counts)
+                mesh.CreateFaceVertexIndicesAttr(face_indices)
+                mesh.CreateSubdivisionSchemeAttr("none")
+                UsdShade.MaterialBindingAPI(mesh.GetPrim()).Bind(material_cache["scan_robot_visual_mesh"])
+                pose = self.cfg.base_start_poses[agent_index]
+                visual_pos, visual_yaw = _robot_visual_pose_from_proxy(
+                    (pose[0], pose[1], pose[2]),
+                    pose[3],
+                    effective_position_offset,
+                    yaw_offset,
+                )
+                set_transform(mesh.GetPrim(), visual_pos, (1.0, 1.0, 1.0), visual_yaw)
+                mesh_spawned_by_robot[robot_name] = True
+                follow_enabled_by_robot[robot_name] = True
+                mesh_error_by_robot[robot_name] = None
+            except Exception as exc:
+                print(
+                    "[WARN]: Robot OBJ visual mesh was not spawned; task-space proxy remains active. "
+                    f"robot={robot_name} path={mesh_path} error={exc}"
+                )
+                mesh_spawned_by_robot[robot_name] = False
+                follow_enabled_by_robot[robot_name] = False
+                mesh_error_by_robot[robot_name] = str(exc)
+
+            diagnostics["visual_mesh_spawned_by_robot"] = mesh_spawned_by_robot
+            diagnostics["visual_mesh_prim_path_by_robot"] = mesh_prim_path_by_robot
+            diagnostics["visual_follow_enabled_by_robot"] = follow_enabled_by_robot
+            diagnostics["visual_mesh_error_by_robot"] = mesh_error_by_robot
+            diagnostics["visual_mesh_local_min_z_by_robot"] = mesh_local_min_z_by_robot
+            diagnostics["visual_mesh_auto_bottom_offset_z_by_robot"] = mesh_auto_bottom_offset_z_by_robot
+            diagnostics["visual_mesh_effective_position_offset_by_robot"] = (
+                mesh_effective_position_offset_by_robot
+            )
+
         # Keep the large component translucent and matte so robots behind it remain visible without specular glare.
         make_material("scan_component_blue", (0.2, 0.45, 0.9), opacity=0.35, roughness=1.0, specular_color=(0.0, 0.0, 0.0))
         make_material("scan_component_mesh_gray", (0.62, 0.65, 0.68), opacity=1.0, roughness=0.8, specular_color=(0.02, 0.02, 0.02))
         make_material("scan_robot_red", (0.9, 0.2, 0.2))
         make_material("scan_robot_green", (0.2, 0.8, 0.3))
         make_material("scan_robot_yellow", (0.9, 0.75, 0.2))
+        make_material("scan_robot_visual_mesh", (0.55, 0.58, 0.62), opacity=1.0, roughness=0.75, specular_color=(0.02, 0.02, 0.02))
         make_material("scan_scanner_white", (0.95, 0.95, 0.95))
         make_material("scan_viewpoint_cyan", (0.0, 0.85, 1.0))
 
@@ -653,24 +1526,28 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
 
         robot_materials = ("scan_robot_red", "scan_robot_green", "scan_robot_yellow")
         for index, pose in enumerate(self.cfg.base_start_poses):
-            add_cube(
-                f"{root_path}/Robot_{index}_BaseMarker",
-                (pose[0], pose[1], pose[2]),
-                (0.65, 0.45, 0.25),
-                robot_materials[index],
-                pose[3],
-            )
-            scanner_pos = (
-                pose[0] + self.cfg.scanner_start_offsets[index][0],
-                pose[1] + self.cfg.scanner_start_offsets[index][1],
-                pose[2] + self.cfg.scanner_start_offsets[index][2],
-            )
-            add_sphere(
-                f"{root_path}/Robot_{index}_ScannerMarker",
-                scanner_pos,
-                0.12,
-                "scan_scanner_white",
-            )
+            robot_name = str(self.cfg.possible_agents[index])
+            if self.cfg.robot_visual_mode == "mesh":
+                add_robot_obj_visual(robot_name, index)
+            if self.cfg.robot_visual_mode != "none":
+                add_cube(
+                    f"{root_path}/Robot_{index}_BaseMarker",
+                    (pose[0], pose[1], pose[2]),
+                    (0.65, 0.45, 0.25),
+                    robot_materials[index % len(robot_materials)],
+                    pose[3],
+                )
+                scanner_pos = (
+                    pose[0] + self.cfg.scanner_start_offsets[index][0],
+                    pose[1] + self.cfg.scanner_start_offsets[index][1],
+                    pose[2] + self.cfg.scanner_start_offsets[index][2],
+                )
+                add_sphere(
+                    f"{root_path}/Robot_{index}_ScannerMarker",
+                    scanner_pos,
+                    0.12,
+                    "scan_scanner_white",
+                )
 
         for index, viewpoint in enumerate(self.cfg.viewpoint_poses):
             add_sphere(
@@ -688,30 +1565,250 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             return True
         return self.sim.render_mode >= self.sim.RenderMode.PARTIAL_RENDERING
 
-    def _update_usd_debug_visuals(self):
-        """Update USD markers from high-level task-space buffers."""
-        if not self._should_update_usd_debug_visuals():
+    def _record_obstacle_debug_visualization_skip(self, reason: str) -> None:
+        self._obstacle_debug_visualization_last_diagnostics = self._obstacle_debug_visualization_base_diagnostics(
+            drawn_line_count=0,
+            skipped_reason=reason,
+            pairs_sample=[],
+            line_prim_paths_sample=[],
+        )
+
+    def _should_update_obstacle_debug_visuals(self) -> bool:
+        if not bool(getattr(self.cfg, "obstacle_debug_visualization_enabled", False)):
+            self._record_obstacle_debug_visualization_skip("disabled")
+            return False
+        if not self.cfg.enable_usd_debug_visuals:
+            self._record_obstacle_debug_visualization_skip("usd_debug_visuals_disabled")
+            return False
+        if not bool(getattr(self.cfg, "obstacle_diagnostics_enabled", False)):
+            self._record_obstacle_debug_visualization_skip("obstacle_diagnostics_disabled")
+            return False
+        if getattr(self.cfg, "obstacle_debug_visualization_line_source", None) != "mesh_footprint_intersections":
+            self._record_obstacle_debug_visualization_skip("unsupported_line_source")
+            return False
+        draw_in_headless = bool(getattr(self.cfg, "obstacle_debug_visualization_draw_in_headless", False))
+        if not self.sim.has_gui() and not draw_in_headless:
+            self._record_obstacle_debug_visualization_skip("headless_without_draw_in_headless")
+            return False
+        if not self.sim.has_gui() and not draw_in_headless and not self._should_update_usd_debug_visuals():
+            self._record_obstacle_debug_visualization_skip("debug_visuals_unavailable")
+            return False
+        return True
+
+    def _ensure_obstacle_debug_line_material(self, stage):
+        from pxr import Gf, Sdf, UsdShade
+
+        material_path = "/World/Materials/scan_obstacle_blocked_line"
+        material = UsdShade.Material.Get(stage, material_path)
+        if material and material.GetPrim().IsValid():
+            return material
+        material = UsdShade.Material.Define(stage, material_path)
+        shader = UsdShade.Shader.Define(stage, f"{material_path}/Shader")
+        shader.CreateIdAttr("UsdPreviewSurface")
+        shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(1.0, 0.05, 0.02))
+        shader.CreateInput("emissiveColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(0.35, 0.0, 0.0))
+        shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.35)
+        material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+        return material
+
+    def _hide_inactive_obstacle_debug_lines(self, stage, UsdGeom, active_paths: set[str]) -> None:
+        previous_paths = getattr(self, "_obstacle_debug_line_prim_paths", set())
+        for prim_path in previous_paths - active_paths:
+            prim = stage.GetPrimAtPath(prim_path)
+            if prim.IsValid():
+                UsdGeom.Imageable(prim).MakeInvisible()
+        self._obstacle_debug_line_prim_paths = set(previous_paths | active_paths)
+
+    def _select_obstacle_debug_line_pairs(self, problem: dict) -> tuple[list[dict], str | None]:
+        mask = problem.get("mesh_footprint_intersection_mask")
+        if not isinstance(mask, torch.Tensor):
+            return [], "missing_mesh_footprint_intersection_mask"
+        mask = mask.to(dtype=torch.bool)
+        if mask.ndim != 3:
+            return [], "invalid_mesh_footprint_intersection_mask_shape"
+        if not bool(mask.any().item()):
+            return [], "no_blocked_pairs"
+
+        max_lines_per_robot = int(getattr(self.cfg, "obstacle_debug_visualization_max_lines_per_robot", 0))
+        max_total_lines = int(getattr(self.cfg, "obstacle_debug_visualization_max_total_lines", 0))
+        if max_lines_per_robot <= 0 or max_total_lines <= 0:
+            return [], "line_limit_zero"
+
+        straight_line_cost = problem.get("straight_line_cost_matrix")
+        aware_cost = problem.get("mesh_footprint_aware_cost_matrix")
+        prefer_shortest = bool(
+            getattr(self.cfg, "obstacle_debug_visualization_prefer_shortest_blocked_pairs", True)
+        )
+        viewpoint_pos = problem["viewpoint_pos"]
+        viewpoint_ids = list(problem.get("viewpoint_ids", range(self.num_viewpoints)))
+        z_mode = str(getattr(self.cfg, "obstacle_debug_visualization_line_z_mode", "max_endpoint"))
+        z_value = float(getattr(self.cfg, "obstacle_debug_visualization_line_z_value", 0.20))
+        z_offset = float(getattr(self.cfg, "obstacle_debug_visualization_line_z_offset", 0.05))
+
+        pairs: list[dict] = []
+        for env_id in range(min(mask.shape[0], self.num_envs)):
+            for agent_id in range(min(mask.shape[1], self.num_agents_cfg)):
+                candidate_indices = torch.nonzero(mask[env_id, agent_id], as_tuple=False).flatten().tolist()
+                if prefer_shortest and isinstance(straight_line_cost, torch.Tensor):
+                    candidate_indices.sort(
+                        key=lambda viewpoint_index: float(
+                            straight_line_cost[env_id, agent_id, int(viewpoint_index)].detach().cpu().item()
+                        )
+                    )
+                for viewpoint_index in candidate_indices[:max_lines_per_robot]:
+                    if len(pairs) >= max_total_lines:
+                        return pairs, None
+                    viewpoint_index = int(viewpoint_index)
+                    base_pos = self.base_pos[env_id, agent_id].detach().cpu().tolist()
+                    end_pos = viewpoint_pos[env_id, viewpoint_index].detach().cpu().tolist()
+                    if z_mode == "fixed":
+                        line_z = z_value + z_offset
+                    else:
+                        line_z = max(float(base_pos[2]), float(end_pos[2]), 0.0) + z_offset
+                    pair = {
+                        "env_id": env_id,
+                        "robot_id": agent_id,
+                        "robot_name": str(self.cfg.possible_agents[agent_id]),
+                        "viewpoint_id": viewpoint_ids[viewpoint_index]
+                        if viewpoint_index < len(viewpoint_ids)
+                        else viewpoint_index,
+                        "viewpoint_index": viewpoint_index,
+                        "straight_line_cost": None,
+                        "obstacle_aware_cost": None,
+                        "intersects_mesh_footprint": True,
+                        "_line_start": (float(base_pos[0]), float(base_pos[1]), line_z),
+                        "_line_end": (float(end_pos[0]), float(end_pos[1]), line_z),
+                    }
+                    if isinstance(straight_line_cost, torch.Tensor):
+                        pair["straight_line_cost"] = float(
+                            straight_line_cost[env_id, agent_id, viewpoint_index].detach().cpu().item()
+                        )
+                    if isinstance(aware_cost, torch.Tensor):
+                        pair["obstacle_aware_cost"] = float(
+                            aware_cost[env_id, agent_id, viewpoint_index].detach().cpu().item()
+                        )
+                    pairs.append(pair)
+        return pairs, None
+
+    def _update_obstacle_debug_visual_lines(self, stage, Gf, UsdGeom) -> None:
+        problem = self.get_assignment_problem()
+        selected_pairs, skipped_reason = self._select_obstacle_debug_line_pairs(problem)
+        active_paths: set[str] = set()
+        if not selected_pairs:
+            self._hide_inactive_obstacle_debug_lines(stage, UsdGeom, active_paths)
+            self._obstacle_debug_visualization_last_diagnostics = (
+                self._obstacle_debug_visualization_base_diagnostics(
+                    drawn_line_count=0,
+                    skipped_reason=skipped_reason or "no_selected_pairs",
+                    pairs_sample=[],
+                    line_prim_paths_sample=[],
+                )
+            )
             return
 
-        # USD writes are useful in GUI and in camera-enabled headless video. Pure headless training/evaluation skips
-        # this path to avoid extra overhead and any dependency on rendering state.
+        from pxr import UsdShade
+
+        material = self._ensure_obstacle_debug_line_material(stage)
+        line_width = float(getattr(self.cfg, "obstacle_debug_visualization_line_width", 0.03))
+        for line_index, pair in enumerate(selected_pairs):
+            env_id = int(pair["env_id"])
+            if env_id >= len(self.scene.env_prim_paths):
+                continue
+            root_path = f"{self.scene.env_prim_paths[env_id]}/ObstacleDebugLines"
+            UsdGeom.Xform.Define(stage, root_path)
+            prim_path = f"{root_path}/BlockedPath_{line_index:03d}"
+            curve = UsdGeom.BasisCurves.Define(stage, prim_path)
+            curve.CreateTypeAttr("linear")
+            curve.CreateCurveVertexCountsAttr([2])
+            curve.CreatePointsAttr([Gf.Vec3f(*pair["_line_start"]), Gf.Vec3f(*pair["_line_end"])])
+            curve.CreateWidthsAttr([line_width, line_width])
+            try:
+                curve.SetWidthsInterpolation(UsdGeom.Tokens.vertex)
+            except AttributeError:
+                pass
+            curve.CreateWrapAttr("nonperiodic")
+            UsdShade.MaterialBindingAPI(curve.GetPrim()).Bind(material)
+            UsdGeom.Imageable(curve.GetPrim()).MakeVisible()
+            active_paths.add(prim_path)
+
+        self._hide_inactive_obstacle_debug_lines(stage, UsdGeom, active_paths)
+        sample_pairs = [
+            {key: value for key, value in pair.items() if not key.startswith("_")}
+            for pair in selected_pairs[:10]
+        ]
+        self._obstacle_debug_visualization_last_diagnostics = self._obstacle_debug_visualization_base_diagnostics(
+            drawn_line_count=len(active_paths),
+            skipped_reason=None,
+            pairs_sample=sample_pairs,
+            line_prim_paths_sample=sorted(active_paths)[:10],
+        )
+
+    def _update_usd_debug_visuals(self):
+        """Update USD markers from high-level task-space buffers."""
+        update_debug_markers = self._should_update_usd_debug_visuals()
+        update_obstacle_debug_lines = self._should_update_obstacle_debug_visuals()
+        visual_follow_enabled = (
+            (self.cfg.robot_config_diagnostics or {}).get("visual_follow_enabled_by_robot", {}) or {}
+        )
+        visual_position_offsets = (
+            (self.cfg.robot_config_diagnostics or {}).get(
+                "visual_mesh_effective_position_offset_by_robot", {}
+            )
+            or (self.cfg.robot_config_diagnostics or {}).get("visual_mesh_position_offset_by_robot", {})
+            or {}
+        )
+        visual_yaw_offsets = (
+            (self.cfg.robot_config_diagnostics or {}).get("visual_mesh_yaw_offset_by_robot", {}) or {}
+        )
+        update_robot_visuals = any(bool(value) for value in visual_follow_enabled.values())
+        if not update_debug_markers and not update_robot_visuals and not update_obstacle_debug_lines:
+            return
+
+        # Marker USD writes are useful in GUI and in camera-enabled headless video. Robot visual mesh follow is also
+        # allowed in pure headless smokes when a configured display-only mesh was actually spawned.
         from pxr import Gf, UsdGeom
 
         stage = self.scene.stage
         for env_index, env_path in enumerate(self.scene.env_prim_paths):
             for agent_index in range(self.num_agents_cfg):
-                base_prim = stage.GetPrimAtPath(f"{env_path}/Robot_{agent_index}_BaseMarker")
-                scanner_prim = stage.GetPrimAtPath(f"{env_path}/Robot_{agent_index}_ScannerMarker")
-                if base_prim.IsValid():
-                    base_pos = self.base_pos[env_index, agent_index].detach().cpu().tolist()
-                    base_yaw = float(self.base_yaw[env_index, agent_index].detach().cpu())
-                    UsdGeom.XformCommonAPI(base_prim).SetTranslate(Gf.Vec3d(*base_pos))
-                    UsdGeom.XformCommonAPI(base_prim).SetRotate(
-                        (0.0, 0.0, math.degrees(base_yaw)), UsdGeom.XformCommonAPI.RotationOrderXYZ
+                base_pos = self.base_pos[env_index, agent_index].detach().cpu().tolist()
+                base_yaw = float(self.base_yaw[env_index, agent_index].detach().cpu())
+                if update_debug_markers:
+                    base_prim = stage.GetPrimAtPath(f"{env_path}/Robot_{agent_index}_BaseMarker")
+                    scanner_prim = stage.GetPrimAtPath(f"{env_path}/Robot_{agent_index}_ScannerMarker")
+                    if base_prim.IsValid():
+                        UsdGeom.XformCommonAPI(base_prim).SetTranslate(Gf.Vec3d(*base_pos))
+                        UsdGeom.XformCommonAPI(base_prim).SetRotate(
+                            (0.0, 0.0, math.degrees(base_yaw)), UsdGeom.XformCommonAPI.RotationOrderXYZ
+                        )
+                    if scanner_prim.IsValid():
+                        scanner_pos = self.scanner_pos[env_index, agent_index].detach().cpu().tolist()
+                        UsdGeom.XformCommonAPI(scanner_prim).SetTranslate(Gf.Vec3d(*scanner_pos))
+
+                if update_robot_visuals:
+                    robot_name = str(self.cfg.possible_agents[agent_index])
+                    if not bool(visual_follow_enabled.get(robot_name, False)):
+                        continue
+                    visual_prim = stage.GetPrimAtPath(
+                        f"{env_path}/RobotVisuals/{_safe_usd_prim_name(robot_name)}_visual"
                     )
-                if scanner_prim.IsValid():
-                    scanner_pos = self.scanner_pos[env_index, agent_index].detach().cpu().tolist()
-                    UsdGeom.XformCommonAPI(scanner_prim).SetTranslate(Gf.Vec3d(*scanner_pos))
+                    if not visual_prim.IsValid():
+                        continue
+                    position_offset = visual_position_offsets.get(robot_name, ROBOT_VISUAL_MESH_POSITION_OFFSET)
+                    yaw_offset = visual_yaw_offsets.get(robot_name, ROBOT_VISUAL_MESH_YAW_OFFSET)
+                    visual_pos, visual_yaw = _robot_visual_pose_from_proxy(
+                        base_pos,
+                        base_yaw,
+                        position_offset,
+                        float(yaw_offset),
+                    )
+                    UsdGeom.XformCommonAPI(visual_prim).SetTranslate(Gf.Vec3d(*visual_pos))
+                    UsdGeom.XformCommonAPI(visual_prim).SetRotate(
+                        (0.0, 0.0, math.degrees(visual_yaw)), UsdGeom.XformCommonAPI.RotationOrderXYZ
+                    )
+
+        if update_obstacle_debug_lines:
+            self._update_obstacle_debug_visual_lines(stage, Gf, UsdGeom)
 
     def _pre_physics_step(self, actions: dict[str, torch.Tensor]):
         # Preserve the previous action for the action-rate penalty, then clamp policy/controller outputs before they
@@ -761,13 +1858,13 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             self._usd_debug_dirty = False
 
     def _get_observations(self) -> dict[str, torch.Tensor]:
-        """Build per-agent observations with the fixed 96D layout declared in the config."""
+        """Build per-agent observations with the configured per-agent layout."""
         coverage_ratio = self.viewpoints_covered.float().mean(dim=-1, keepdim=True)
         observations = {}
         for agent, index in self.agent_index.items():
             # 96D layout:
             # base_rel(3), yaw sin/cos(2), scanner_rel(3), scanner_quat(4), coverage(1), capability(4),
-            # nearest viewpoint slots(8 * 8), other scanners(2 * 3), previous action(9).
+            # nearest viewpoint slots(8 * 8), other scanners((M - 1) * 3), previous action(9).
             base_rel = self.base_pos[:, index, :] / self.cfg.scene.env_spacing
             yaw = self.base_yaw[:, index]
             yaw_sincos = torch.stack((torch.sin(yaw), torch.cos(yaw)), dim=-1)
@@ -789,6 +1886,10 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
                         (self.scanner_pos[:, other_index, :] - self.scanner_pos[:, index, :])
                         / self.cfg.scene.env_spacing
                     )
+            if other_scanners:
+                other_scanner_obs = torch.cat(other_scanners, dim=-1)
+            else:
+                other_scanner_obs = torch.zeros(self.num_envs, 0, dtype=torch.float32, device=self.device)
             observations[agent] = torch.cat(
                 (
                     base_rel,
@@ -798,7 +1899,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
                     coverage_ratio,
                     capability,
                     viewpoint_obs,
-                    torch.cat(other_scanners, dim=-1),
+                    other_scanner_obs,
                     self.previous_actions[agent],
                 ),
                 dim=-1,
@@ -959,6 +2060,9 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             f"half_extents={self.cfg.component_proxy_half_extents} "
             f"visual_visible={self.cfg.component_proxy_visual_visible}"
         )
+        print(f"[INFO]: Scan scenario diagnostics {self.get_scenario_diagnostics()}")
+        print(f"[INFO]: Scan robot config diagnostics {self.get_robot_config_diagnostics()}")
+        print(f"[INFO]: Scan capability diagnostics {self.get_capability_diagnostics()}")
         if self.cfg.component_mesh_path:
             print(
                 "[INFO]: Scan component visual mesh "
@@ -981,6 +2085,12 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
                 f"world_max={self.cfg.component_mesh_world_bounds_m_max} "
                 f"auto_proxy_center={self.cfg.component_mesh_auto_proxy_center} "
                 f"auto_proxy_half_extents={self.cfg.component_mesh_auto_proxy_half_extents}"
+            )
+        if self.cfg.obstacle_diagnostics_enabled:
+            print(
+                "[INFO]: Scan obstacle diagnostics "
+                f"mode={self.cfg.obstacle_diagnostics_mode} source={self.cfg.obstacle_source} "
+                f"footprint={self.get_component_obstacle_footprint_diagnostics()}"
             )
         print(
             "[INFO]: Scan viewpoints loaded "
@@ -1054,6 +2164,9 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         mesh_diagnostics = self.get_component_mesh_diagnostics()
         if mesh_diagnostics is not None:
             print(f"[INFO]: Scan reset diagnostics component mesh={mesh_diagnostics}")
+        print(f"[INFO]: Scan reset diagnostics scenario={self.get_scenario_diagnostics()}")
+        print(f"[INFO]: Scan reset diagnostics robot config={self.get_robot_config_diagnostics()}")
+        print(f"[INFO]: Scan reset diagnostics capability config={self.get_capability_diagnostics()}")
         print(
             "[INFO]: Scan reset diagnostics infeasible rows="
             f"{[row for row in self.feasibility_diagnostic_rows if not row['feasible']]}"

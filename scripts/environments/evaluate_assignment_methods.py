@@ -16,6 +16,7 @@ import argparse
 import copy
 import csv
 import json
+import math
 import random
 import sys
 from pathlib import Path
@@ -83,6 +84,22 @@ parser.add_argument(
 parser.add_argument("--output_name", type=str, default=None, help="Optional safe run folder name under --output_dir.")
 parser.add_argument("--viewpoint_csv_path", type=str, default=None, help="Optional fixed-N viewpoint CSV path.")
 parser.add_argument("--expect_num_viewpoints", type=int, default=None, help="Assert the loaded viewpoint count.")
+parser.add_argument("--robot_config_path", type=str, default=None, help="Optional Robot Config MVP YAML path.")
+parser.add_argument("--capability_config_path", type=str, default=None, help="Optional capability profile YAML path.")
+parser.add_argument(
+    "--robot_visual_mode",
+    type=str,
+    choices=("mesh", "debug_marker", "none"),
+    default=None,
+    help="Robot visual mode: mesh, debug_marker, or none.",
+)
+parser.add_argument(
+    "--component_visual_mode",
+    type=str,
+    choices=("mesh", "bbox", "none"),
+    default=None,
+    help="Component visual mode: mesh, bbox, or none.",
+)
 parser.add_argument(
     "--viewpoint_candidate_top_k",
     type=int,
@@ -199,6 +216,15 @@ parser.add_argument(
     default=0,
     help="Print assignment-RL diagnostics every N steps after the leading window. 0 disables interval printing.",
 )
+parser.add_argument(
+    "--compare_obstacle_aware_candidates",
+    action="store_true",
+    default=False,
+    help=(
+        "Diagnostic-only: compare nearest/greedy baseline choices against choices from a copied problem whose "
+        "cost_matrix is mesh_footprint_aware_cost_matrix. Does not change actual solver inputs."
+    ),
+)
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli, hydra_args = parser.parse_known_args()
@@ -207,12 +233,17 @@ sys.argv = [sys.argv[0]] + hydra_args
 print(
     f"[INFO]: evaluate_assignment_methods methods={args_cli.methods} "
     f"scenario_config={SCENARIO_CONFIG.get('_scenario_config_path')} "
+    f"robot_config_path={getattr(args_cli, 'robot_config_path', None)} "
+    f"capability_config_path={getattr(args_cli, 'capability_config_path', None)} "
+    f"robot_visual_mode={getattr(args_cli, 'robot_visual_mode', None)} "
+    f"component_visual_mode={getattr(args_cli, 'component_visual_mode', None)} "
     f"viewpoint_candidate_top_k={args_cli.viewpoint_candidate_top_k} "
     f"candidate_mode={'all_viewpoints' if int(args_cli.viewpoint_candidate_top_k) <= 0 else 'nearest_top_k'} "
     f"level2_pair_filter_json={args_cli.level2_pair_filter_json} "
     f"assignment_retry_fallback={bool(args_cli.assignment_retry_fallback)} "
     f"assignment_stall_window={args_cli.assignment_stall_window} "
     f"assignment_pair_cooldown={args_cli.assignment_pair_cooldown} "
+    f"compare_obstacle_aware_candidates={bool(args_cli.compare_obstacle_aware_candidates)} "
     f"write_controller_state_trace={bool(args_cli.write_controller_state_trace)} "
     f"controller_trace_pairs={args_cli.controller_trace_pairs or args_cli.controller_trace_agent_viewpoint_pairs}",
     flush=True,
@@ -252,6 +283,7 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_controller import 
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_adapter import make_harl_action_tensor
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import make_assignment_harl_env
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_rl_interface import compute_assignment_duplicate_count
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_state import status_counts
 from isaaclab_tasks.direct.scan_mobile_manipulator.solvers import make_solver
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
@@ -416,8 +448,20 @@ def _clone_env_cfg(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEn
         cfg.sim.use_fabric = not bool(getattr(args_cli, "disable_fabric", False))
     if args_cli.seed is not None:
         cfg.seed = args_cli.seed
+    for attr in ("scenario_config_path", "scenario_name", "scenario_type"):
+        value = getattr(args_cli, attr, None)
+        if value is not None:
+            setattr(cfg, attr, value)
     if args_cli.viewpoint_csv_path is not None:
         cfg.viewpoint_csv_path = args_cli.viewpoint_csv_path
+    if args_cli.robot_config_path is not None:
+        cfg.robot_config_path = args_cli.robot_config_path
+    if args_cli.capability_config_path is not None:
+        cfg.capability_config_path = args_cli.capability_config_path
+    if args_cli.robot_visual_mode is not None:
+        cfg.robot_visual_mode = args_cli.robot_visual_mode
+    if args_cli.component_visual_mode is not None:
+        cfg.component_visual_mode = args_cli.component_visual_mode
     if args_cli.component_mesh_path is not None:
         cfg.component_mesh_path = args_cli.component_mesh_path
     if args_cli.component_mesh_format is not None:
@@ -444,6 +488,28 @@ def _clone_env_cfg(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEn
         cfg.component_proxy_padding = float(args_cli.component_proxy_padding)
     if args_cli.component_proxy_visual_visible is not None:
         cfg.component_proxy_visual_visible = bool(args_cli.component_proxy_visual_visible)
+    for attr in (
+        "obstacle_diagnostics_enabled",
+        "obstacle_diagnostics_mode",
+        "obstacle_source",
+        "obstacle_footprint_resolution",
+        "obstacle_footprint_inflation_radius",
+        "obstacle_line_sample_step",
+        "obstacle_blocked_path_penalty",
+        "obstacle_debug_visualization_enabled",
+        "obstacle_debug_visualization_draw_in_headless",
+        "obstacle_debug_visualization_line_source",
+        "obstacle_debug_visualization_max_lines_per_robot",
+        "obstacle_debug_visualization_max_total_lines",
+        "obstacle_debug_visualization_prefer_shortest_blocked_pairs",
+        "obstacle_debug_visualization_line_z_mode",
+        "obstacle_debug_visualization_line_z_value",
+        "obstacle_debug_visualization_line_z_offset",
+        "obstacle_debug_visualization_line_width",
+    ):
+        value = getattr(args_cli, attr, None)
+        if value is not None:
+            setattr(cfg, attr, value)
     return cfg
 
 
@@ -1349,6 +1415,433 @@ def _prepare_baseline_assignment_problem(problem: dict, retry_state: dict | None
     return _apply_viewpoint_candidate_filter(problem)
 
 
+def _json_float(value: Any) -> float | None:
+    try:
+        numeric = float(value.item() if isinstance(value, torch.Tensor) else value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _viewpoint_id_from_assignment(viewpoint_ids: list[int], viewpoint_index: int) -> int:
+    if viewpoint_index < 0:
+        return -1
+    if viewpoint_index < len(viewpoint_ids):
+        return int(viewpoint_ids[viewpoint_index])
+    return int(viewpoint_index)
+
+
+def _selected_matrix_sum(matrix: torch.Tensor | None, assignment: torch.Tensor) -> float:
+    if not isinstance(matrix, torch.Tensor):
+        return 0.0
+    total = 0.0
+    for env_id_tensor, agent_id_tensor in torch.nonzero(assignment >= 0, as_tuple=False):
+        env_id = int(env_id_tensor.item())
+        agent_id = int(agent_id_tensor.item())
+        viewpoint_index = int(assignment[env_id, agent_id].item())
+        value = _json_float(matrix[env_id, agent_id, viewpoint_index])
+        if value is not None:
+            total += value
+    return total
+
+
+def _selected_intersection_count(intersection_mask: torch.Tensor | None, assignment: torch.Tensor) -> int:
+    if not isinstance(intersection_mask, torch.Tensor):
+        return 0
+    mask = intersection_mask.to(dtype=torch.bool)
+    count = 0
+    for env_id_tensor, agent_id_tensor in torch.nonzero(assignment >= 0, as_tuple=False):
+        env_id = int(env_id_tensor.item())
+        agent_id = int(agent_id_tensor.item())
+        viewpoint_index = int(assignment[env_id, agent_id].item())
+        count += int(bool(mask[env_id, agent_id, viewpoint_index].item()))
+    return count
+
+
+def _assignment_pair_value(matrix: torch.Tensor | None, env_id: int, agent_id: int, viewpoint_index: int) -> float | None:
+    if viewpoint_index < 0 or not isinstance(matrix, torch.Tensor):
+        return None
+    return _json_float(matrix[env_id, agent_id, viewpoint_index])
+
+
+def _assignment_pair_intersects(
+    intersection_mask: torch.Tensor | None,
+    env_id: int,
+    agent_id: int,
+    viewpoint_index: int,
+) -> bool:
+    if viewpoint_index < 0 or not isinstance(intersection_mask, torch.Tensor):
+        return False
+    return bool(intersection_mask.to(dtype=torch.bool)[env_id, agent_id, viewpoint_index].item())
+
+
+def _selected_pair_sample(
+    *,
+    assignment: torch.Tensor,
+    agents: list[str],
+    viewpoint_ids: list[int],
+    intersection_mask: torch.Tensor | None,
+    baseline_cost_matrix: torch.Tensor | None,
+    obstacle_aware_cost_matrix: torch.Tensor | None,
+    obstacle_penalty_matrix: torch.Tensor | None,
+    limit: int = 10,
+) -> list[dict]:
+    rows = []
+    for env_id_tensor, agent_id_tensor in torch.nonzero(assignment >= 0, as_tuple=False):
+        if len(rows) >= limit:
+            break
+        env_id = int(env_id_tensor.item())
+        agent_id = int(agent_id_tensor.item())
+        viewpoint_index = int(assignment[env_id, agent_id].item())
+        rows.append(
+            {
+                "env_id": env_id,
+                "robot_id": agent_id,
+                "robot_name": agents[agent_id] if agent_id < len(agents) else f"robot_{agent_id}",
+                "viewpoint_id": _viewpoint_id_from_assignment(viewpoint_ids, viewpoint_index),
+                "pair_intersects": _assignment_pair_intersects(intersection_mask, env_id, agent_id, viewpoint_index),
+                "baseline_cost": _assignment_pair_value(baseline_cost_matrix, env_id, agent_id, viewpoint_index),
+                "obstacle_aware_cost": _assignment_pair_value(
+                    obstacle_aware_cost_matrix, env_id, agent_id, viewpoint_index
+                ),
+                "obstacle_penalty": _assignment_pair_value(obstacle_penalty_matrix, env_id, agent_id, viewpoint_index),
+            }
+        )
+    return rows
+
+
+def _changed_pair_sample(
+    *,
+    baseline_assignment: torch.Tensor,
+    candidate_assignment: torch.Tensor,
+    agents: list[str],
+    viewpoint_ids: list[int],
+    intersection_mask: torch.Tensor | None,
+    baseline_cost_matrix: torch.Tensor | None,
+    obstacle_aware_cost_matrix: torch.Tensor | None,
+    limit: int = 10,
+) -> list[dict]:
+    rows = []
+    changed = baseline_assignment != candidate_assignment
+    for env_id_tensor, agent_id_tensor in torch.nonzero(changed, as_tuple=False):
+        if len(rows) >= limit:
+            break
+        env_id = int(env_id_tensor.item())
+        agent_id = int(agent_id_tensor.item())
+        baseline_index = int(baseline_assignment[env_id, agent_id].item())
+        candidate_index = int(candidate_assignment[env_id, agent_id].item())
+        rows.append(
+            {
+                "env_id": env_id,
+                "robot_id": agent_id,
+                "robot_name": agents[agent_id] if agent_id < len(agents) else f"robot_{agent_id}",
+                "baseline_viewpoint_id": _viewpoint_id_from_assignment(viewpoint_ids, baseline_index),
+                "candidate_viewpoint_id": _viewpoint_id_from_assignment(viewpoint_ids, candidate_index),
+                "baseline_pair_intersects": _assignment_pair_intersects(
+                    intersection_mask, env_id, agent_id, baseline_index
+                ),
+                "candidate_pair_intersects": _assignment_pair_intersects(
+                    intersection_mask, env_id, agent_id, candidate_index
+                ),
+                "baseline_cost": _assignment_pair_value(baseline_cost_matrix, env_id, agent_id, baseline_index),
+                "candidate_cost": _assignment_pair_value(baseline_cost_matrix, env_id, agent_id, candidate_index),
+                "baseline_obstacle_aware_cost": _assignment_pair_value(
+                    obstacle_aware_cost_matrix, env_id, agent_id, baseline_index
+                ),
+                "candidate_obstacle_aware_cost": _assignment_pair_value(
+                    obstacle_aware_cost_matrix, env_id, agent_id, candidate_index
+                ),
+            }
+        )
+    return rows
+
+
+def _obstacle_candidate_required_tensors(problem: dict) -> tuple[dict[str, torch.Tensor] | None, str | None]:
+    required = {
+        "baseline_cost_matrix": problem.get("cost_matrix"),
+        "mesh_footprint_intersection_mask": problem.get("mesh_footprint_intersection_mask"),
+        "mesh_footprint_penalty_matrix": problem.get("mesh_footprint_penalty_matrix"),
+        "mesh_footprint_aware_cost_matrix": problem.get("mesh_footprint_aware_cost_matrix"),
+    }
+    missing = [name for name, value in required.items() if not isinstance(value, torch.Tensor)]
+    if missing:
+        return None, f"missing_required_tensors:{','.join(missing)}"
+
+    expected_shape = tuple(required["baseline_cost_matrix"].shape)
+    shape_errors = [name for name, value in required.items() if tuple(value.shape) != expected_shape]
+    if shape_errors:
+        return None, f"shape_mismatch:{','.join(shape_errors)} expected={expected_shape}"
+    return required, None
+
+
+def _obstacle_candidate_baseline_metrics(
+    *,
+    method: str,
+    step: torch.Tensor,
+    problem: dict,
+    assignment: torch.Tensor,
+    agents: list[str],
+    viewpoint_ids: list[int],
+) -> dict:
+    tensors, reason = _obstacle_candidate_required_tensors(problem)
+    selected_pair_count = int((assignment >= 0).sum().item())
+    row = {
+        "method": method,
+        "steps": 1,
+        "available": tensors is not None,
+        "skipped_reason": reason,
+        "candidate_available": False,
+        "candidate_reason": "baseline_intersection_stats_only",
+        "selected_pair_count": selected_pair_count,
+        "selected_intersection_count": 0,
+        "selected_baseline_cost_sum": 0.0,
+        "selected_obstacle_aware_cost_sum": 0.0,
+        "obstacle_penalty_sum_for_baseline_selection": 0.0,
+        "candidate_changed_assignment_count": 0,
+        "candidate_assignment_decision_count": int(assignment.numel()),
+        "candidate_selected_pair_count": 0,
+        "candidate_intersection_count": 0,
+        "candidate_baseline_cost_sum": 0.0,
+        "candidate_obstacle_aware_cost_sum": 0.0,
+        "obstacle_penalty_sum_for_candidate_selection": 0.0,
+        "mesh_footprint_intersection_count": 0,
+        "baseline_selected_pairs_sample": [],
+        "candidate_selected_pairs_sample": [],
+        "changed_pairs_sample": [],
+        "blocked_baseline_pairs_sample": [],
+        "step_min": int(step.min().item()) if isinstance(step, torch.Tensor) and step.numel() > 0 else 0,
+        "step_max": int(step.max().item()) if isinstance(step, torch.Tensor) and step.numel() > 0 else 0,
+    }
+    if tensors is None:
+        return row
+
+    intersection_mask = tensors["mesh_footprint_intersection_mask"]
+    penalty_matrix = tensors["mesh_footprint_penalty_matrix"]
+    aware_cost_matrix = tensors["mesh_footprint_aware_cost_matrix"]
+    baseline_cost_matrix = tensors["baseline_cost_matrix"]
+    row.update(
+        {
+            "selected_intersection_count": _selected_intersection_count(intersection_mask, assignment),
+            "selected_baseline_cost_sum": _selected_matrix_sum(baseline_cost_matrix, assignment),
+            "selected_obstacle_aware_cost_sum": _selected_matrix_sum(aware_cost_matrix, assignment),
+            "obstacle_penalty_sum_for_baseline_selection": _selected_matrix_sum(penalty_matrix, assignment),
+            "mesh_footprint_intersection_count": int(intersection_mask.to(dtype=torch.bool).sum().item()),
+            "baseline_selected_pairs_sample": _selected_pair_sample(
+                assignment=assignment,
+                agents=agents,
+                viewpoint_ids=viewpoint_ids,
+                intersection_mask=intersection_mask,
+                baseline_cost_matrix=baseline_cost_matrix,
+                obstacle_aware_cost_matrix=aware_cost_matrix,
+                obstacle_penalty_matrix=penalty_matrix,
+            ),
+            "blocked_baseline_pairs_sample": [
+                pair
+                for pair in _selected_pair_sample(
+                    assignment=assignment,
+                    agents=agents,
+                    viewpoint_ids=viewpoint_ids,
+                    intersection_mask=intersection_mask,
+                    baseline_cost_matrix=baseline_cost_matrix,
+                    obstacle_aware_cost_matrix=aware_cost_matrix,
+                    obstacle_penalty_matrix=penalty_matrix,
+                )
+                if bool(pair.get("pair_intersects", False))
+            ],
+        }
+    )
+    return row
+
+
+def _compare_obstacle_aware_candidate_step(
+    *,
+    method: str,
+    step: torch.Tensor,
+    problem: dict,
+    baseline_assignment: torch.Tensor,
+    agents: list[str],
+    viewpoint_ids: list[int],
+) -> dict:
+    row = _obstacle_candidate_baseline_metrics(
+        method=method,
+        step=step,
+        problem=problem,
+        assignment=baseline_assignment,
+        agents=agents,
+        viewpoint_ids=viewpoint_ids,
+    )
+    if not bool(row["available"]):
+        return row
+    if method not in {"nearest", "greedy"}:
+        return row
+
+    tensors, reason = _obstacle_candidate_required_tensors(problem)
+    if tensors is None:
+        row["candidate_reason"] = reason
+        return row
+
+    candidate_problem = dict(problem)
+    candidate_problem["cost_matrix"] = tensors["mesh_footprint_aware_cost_matrix"]
+    candidate_assignment = make_solver(method).solve(candidate_problem)
+    _validate_assignment(candidate_problem, candidate_assignment)
+
+    intersection_mask = tensors["mesh_footprint_intersection_mask"]
+    penalty_matrix = tensors["mesh_footprint_penalty_matrix"]
+    baseline_cost_matrix = tensors["baseline_cost_matrix"]
+    aware_cost_matrix = tensors["mesh_footprint_aware_cost_matrix"]
+    changed_count = int((baseline_assignment != candidate_assignment).sum().item())
+    row.update(
+        {
+            "candidate_available": True,
+            "candidate_reason": "mesh_footprint_aware_cost_matrix_on_copied_problem",
+            "candidate_changed_assignment_count": changed_count,
+            "candidate_selected_pair_count": int((candidate_assignment >= 0).sum().item()),
+            "candidate_intersection_count": _selected_intersection_count(intersection_mask, candidate_assignment),
+            "candidate_baseline_cost_sum": _selected_matrix_sum(baseline_cost_matrix, candidate_assignment),
+            "candidate_obstacle_aware_cost_sum": _selected_matrix_sum(aware_cost_matrix, candidate_assignment),
+            "obstacle_penalty_sum_for_candidate_selection": _selected_matrix_sum(penalty_matrix, candidate_assignment),
+            "candidate_selected_pairs_sample": _selected_pair_sample(
+                assignment=candidate_assignment,
+                agents=agents,
+                viewpoint_ids=viewpoint_ids,
+                intersection_mask=intersection_mask,
+                baseline_cost_matrix=baseline_cost_matrix,
+                obstacle_aware_cost_matrix=aware_cost_matrix,
+                obstacle_penalty_matrix=penalty_matrix,
+            ),
+            "changed_pairs_sample": _changed_pair_sample(
+                baseline_assignment=baseline_assignment,
+                candidate_assignment=candidate_assignment,
+                agents=agents,
+                viewpoint_ids=viewpoint_ids,
+                intersection_mask=intersection_mask,
+                baseline_cost_matrix=baseline_cost_matrix,
+                obstacle_aware_cost_matrix=aware_cost_matrix,
+            ),
+        }
+    )
+    return row
+
+
+def _limited_extend(target: list[dict], source: list[dict], *, limit: int = 10) -> None:
+    remaining = max(0, limit - len(target))
+    if remaining > 0:
+        target.extend(source[:remaining])
+
+
+def _finalize_obstacle_aware_candidate_comparison(rows: list[dict], methods: list[str]) -> dict:
+    diagnostics = {
+        "enabled": True,
+        "mode": "diagnostic_only_copied_problem_cost_swap",
+        "candidate_cost_field": "mesh_footprint_aware_cost_matrix",
+        "baseline_cost_field": "cost_matrix",
+        "solver_behavior_changed": False,
+        "methods_requested": list(methods),
+        "methods_compared": [],
+        "methods_baseline_only": [],
+        "available": any(bool(row.get("available", False)) for row in rows),
+        "unavailable_reasons": sorted(
+            {
+                str(row.get("skipped_reason"))
+                for row in rows
+                if not bool(row.get("available", False)) and row.get("skipped_reason")
+            }
+        ),
+        "mesh_footprint_intersection_count": max(
+            (int(row.get("mesh_footprint_intersection_count", 0)) for row in rows),
+            default=0,
+        ),
+        "per_method_summary": {},
+        "samples": {
+            "blocked_baseline_pairs_sample": [],
+            "changed_pairs_sample": [],
+            "baseline_selected_pairs_sample": [],
+            "candidate_selected_pairs_sample": [],
+        },
+    }
+    if not rows:
+        diagnostics["available"] = False
+        diagnostics["unavailable_reasons"] = ["no_evaluation_steps_recorded"]
+        return diagnostics
+
+    for method in methods:
+        method_rows = [row for row in rows if row.get("method") == method]
+        if not method_rows:
+            continue
+        selected_pair_count = sum(int(row.get("selected_pair_count", 0)) for row in method_rows)
+        selected_intersection_count = sum(int(row.get("selected_intersection_count", 0)) for row in method_rows)
+        candidate_decision_count = sum(int(row.get("candidate_assignment_decision_count", 0)) for row in method_rows)
+        candidate_changed_count = sum(int(row.get("candidate_changed_assignment_count", 0)) for row in method_rows)
+        candidate_selected_pair_count = sum(int(row.get("candidate_selected_pair_count", 0)) for row in method_rows)
+        candidate_intersection_count = sum(int(row.get("candidate_intersection_count", 0)) for row in method_rows)
+        candidate_available = any(bool(row.get("candidate_available", False)) for row in method_rows)
+        if candidate_available:
+            diagnostics["methods_compared"].append(method)
+        else:
+            diagnostics["methods_baseline_only"].append(method)
+
+        summary = {
+            "steps": len(method_rows),
+            "candidate_available": candidate_available,
+            "candidate_reason": next(
+                (str(row.get("candidate_reason")) for row in method_rows if row.get("candidate_reason")),
+                None,
+            ),
+            "selected_pair_count": selected_pair_count,
+            "selected_intersection_count": selected_intersection_count,
+            "selected_intersection_rate": (
+                selected_intersection_count / float(selected_pair_count) if selected_pair_count > 0 else 0.0
+            ),
+            "selected_baseline_cost_sum": sum(float(row.get("selected_baseline_cost_sum", 0.0)) for row in method_rows),
+            "selected_obstacle_aware_cost_sum": sum(
+                float(row.get("selected_obstacle_aware_cost_sum", 0.0)) for row in method_rows
+            ),
+            "obstacle_penalty_sum_for_baseline_selection": sum(
+                float(row.get("obstacle_penalty_sum_for_baseline_selection", 0.0)) for row in method_rows
+            ),
+            "candidate_changed_assignment_count": candidate_changed_count,
+            "candidate_changed_assignment_rate": (
+                candidate_changed_count / float(candidate_decision_count) if candidate_decision_count > 0 else 0.0
+            ),
+            "candidate_selected_pair_count": candidate_selected_pair_count,
+            "candidate_intersection_count": candidate_intersection_count,
+            "candidate_intersection_rate": (
+                candidate_intersection_count / float(candidate_selected_pair_count)
+                if candidate_selected_pair_count > 0
+                else 0.0
+            ),
+            "candidate_baseline_cost_sum": sum(
+                float(row.get("candidate_baseline_cost_sum", 0.0)) for row in method_rows
+            ),
+            "candidate_obstacle_aware_cost_sum": sum(
+                float(row.get("candidate_obstacle_aware_cost_sum", 0.0)) for row in method_rows
+            ),
+            "obstacle_penalty_sum_for_candidate_selection": sum(
+                float(row.get("obstacle_penalty_sum_for_candidate_selection", 0.0)) for row in method_rows
+            ),
+        }
+        diagnostics["per_method_summary"][method] = summary
+
+        for row in method_rows:
+            _limited_extend(
+                diagnostics["samples"]["blocked_baseline_pairs_sample"],
+                list(row.get("blocked_baseline_pairs_sample", [])),
+            )
+            _limited_extend(
+                diagnostics["samples"]["changed_pairs_sample"],
+                list(row.get("changed_pairs_sample", [])),
+            )
+            _limited_extend(
+                diagnostics["samples"]["baseline_selected_pairs_sample"],
+                list(row.get("baseline_selected_pairs_sample", [])),
+            )
+            _limited_extend(
+                diagnostics["samples"]["candidate_selected_pairs_sample"],
+                list(row.get("candidate_selected_pairs_sample", [])),
+            )
+    return diagnostics
+
+
 def _decode_raw_ids(raw_ids: torch.Tensor, noop_id: int) -> torch.Tensor:
     return torch.where(raw_ids == noop_id, torch.full_like(raw_ids, -1), raw_ids)
 
@@ -1366,13 +1859,16 @@ def _validate_fixed12_scenario(problem: dict, method: str) -> None:
         raise RuntimeError(f"fixed-12 MVP has viewpoints with no feasible agent: {missing}")
     if not bool(available[:, :, 11].any()):
         raise RuntimeError("fixed-12 MVP expected viewpoint 11 to enter available_mask")
-    if bool(feasible[:, 2, 5].any()):
+    agent2_viewpoint5_available = None
+    if int(problem["num_agents"]) > 2:
+        agent2_viewpoint5_available = bool(available[0, 2, 5].item())
+    if int(problem["num_agents"]) > 2 and bool(feasible[:, 2, 5].any()):
         raise RuntimeError("fixed-12 MVP expected agent_2 -> viewpoint_5 to be infeasible")
 
     print(
         f"[INFO]: {method} fixed-12 MVP mask ok: "
         f"viewpoint_11_available={available[0, :, 11].detach().cpu().tolist()} "
-        f"agent2_viewpoint5_available={bool(available[0, 2, 5].item())}"
+        f"agent2_viewpoint5_available={agent2_viewpoint5_available}"
     )
 
 
@@ -1383,7 +1879,12 @@ def _fixed_n_invariants(unwrapped, problem: dict) -> dict:
     noop_id = int(getattr(unwrapped, "noop_action_id", num_viewpoints))
     available_mask_shape = tuple(problem["available_mask"].shape)
     feasible_mask_shape = tuple(problem["feasible_mask"].shape)
+    cost_matrix_shape = tuple(problem["cost_matrix"].shape)
+    task_status_shape = tuple(problem["task_status"].shape)
+    robot_status_shape = tuple(problem["robot_status"].shape)
     expected_mask_shape = (num_envs, num_agents, num_viewpoints)
+    expected_task_status_shape = (num_envs, num_viewpoints)
+    expected_robot_status_shape = (num_envs, num_agents)
     available_actions_shape = (num_envs, num_agents, num_viewpoints + 1)
 
     if num_viewpoints <= 0:
@@ -1396,6 +1897,16 @@ def _fixed_n_invariants(unwrapped, problem: dict) -> dict:
         )
     if feasible_mask_shape != expected_mask_shape:
         raise RuntimeError(f"feasible_mask shape mismatch: expected {expected_mask_shape}, got {feasible_mask_shape}")
+    if cost_matrix_shape != expected_mask_shape:
+        raise RuntimeError(f"cost_matrix shape mismatch: expected {expected_mask_shape}, got {cost_matrix_shape}")
+    if task_status_shape != expected_task_status_shape:
+        raise RuntimeError(
+            f"task_status shape mismatch: expected {expected_task_status_shape}, got {task_status_shape}"
+        )
+    if robot_status_shape != expected_robot_status_shape:
+        raise RuntimeError(
+            f"robot_status shape mismatch: expected {expected_robot_status_shape}, got {robot_status_shape}"
+        )
 
     return {
         "num_envs": num_envs,
@@ -1405,6 +1916,9 @@ def _fixed_n_invariants(unwrapped, problem: dict) -> dict:
         "action_width": num_viewpoints + 1,
         "available_mask_shape": list(available_mask_shape),
         "feasible_mask_shape": list(feasible_mask_shape),
+        "cost_matrix_shape": list(cost_matrix_shape),
+        "task_status_shape": list(task_status_shape),
+        "robot_status_shape": list(robot_status_shape),
         "available_actions_shape": list(available_actions_shape),
     }
 
@@ -1443,12 +1957,88 @@ def _agents_per_viewpoint(mask: torch.Tensor, *, agents: list[str], viewpoint_id
     return result
 
 
+def _obstacle_diagnostics_summary(problem: dict, *, agents: list[str], viewpoint_ids: list[int]) -> dict:
+    summary = {
+        "obstacle_diagnostics_enabled": bool(problem.get("obstacle_diagnostics_enabled", False)),
+        "obstacle_source": problem.get("obstacle_source"),
+        "obstacle_diagnostics_mode": problem.get("obstacle_diagnostics_mode"),
+    }
+    footprint = problem.get("component_obstacle_footprint_diagnostics")
+    if footprint:
+        summary["component_obstacle_footprint_diagnostics"] = footprint
+        for key in (
+            "footprint_resolution",
+            "footprint_inflation_radius",
+            "line_sample_step",
+            "footprint_bounds_xy",
+            "footprint_grid_shape",
+            "occupied_cell_count",
+            "inflated_occupied_cell_count",
+        ):
+            if key in footprint:
+                summary[key] = footprint[key]
+
+    intersection_mask = problem.get("mesh_footprint_intersection_mask")
+    aware_cost = problem.get("mesh_footprint_aware_cost_matrix")
+    penalty_matrix = problem.get("mesh_footprint_penalty_matrix")
+    straight_line_cost = problem.get("straight_line_cost_matrix")
+    if isinstance(intersection_mask, torch.Tensor):
+        mask = intersection_mask.to(dtype=torch.bool)
+        summary["mesh_footprint_intersection_shape"] = list(mask.shape)
+        summary["mesh_footprint_intersection_count"] = int(mask.sum().item())
+        blocked_pairs = []
+        for index in torch.nonzero(mask, as_tuple=False)[:10].detach().cpu().tolist():
+            env_id, agent_id, viewpoint_index = [int(value) for value in index]
+            pair = {
+                "env_id": env_id,
+                "robot_name": agents[agent_id] if agent_id < len(agents) else str(agent_id),
+                "viewpoint_id": viewpoint_ids[viewpoint_index]
+                if viewpoint_index < len(viewpoint_ids)
+                else viewpoint_index,
+            }
+            if isinstance(straight_line_cost, torch.Tensor):
+                pair["straight_line_cost"] = float(straight_line_cost[env_id, agent_id, viewpoint_index].item())
+            if isinstance(aware_cost, torch.Tensor):
+                pair["obstacle_aware_cost"] = float(aware_cost[env_id, agent_id, viewpoint_index].item())
+            blocked_pairs.append(pair)
+        summary["blocked_pairs_sample"] = blocked_pairs
+    if isinstance(straight_line_cost, torch.Tensor):
+        summary["straight_line_cost_matrix_shape"] = list(straight_line_cost.shape)
+    if isinstance(penalty_matrix, torch.Tensor):
+        summary["mesh_footprint_penalty_matrix_shape"] = list(penalty_matrix.shape)
+    if isinstance(aware_cost, torch.Tensor):
+        summary["mesh_footprint_aware_cost_shape"] = list(aware_cost.shape)
+    for key in (
+        "obstacle_debug_visualization_enabled",
+        "obstacle_debug_visualization_draw_in_headless",
+        "obstacle_debug_visualization_line_source",
+        "obstacle_debug_visualization_max_lines_per_robot",
+        "obstacle_debug_visualization_max_total_lines",
+        "obstacle_debug_visualization_prefer_shortest_blocked_pairs",
+        "obstacle_debug_visualization_line_z_mode",
+        "obstacle_debug_visualization_line_z_value",
+        "obstacle_debug_visualization_line_z_offset",
+        "obstacle_debug_visualization_line_width",
+        "obstacle_debug_visualization_drawn_line_count",
+        "obstacle_debug_visualization_skipped_reason",
+        "obstacle_debug_visualization_pairs_sample",
+        "obstacle_debug_visualization_line_prim_paths_sample",
+    ):
+        if key in problem:
+            summary[key] = problem[key]
+    return summary
+
+
 def _collect_evaluation_diagnostics(unwrapped, problem: dict, methods: list[str]) -> dict:
     invariants = _fixed_n_invariants(unwrapped, problem)
     agents = list(unwrapped.possible_agents)
     viewpoint_ids = [int(value) for value in problem.get("viewpoint_ids", range(invariants["num_viewpoints"]))]
     feasible_mask = problem["feasible_mask"].to(dtype=torch.bool)
     static_feasible_mask = problem.get("static_geometric_feasible_mask", feasible_mask).to(dtype=torch.bool)
+    task_status = problem["task_status"].to(dtype=torch.long)
+    robot_status = problem["robot_status"].to(dtype=torch.long)
+    task_status_names = problem.get("task_status_names", {})
+    robot_status_names = problem.get("robot_status_names", {})
     env_has_feasible_agent = feasible_mask.any(dim=1)
     unavailable_indices = torch.nonzero(~env_has_feasible_agent.any(dim=0), as_tuple=False).flatten()
     permanently_unavailable = [viewpoint_ids[int(index.item())] for index in unavailable_indices.detach().cpu()]
@@ -1456,12 +2046,32 @@ def _collect_evaluation_diagnostics(unwrapped, problem: dict, methods: list[str]
     mesh_diagnostics = None
     if hasattr(unwrapped, "get_component_mesh_diagnostics"):
         mesh_diagnostics = unwrapped.get_component_mesh_diagnostics()
+    scenario_diagnostics = problem.get("scenario_diagnostics", {})
+    if not scenario_diagnostics and hasattr(unwrapped, "get_scenario_diagnostics"):
+        scenario_diagnostics = unwrapped.get_scenario_diagnostics()
+    robot_config_diagnostics = None
+    if hasattr(unwrapped, "get_robot_config_diagnostics"):
+        robot_config_diagnostics = unwrapped.get_robot_config_diagnostics()
+    robot_visual_diagnostics = problem.get("robot_visual_diagnostics", {})
+    capability_diagnostics = problem.get("capability_diagnostics", {})
+    if not capability_diagnostics and hasattr(unwrapped, "get_capability_diagnostics"):
+        capability_diagnostics = unwrapped.get_capability_diagnostics()
 
     diagnostics = {
         "task": args_cli.task,
         "scenario_config_path": SCENARIO_CONFIG.get("_scenario_config_path"),
         "scenario_name": SCENARIO_CONFIG.get("scenario_name"),
+        "scenario_type": SCENARIO_CONFIG.get("scenario_type"),
         "viewpoint_csv_path": getattr(unwrapped.cfg, "viewpoint_csv_path", None),
+        "robot_config_path": getattr(unwrapped.cfg, "robot_config_path", None),
+        "capability_config_path": getattr(unwrapped.cfg, "capability_config_path", None),
+        "robot_visual_mode": scenario_diagnostics.get("robot_visual_mode"),
+        "component_visual_mode": scenario_diagnostics.get("component_visual_mode"),
+        "robot_visual_mesh_enabled": scenario_diagnostics.get("robot_visual_mesh_enabled"),
+        "component_mesh_enabled": scenario_diagnostics.get("component_mesh_enabled"),
+        "component_proxy_type": scenario_diagnostics.get("component_proxy_type"),
+        "component_proxy_center": scenario_diagnostics.get("component_proxy_center"),
+        "component_proxy_half_extents": scenario_diagnostics.get("component_proxy_half_extents"),
         "viewpoint_source": getattr(unwrapped, "viewpoint_source", None),
         "viewpoint_ids": viewpoint_ids,
         "methods_evaluated": list(methods),
@@ -1475,6 +2085,10 @@ def _collect_evaluation_diagnostics(unwrapped, problem: dict, methods: list[str]
             static_feasible_mask, agents=agents, viewpoint_ids=viewpoint_ids
         ),
         "feasible_agents_per_viewpoint": _agents_per_viewpoint(feasible_mask, agents=agents, viewpoint_ids=viewpoint_ids),
+        "task_status_counts": status_counts(task_status, task_status_names),
+        "robot_status_counts": status_counts(robot_status, robot_status_names),
+        "task_status_names": task_status_names,
+        "robot_status_names": robot_status_names,
         "permanently_unavailable_viewpoints": permanently_unavailable,
         "manual_feasibility_override_rows": list(problem.get("manual_feasibility_override_rows", [])),
         "infeasible_rows": [row for row in final_rows if not row.get("feasible", False)],
@@ -1484,6 +2098,15 @@ def _collect_evaluation_diagnostics(unwrapped, problem: dict, methods: list[str]
     diagnostics.update(invariants)
     if mesh_diagnostics is not None:
         diagnostics["component_mesh_diagnostics"] = mesh_diagnostics
+    if scenario_diagnostics:
+        diagnostics["scenario_diagnostics"] = scenario_diagnostics
+    if robot_config_diagnostics:
+        diagnostics["robot_config_diagnostics"] = robot_config_diagnostics
+    if robot_visual_diagnostics:
+        diagnostics["robot_visual_diagnostics"] = robot_visual_diagnostics
+    if capability_diagnostics:
+        diagnostics["capability_diagnostics"] = capability_diagnostics
+    diagnostics.update(_obstacle_diagnostics_summary(problem, agents=agents, viewpoint_ids=viewpoint_ids))
     return diagnostics
 
 
@@ -1883,6 +2506,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
     assignment_history: list[dict] = []
     retry_fallback_events: list[dict] = []
     controller_state_trace: list[dict] = []
+    obstacle_candidate_comparison_rows: list[dict] = []
     retry_fallback_stats = _init_retry_fallback_stats()
     diagnostics: dict | None = None
     agent_names = _agent_names_from_unwrapped(unwrapped)
@@ -1951,6 +2575,17 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     valid_decisions = _valid_assignment_decisions(problem, assignment)
                     covered_before = unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
                     step_before = buffers["length"].clone()
+                    if args_cli.compare_obstacle_aware_candidates:
+                        obstacle_candidate_comparison_rows.append(
+                            _compare_obstacle_aware_candidate_step(
+                                method=method,
+                                step=step_before,
+                                problem=problem,
+                                baseline_assignment=assignment,
+                                agents=agent_names,
+                                viewpoint_ids=viewpoint_ids,
+                            )
+                        )
                     assignment_transition_info = _update_controller_trace_assignment_state(
                         trace_state, assignment, viewpoint_ids
                     )
@@ -2074,6 +2709,11 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
     if diagnostics is None:
         diagnostics = {}
     diagnostics.update(_retry_fallback_runtime_diagnostics(retry_fallback_stats))
+    if args_cli.compare_obstacle_aware_candidates:
+        diagnostics["obstacle_aware_candidate_comparison"] = _finalize_obstacle_aware_candidate_comparison(
+            obstacle_candidate_comparison_rows,
+            methods,
+        )
     return all_records, diagnostics, assignment_history, retry_fallback_events, controller_state_trace
 
 
@@ -2420,6 +3060,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     retry_fallback_events_path = output_dir / "retry_fallback_events.csv"
     controller_state_trace_path = output_dir / "controller_state_trace.csv"
     controller_state_trace_summary_path = output_dir / "controller_state_trace_summary.csv"
+    if "obstacle_aware_candidate_comparison" in diagnostics:
+        diagnostics["obstacle_aware_candidate_comparison"]["output_path"] = str(diagnostics_path)
     existing_records = _read_per_episode_csv(per_episode_path) if args_cli.append_csv else []
     if existing_records:
         _offset_episode_ids(all_records, existing_records)
