@@ -171,6 +171,14 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
 
     enable_usd_debug_visuals = True
     use_camera_light_in_gui = True
+    gui_camera_enabled = True
+    gui_camera_eye = (0.0, -7.5, 3.2)
+    gui_camera_target = (0.0, 0.0, 1.1)
+    ground_grid_enabled = False
+    ground_grid_half_extent = 6.0
+    ground_grid_spacing = 0.5
+    ground_grid_z = 0.01
+    ground_grid_line_width = 0.008
 
     # Fixed 12-viewpoint MVP scan set. Pose layout is [x, y, z, qw, qx, qy, qz]; keep the WXYZ quaternion order used by
     # Isaac Lab math utilities. Viewpoint 11 is intentionally outside the component proxy's min-range shell so it remains
@@ -473,6 +481,36 @@ def _prepare_visualization_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
             cfg.component_mesh_path = None
     if cfg.component_visual_mode == "none":
         cfg.component_proxy_visual_visible = False
+    cfg.gui_camera_enabled = bool(getattr(cfg, "gui_camera_enabled", True))
+    cfg.gui_camera_eye = _as_float_tuple(
+        getattr(cfg, "gui_camera_eye", (0.0, -7.5, 3.2)),
+        name="gui_camera_eye",
+        length=3,
+    )
+    cfg.gui_camera_target = _as_float_tuple(
+        getattr(cfg, "gui_camera_target", (0.0, 0.0, 1.1)),
+        name="gui_camera_target",
+        length=3,
+    )
+    if cfg.gui_camera_enabled:
+        cfg.viewer.eye = cfg.gui_camera_eye
+        cfg.viewer.lookat = cfg.gui_camera_target
+    cfg.ground_grid_enabled = bool(getattr(cfg, "ground_grid_enabled", False))
+    cfg.ground_grid_half_extent = _positive_finite(
+        getattr(cfg, "ground_grid_half_extent", 6.0),
+        name="ground_grid_half_extent",
+    )
+    cfg.ground_grid_spacing = _positive_finite(
+        getattr(cfg, "ground_grid_spacing", 0.5),
+        name="ground_grid_spacing",
+    )
+    cfg.ground_grid_z = float(getattr(cfg, "ground_grid_z", 0.01))
+    if not math.isfinite(cfg.ground_grid_z):
+        raise ValueError(f"ground_grid_z must be finite, got {cfg.ground_grid_z!r}.")
+    cfg.ground_grid_line_width = _positive_finite(
+        getattr(cfg, "ground_grid_line_width", 0.008),
+        name="ground_grid_line_width",
+    )
 
 
 def _legacy_robot_config_from_cfg(cfg: ScanMobileManipulatorEnvCfg) -> RobotConfig:
@@ -1180,6 +1218,16 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             "scenario_type": getattr(self.cfg, "scenario_type", None),
             "robot_visual_mode": getattr(self.cfg, "robot_visual_mode", "mesh"),
             "component_visual_mode": getattr(self.cfg, "component_visual_mode", "mesh"),
+            "gui_camera_enabled": bool(getattr(self.cfg, "gui_camera_enabled", True)),
+            "gui_camera_eye": list(getattr(self.cfg, "gui_camera_eye", (0.0, -7.5, 3.2))),
+            "gui_camera_target": list(getattr(self.cfg, "gui_camera_target", (0.0, 0.0, 1.1))),
+            "viewer_eye": list(getattr(self.cfg.viewer, "eye", (7.5, 7.5, 7.5))),
+            "viewer_lookat": list(getattr(self.cfg.viewer, "lookat", (0.0, 0.0, 0.0))),
+            "ground_grid_enabled": bool(getattr(self.cfg, "ground_grid_enabled", False)),
+            "ground_grid_half_extent": float(getattr(self.cfg, "ground_grid_half_extent", 6.0)),
+            "ground_grid_spacing": float(getattr(self.cfg, "ground_grid_spacing", 0.5)),
+            "ground_grid_z": float(getattr(self.cfg, "ground_grid_z", 0.01)),
+            "ground_grid_line_width": float(getattr(self.cfg, "ground_grid_line_width", 0.008)),
             "robot_visual_mesh_enabled": robot_visual_mesh_enabled,
             "component_mesh_enabled": component_mesh_enabled,
             "component_proxy_type": self.cfg.component_proxy_type,
@@ -1257,6 +1305,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             self._create_static_usd_debug_scene()
         self.scene.clone_environments(copy_from_source=False)
         self._configure_gui_lighting()
+        self._configure_gui_camera()
 
     def _configure_gui_lighting(self):
         """Prefer viewport camera lighting for GUI debugging while leaving headless runs unchanged."""
@@ -1278,6 +1327,24 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
 
                 carb.settings.get_settings().set("/rtx/useViewLightingMode", True)
                 carb.log_warn(f"Could not enable scan debug camera lighting: {exc}")
+            except Exception:
+                pass
+
+    def _configure_gui_camera(self):
+        """Set a useful default GUI viewport angle for scan debugging."""
+        if not self.cfg.gui_camera_enabled or not self.sim.has_gui():
+            return
+
+        try:
+            self.sim.set_camera_view(
+                eye=list(self.cfg.gui_camera_eye),
+                target=list(self.cfg.gui_camera_target),
+            )
+        except Exception as exc:
+            try:
+                import carb
+
+                carb.log_warn(f"Could not set scan debug GUI camera view: {exc}")
             except Exception:
                 pass
 
@@ -1369,6 +1436,45 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             mesh.CreateFaceVertexIndicesAttr([index for face in mesh_data.faces for index in face])
             mesh.CreateSubdivisionSchemeAttr("none")
             UsdShade.MaterialBindingAPI(mesh.GetPrim()).Bind(material_cache["scan_component_mesh_gray"])
+
+        def add_ground_grid_visual(path: str):
+            if not self.cfg.ground_grid_enabled:
+                return
+            half_extent = float(self.cfg.ground_grid_half_extent)
+            spacing = float(self.cfg.ground_grid_spacing)
+            z_value = float(self.cfg.ground_grid_z)
+            line_width = float(self.cfg.ground_grid_line_width)
+            steps = max(1, int(math.floor(half_extent / spacing)))
+            coordinates = [round(index * spacing, 6) for index in range(-steps, steps + 1)]
+            points = []
+            curve_vertex_counts = []
+            for coordinate in coordinates:
+                points.extend(
+                    [
+                        Gf.Vec3f(-half_extent, coordinate, z_value),
+                        Gf.Vec3f(half_extent, coordinate, z_value),
+                    ]
+                )
+                curve_vertex_counts.append(2)
+                points.extend(
+                    [
+                        Gf.Vec3f(coordinate, -half_extent, z_value),
+                        Gf.Vec3f(coordinate, half_extent, z_value),
+                    ]
+                )
+                curve_vertex_counts.append(2)
+
+            grid = UsdGeom.BasisCurves.Define(stage, path)
+            grid.CreateTypeAttr("linear")
+            grid.CreateCurveVertexCountsAttr(curve_vertex_counts)
+            grid.CreatePointsAttr(points)
+            grid.CreateWidthsAttr([line_width] * len(points))
+            try:
+                grid.SetWidthsInterpolation(UsdGeom.Tokens.vertex)
+            except AttributeError:
+                pass
+            grid.CreateWrapAttr("nonperiodic")
+            UsdShade.MaterialBindingAPI(grid.GetPrim()).Bind(material_cache["scan_ground_grid"])
 
         robot_visual_mesh_cache = {}
 
@@ -1508,6 +1614,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         make_material("scan_robot_visual_mesh", (0.55, 0.58, 0.62), opacity=1.0, roughness=0.75, specular_color=(0.02, 0.02, 0.02))
         make_material("scan_scanner_white", (0.95, 0.95, 0.95))
         make_material("scan_viewpoint_cyan", (0.0, 0.85, 1.0))
+        make_material("scan_ground_grid", (0.34, 0.36, 0.38), opacity=1.0, roughness=1.0, specular_color=(0.0, 0.0, 0.0))
 
         # Use a non-dome stage light to keep Isaac Sim's default viewport background. In GUI runs, camera light is
         # enabled separately by `_configure_gui_lighting()` for a brighter debug view.
@@ -1522,6 +1629,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
                 component_scale,
                 "scan_component_blue",
             )
+        add_ground_grid_visual(f"{root_path}/GroundGrid")
         add_component_obj_visual(f"{root_path}/MeasuredComponentObjVisual")
 
         robot_materials = ("scan_robot_red", "scan_robot_green", "scan_robot_yellow")

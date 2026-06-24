@@ -101,6 +101,24 @@ parser.add_argument(
     help="Component visual mode: mesh, bbox, or none.",
 )
 parser.add_argument(
+    "--gui_camera_enabled",
+    action=argparse.BooleanOptionalAction,
+    default=None,
+    help="Set a default GUI viewport camera when not headless.",
+)
+parser.add_argument("--gui_camera_eye", nargs=3, type=float, default=None, help="GUI camera eye position.")
+parser.add_argument("--gui_camera_target", nargs=3, type=float, default=None, help="GUI camera look-at target.")
+parser.add_argument(
+    "--ground_grid_enabled",
+    action=argparse.BooleanOptionalAction,
+    default=None,
+    help="Draw a visual-only USD ground grid for GUI inspection.",
+)
+parser.add_argument("--ground_grid_half_extent", type=float, default=None, help="Ground grid half extent in meters.")
+parser.add_argument("--ground_grid_spacing", type=float, default=None, help="Ground grid line spacing in meters.")
+parser.add_argument("--ground_grid_z", type=float, default=None, help="Ground grid z height in meters.")
+parser.add_argument("--ground_grid_line_width", type=float, default=None, help="Ground grid USD curve width.")
+parser.add_argument(
     "--viewpoint_candidate_top_k",
     type=int,
     default=-1,
@@ -462,6 +480,22 @@ def _clone_env_cfg(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEn
         cfg.robot_visual_mode = args_cli.robot_visual_mode
     if args_cli.component_visual_mode is not None:
         cfg.component_visual_mode = args_cli.component_visual_mode
+    if args_cli.gui_camera_enabled is not None:
+        cfg.gui_camera_enabled = bool(args_cli.gui_camera_enabled)
+    if args_cli.gui_camera_eye is not None:
+        cfg.gui_camera_eye = tuple(args_cli.gui_camera_eye)
+    if args_cli.gui_camera_target is not None:
+        cfg.gui_camera_target = tuple(args_cli.gui_camera_target)
+    for attr in (
+        "ground_grid_enabled",
+        "ground_grid_half_extent",
+        "ground_grid_spacing",
+        "ground_grid_z",
+        "ground_grid_line_width",
+    ):
+        value = getattr(args_cli, attr, None)
+        if value is not None:
+            setattr(cfg, attr, value)
     if args_cli.component_mesh_path is not None:
         cfg.component_mesh_path = args_cli.component_mesh_path
     if args_cli.component_mesh_format is not None:
@@ -1578,6 +1612,7 @@ def _obstacle_candidate_baseline_metrics(
     *,
     method: str,
     step: torch.Tensor,
+    episode_index: torch.Tensor | None,
     problem: dict,
     assignment: torch.Tensor,
     agents: list[str],
@@ -1611,6 +1646,16 @@ def _obstacle_candidate_baseline_metrics(
         "blocked_baseline_pairs_sample": [],
         "step_min": int(step.min().item()) if isinstance(step, torch.Tensor) and step.numel() > 0 else 0,
         "step_max": int(step.max().item()) if isinstance(step, torch.Tensor) and step.numel() > 0 else 0,
+        "episode_index_min": (
+            int(episode_index.min().item())
+            if isinstance(episode_index, torch.Tensor) and episode_index.numel() > 0
+            else 0
+        ),
+        "episode_index_max": (
+            int(episode_index.max().item())
+            if isinstance(episode_index, torch.Tensor) and episode_index.numel() > 0
+            else 0
+        ),
     }
     if tensors is None:
         return row
@@ -1657,6 +1702,7 @@ def _compare_obstacle_aware_candidate_step(
     *,
     method: str,
     step: torch.Tensor,
+    episode_index: torch.Tensor | None,
     problem: dict,
     baseline_assignment: torch.Tensor,
     agents: list[str],
@@ -1665,6 +1711,7 @@ def _compare_obstacle_aware_candidate_step(
     row = _obstacle_candidate_baseline_metrics(
         method=method,
         step=step,
+        episode_index=episode_index,
         problem=problem,
         assignment=baseline_assignment,
         agents=agents,
@@ -1729,6 +1776,72 @@ def _limited_extend(target: list[dict], source: list[dict], *, limit: int = 10) 
         target.extend(source[:remaining])
 
 
+def _summarize_obstacle_candidate_rows(rows: list[dict]) -> dict:
+    selected_pair_count = sum(int(row.get("selected_pair_count", 0)) for row in rows)
+    selected_intersection_count = sum(int(row.get("selected_intersection_count", 0)) for row in rows)
+    candidate_decision_count = sum(int(row.get("candidate_assignment_decision_count", 0)) for row in rows)
+    candidate_changed_count = sum(int(row.get("candidate_changed_assignment_count", 0)) for row in rows)
+    candidate_selected_pair_count = sum(int(row.get("candidate_selected_pair_count", 0)) for row in rows)
+    candidate_intersection_count = sum(int(row.get("candidate_intersection_count", 0)) for row in rows)
+    candidate_available = any(bool(row.get("candidate_available", False)) for row in rows)
+    baseline_cost_sum = sum(float(row.get("selected_baseline_cost_sum", 0.0)) for row in rows)
+    baseline_obstacle_aware_cost_sum = sum(
+        float(row.get("selected_obstacle_aware_cost_sum", 0.0)) for row in rows
+    )
+    baseline_obstacle_penalty_sum = sum(
+        float(row.get("obstacle_penalty_sum_for_baseline_selection", 0.0)) for row in rows
+    )
+    candidate_baseline_cost_sum = sum(float(row.get("candidate_baseline_cost_sum", 0.0)) for row in rows)
+    candidate_obstacle_aware_cost_sum = sum(
+        float(row.get("candidate_obstacle_aware_cost_sum", 0.0)) for row in rows
+    )
+    candidate_obstacle_penalty_sum = sum(
+        float(row.get("obstacle_penalty_sum_for_candidate_selection", 0.0)) for row in rows
+    )
+    baseline_intersection_rate = (
+        selected_intersection_count / float(selected_pair_count) if selected_pair_count > 0 else 0.0
+    )
+    candidate_changed_rate = (
+        candidate_changed_count / float(candidate_decision_count) if candidate_decision_count > 0 else 0.0
+    )
+    candidate_intersection_rate = (
+        candidate_intersection_count / float(candidate_selected_pair_count)
+        if candidate_selected_pair_count > 0
+        else 0.0
+    )
+    return {
+        "steps": len(rows),
+        "candidate_available": candidate_available,
+        "candidate_reason": next(
+            (str(row.get("candidate_reason")) for row in rows if row.get("candidate_reason")),
+            None,
+        ),
+        "selected_pair_count": selected_pair_count,
+        "selected_intersection_count": selected_intersection_count,
+        "selected_intersection_rate": baseline_intersection_rate,
+        "selected_baseline_cost_sum": baseline_cost_sum,
+        "selected_obstacle_aware_cost_sum": baseline_obstacle_aware_cost_sum,
+        "obstacle_penalty_sum_for_baseline_selection": baseline_obstacle_penalty_sum,
+        "candidate_changed_assignment_count": candidate_changed_count,
+        "candidate_changed_assignment_rate": candidate_changed_rate,
+        "candidate_selected_pair_count": candidate_selected_pair_count,
+        "candidate_intersection_count": candidate_intersection_count,
+        "candidate_intersection_rate": candidate_intersection_rate,
+        "candidate_baseline_cost_sum": candidate_baseline_cost_sum,
+        "candidate_obstacle_aware_cost_sum": candidate_obstacle_aware_cost_sum,
+        "obstacle_penalty_sum_for_candidate_selection": candidate_obstacle_penalty_sum,
+        "baseline_selected_pair_count": selected_pair_count,
+        "baseline_selected_intersection_count": selected_intersection_count,
+        "baseline_selected_intersection_rate": baseline_intersection_rate,
+        "baseline_cost_sum": baseline_cost_sum,
+        "baseline_obstacle_aware_cost_sum": baseline_obstacle_aware_cost_sum,
+        "baseline_obstacle_penalty_sum": baseline_obstacle_penalty_sum,
+        "candidate_selected_intersection_count": candidate_intersection_count,
+        "candidate_selected_intersection_rate": candidate_intersection_rate,
+        "candidate_obstacle_penalty_sum": candidate_obstacle_penalty_sum,
+    }
+
+
 def _finalize_obstacle_aware_candidate_comparison(rows: list[dict], methods: list[str]) -> dict:
     diagnostics = {
         "enabled": True,
@@ -1751,6 +1864,8 @@ def _finalize_obstacle_aware_candidate_comparison(rows: list[dict], methods: lis
             (int(row.get("mesh_footprint_intersection_count", 0)) for row in rows),
             default=0,
         ),
+        "per_step_summary": [],
+        "per_episode_summary": [],
         "per_method_summary": {},
         "samples": {
             "blocked_baseline_pairs_sample": [],
@@ -1768,59 +1883,13 @@ def _finalize_obstacle_aware_candidate_comparison(rows: list[dict], methods: lis
         method_rows = [row for row in rows if row.get("method") == method]
         if not method_rows:
             continue
-        selected_pair_count = sum(int(row.get("selected_pair_count", 0)) for row in method_rows)
-        selected_intersection_count = sum(int(row.get("selected_intersection_count", 0)) for row in method_rows)
-        candidate_decision_count = sum(int(row.get("candidate_assignment_decision_count", 0)) for row in method_rows)
-        candidate_changed_count = sum(int(row.get("candidate_changed_assignment_count", 0)) for row in method_rows)
-        candidate_selected_pair_count = sum(int(row.get("candidate_selected_pair_count", 0)) for row in method_rows)
-        candidate_intersection_count = sum(int(row.get("candidate_intersection_count", 0)) for row in method_rows)
         candidate_available = any(bool(row.get("candidate_available", False)) for row in method_rows)
         if candidate_available:
             diagnostics["methods_compared"].append(method)
         else:
             diagnostics["methods_baseline_only"].append(method)
 
-        summary = {
-            "steps": len(method_rows),
-            "candidate_available": candidate_available,
-            "candidate_reason": next(
-                (str(row.get("candidate_reason")) for row in method_rows if row.get("candidate_reason")),
-                None,
-            ),
-            "selected_pair_count": selected_pair_count,
-            "selected_intersection_count": selected_intersection_count,
-            "selected_intersection_rate": (
-                selected_intersection_count / float(selected_pair_count) if selected_pair_count > 0 else 0.0
-            ),
-            "selected_baseline_cost_sum": sum(float(row.get("selected_baseline_cost_sum", 0.0)) for row in method_rows),
-            "selected_obstacle_aware_cost_sum": sum(
-                float(row.get("selected_obstacle_aware_cost_sum", 0.0)) for row in method_rows
-            ),
-            "obstacle_penalty_sum_for_baseline_selection": sum(
-                float(row.get("obstacle_penalty_sum_for_baseline_selection", 0.0)) for row in method_rows
-            ),
-            "candidate_changed_assignment_count": candidate_changed_count,
-            "candidate_changed_assignment_rate": (
-                candidate_changed_count / float(candidate_decision_count) if candidate_decision_count > 0 else 0.0
-            ),
-            "candidate_selected_pair_count": candidate_selected_pair_count,
-            "candidate_intersection_count": candidate_intersection_count,
-            "candidate_intersection_rate": (
-                candidate_intersection_count / float(candidate_selected_pair_count)
-                if candidate_selected_pair_count > 0
-                else 0.0
-            ),
-            "candidate_baseline_cost_sum": sum(
-                float(row.get("candidate_baseline_cost_sum", 0.0)) for row in method_rows
-            ),
-            "candidate_obstacle_aware_cost_sum": sum(
-                float(row.get("candidate_obstacle_aware_cost_sum", 0.0)) for row in method_rows
-            ),
-            "obstacle_penalty_sum_for_candidate_selection": sum(
-                float(row.get("obstacle_penalty_sum_for_candidate_selection", 0.0)) for row in method_rows
-            ),
-        }
-        diagnostics["per_method_summary"][method] = summary
+        diagnostics["per_method_summary"][method] = _summarize_obstacle_candidate_rows(method_rows)
 
         for row in method_rows:
             _limited_extend(
@@ -1839,6 +1908,22 @@ def _finalize_obstacle_aware_candidate_comparison(rows: list[dict], methods: lis
                 diagnostics["samples"]["candidate_selected_pairs_sample"],
                 list(row.get("candidate_selected_pairs_sample", [])),
             )
+    step_groups: dict[tuple[str, int, int], list[dict]] = {}
+    episode_groups: dict[tuple[str, int, int], list[dict]] = {}
+    for row in rows:
+        method = str(row.get("method", "unknown"))
+        step_key = (method, int(row.get("step_min", 0)), int(row.get("step_max", 0)))
+        episode_key = (method, int(row.get("episode_index_min", 0)), int(row.get("episode_index_max", 0)))
+        step_groups.setdefault(step_key, []).append(row)
+        episode_groups.setdefault(episode_key, []).append(row)
+    for (method, step_min, step_max), group_rows in sorted(step_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_obstacle_candidate_rows(group_rows)
+        summary.update({"method": method, "step_min": step_min, "step_max": step_max})
+        diagnostics["per_step_summary"].append(summary)
+    for (method, episode_min, episode_max), group_rows in sorted(episode_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_obstacle_candidate_rows(group_rows)
+        summary.update({"method": method, "episode_index_min": episode_min, "episode_index_max": episode_max})
+        diagnostics["per_episode_summary"].append(summary)
     return diagnostics
 
 
@@ -2521,6 +2606,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
             pending_retry_events_by_env: dict[int, list[dict]] = {}
             pending_controller_trace_by_env: dict[int, list[dict]] = {}
             records: list[dict] = []
+            episode_index_by_env = torch.zeros(num_envs, dtype=torch.long, device=device)
             problem = unwrapped.get_assignment_problem()
             _validate_evaluation_scenario(unwrapped, problem, method)
             if diagnostics is None:
@@ -2580,6 +2666,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                             _compare_obstacle_aware_candidate_step(
                                 method=method,
                                 step=step_before,
+                                episode_index=episode_index_by_env.clone(),
                                 problem=problem,
                                 baseline_assignment=assignment,
                                 agents=agent_names,
@@ -2686,6 +2773,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     if manual_reset_ids.numel() > 0:
                         unwrapped._reset_idx(manual_reset_ids)
 
+                    episode_index_by_env[done_ids] += 1
                     if args_cli.write_assignment_history:
                         for env_id_tensor in done_ids:
                             pending_history_by_env.pop(int(env_id_tensor.item()), None)

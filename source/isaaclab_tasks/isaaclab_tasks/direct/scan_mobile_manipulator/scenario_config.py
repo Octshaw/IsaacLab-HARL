@@ -73,6 +73,14 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     visualization = _mapping(config.get("visualization"), "visualization", required=False)
     _put(defaults, "robot_visual_mode", visualization.get("robot_visual_mode"))
     _put(defaults, "component_visual_mode", visualization.get("component_visual_mode"))
+    _put(defaults, "gui_camera_enabled", visualization.get("gui_camera_enabled"))
+    _put(defaults, "gui_camera_eye", visualization.get("gui_camera_eye"))
+    _put(defaults, "gui_camera_target", visualization.get("gui_camera_target"))
+    _put(defaults, "ground_grid_enabled", visualization.get("ground_grid_enabled"))
+    _put(defaults, "ground_grid_half_extent", visualization.get("ground_grid_half_extent"))
+    _put(defaults, "ground_grid_spacing", visualization.get("ground_grid_spacing"))
+    _put(defaults, "ground_grid_z", visualization.get("ground_grid_z"))
+    _put(defaults, "ground_grid_line_width", visualization.get("ground_grid_line_width"))
 
     mesh = _mapping(config.get("component_mesh"), "component_mesh", required=False)
     _put(defaults, "component_mesh_path", mesh.get("path"))
@@ -352,6 +360,24 @@ def _validate_visualization_metadata(config: Mapping[str, Any]) -> None:
         label="visualization.component_visual_mode",
         allowed=SUPPORTED_COMPONENT_VISUAL_MODES,
     )
+    enabled = visualization.get("gui_camera_enabled")
+    if enabled is not None and not isinstance(enabled, bool):
+        raise ValueError(f"visualization.gui_camera_enabled must be boolean, got {enabled!r}.")
+    grid_enabled = visualization.get("ground_grid_enabled")
+    if grid_enabled is not None and not isinstance(grid_enabled, bool):
+        raise ValueError(f"visualization.ground_grid_enabled must be boolean, got {grid_enabled!r}.")
+    for key in ("gui_camera_eye", "gui_camera_target"):
+        value = visualization.get(key)
+        if value is not None:
+            _validate_finite_sequence(value, length=3, label=f"visualization.{key}", positive=False)
+    for key in ("ground_grid_half_extent", "ground_grid_spacing", "ground_grid_line_width"):
+        value = visualization.get(key)
+        if value is not None:
+            if not isinstance(value, (int, float)) or not math.isfinite(float(value)) or float(value) <= 0.0:
+                raise ValueError(f"visualization.{key} must be a positive finite number, got {value!r}.")
+    grid_z = visualization.get("ground_grid_z")
+    if grid_z is not None and (not isinstance(grid_z, (int, float)) or not math.isfinite(float(grid_z))):
+        raise ValueError(f"visualization.ground_grid_z must be finite, got {grid_z!r}.")
 
 
 def _validate_visual_mode_arg(value: Any, *, label: str, allowed: set[str]) -> None:

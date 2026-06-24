@@ -1,0 +1,35 @@
+scenario_name: generate_component_mesh_jittered_viewpoints
+
+component_mesh:
+  path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/Model/aircraft_skin_with_frame.obj
+  format: obj
+  unit: mm
+  scale: [0.001, 0.001, 0.001]
+  orientation: [1.0, 0.0, 0.0, 0.0]
+  orientation_format: qwxyz
+  align_base_center_to_world_origin: true
+
+component_proxy:
+  type: bbox
+  auto_from_mesh: false
+  center: [0.0, 0.0, 1.0]
+  half_extents: [3.0, 1.0, 1.0]
+  padding: 0.0
+
+mesh_viewpoint_generation:
+  num_viewpoints: 50
+  placement_mode: proxy_surface_radial
+  sampling_mode: proxy_side_balanced
+  viewpoint_distance: 0.8
+  distance_jitter: 0.12
+  surface_jitter: 0.08
+  normal_jitter_deg: 6.0
+  min_spacing: 0.05
+  seed: 7
+  normal_mode: radial_xy
+  min_z: 0.65
+  max_z: 1.70
+
+output:
+  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv
+  json_path: results/assignment_diagnostics/component_mesh_jittered_n50_generation.json

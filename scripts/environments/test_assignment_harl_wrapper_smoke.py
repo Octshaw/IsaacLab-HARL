@@ -65,6 +65,24 @@ parser.add_argument(
     default=None,
     help="Component visual mode: mesh, bbox, or none.",
 )
+parser.add_argument(
+    "--gui_camera_enabled",
+    action=argparse.BooleanOptionalAction,
+    default=None,
+    help="Set a default GUI viewport camera when not headless.",
+)
+parser.add_argument("--gui_camera_eye", nargs=3, type=float, default=None, help="GUI camera eye position.")
+parser.add_argument("--gui_camera_target", nargs=3, type=float, default=None, help="GUI camera look-at target.")
+parser.add_argument(
+    "--ground_grid_enabled",
+    action=argparse.BooleanOptionalAction,
+    default=None,
+    help="Draw a visual-only USD ground grid for GUI inspection.",
+)
+parser.add_argument("--ground_grid_half_extent", type=float, default=None, help="Ground grid half extent in meters.")
+parser.add_argument("--ground_grid_spacing", type=float, default=None, help="Ground grid line spacing in meters.")
+parser.add_argument("--ground_grid_z", type=float, default=None, help="Ground grid z height in meters.")
+parser.add_argument("--ground_grid_line_width", type=float, default=None, help="Ground grid USD curve width.")
 parser.add_argument("--result_file", type=str, default=None, help="Optional JSON file for smoke diagnostics.")
 parser.add_argument(
     "--pause_after_setup",
@@ -481,6 +499,22 @@ def main() -> None:
         env_cfg.robot_visual_mode = args_cli.robot_visual_mode
     if args_cli.component_visual_mode is not None:
         env_cfg.component_visual_mode = args_cli.component_visual_mode
+    if args_cli.gui_camera_enabled is not None:
+        env_cfg.gui_camera_enabled = bool(args_cli.gui_camera_enabled)
+    if args_cli.gui_camera_eye is not None:
+        env_cfg.gui_camera_eye = tuple(args_cli.gui_camera_eye)
+    if args_cli.gui_camera_target is not None:
+        env_cfg.gui_camera_target = tuple(args_cli.gui_camera_target)
+    for attr in (
+        "ground_grid_enabled",
+        "ground_grid_half_extent",
+        "ground_grid_spacing",
+        "ground_grid_z",
+        "ground_grid_line_width",
+    ):
+        value = getattr(args_cli, attr, None)
+        if value is not None:
+            setattr(env_cfg, attr, value)
     if args_cli.component_mesh_path is not None:
         env_cfg.component_mesh_path = args_cli.component_mesh_path
     if args_cli.component_mesh_format is not None:

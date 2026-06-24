@@ -16,6 +16,14 @@ capabilities:
 visualization:
   robot_visual_mode: debug_marker
   component_visual_mode: mesh
+  gui_camera_enabled: true
+  gui_camera_eye: [-8.0, -8.0, 8.0]
+  gui_camera_target: [0.0, 0.0, 0.0]
+  ground_grid_enabled: true
+  ground_grid_half_extent: 6.0
+  ground_grid_spacing: 0.5
+  ground_grid_z: 0.01
+  ground_grid_line_width: 0.008
 
 component_mesh:
   path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/Model/aircraft_skin_with_frame.obj
@@ -51,13 +59,13 @@ obstacle_debug_visualization:
   max_lines_per_robot: 5
   max_total_lines: 20
   prefer_shortest_blocked_pairs: true
-  line_z_mode: fixed
+  line_z_mode: max_endpoint #fixed
   line_z_value: 0.20
   line_z_offset: 0.05
   line_width: 0.03
 
 viewpoints:
-  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/synthetic_smoke_n50.csv
+  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv
   expect_num_viewpoints: 50
   format: scanner_pose_world_quat_wxyz_v1
   frame: world
