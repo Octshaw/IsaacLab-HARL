@@ -156,8 +156,23 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     component_obstacle_footprint = None
     component_obstacle_footprint_diagnostics = None
 
-    # Optional visual-only debug lines for obstacle diagnostics. These draw a small sample of robot-to-viewpoint
-    # segments that already intersect the diagnostic mesh footprint. They do not alter assignment costs or masks.
+    # Optional diagnostic-only actual proxy-base motion crossing checks. Evaluator tooling compares previous base XY
+    # to current base XY against the component mesh footprint. These fields do not alter assignment costs, masks,
+    # reward, controller logic, solver behavior, or proxy dynamics.
+    actual_base_motion_obstacle_diagnostics_enabled = False
+    actual_base_motion_obstacle_diagnostics_mode = "disabled"
+    actual_base_motion_obstacle_source = None
+    actual_base_motion_line_sample_step = 0.10
+    actual_base_motion_min_motion_distance = 1.0e-6
+    actual_base_motion_max_pairs_sample = 20
+    actual_base_motion_debug_visualization_enabled = False
+    actual_base_motion_debug_visualization_draw_in_headless = False
+    actual_base_motion_debug_visualization_max_lines = 20
+    actual_base_motion_debug_visualization_line_width = 0.03
+
+    # Optional visual-only debug lines for obstacle diagnostics. These can draw either sampled robot-to-viewpoint
+    # segments that intersect the diagnostic mesh footprint or the latest solver-selected assignment segments. They do
+    # not alter assignment costs, masks, solver behavior, or environment dynamics.
     obstacle_debug_visualization_enabled = False
     obstacle_debug_visualization_draw_in_headless = False
     obstacle_debug_visualization_line_source = "mesh_footprint_intersections"
@@ -168,6 +183,20 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     obstacle_debug_visualization_line_z_value = 0.20
     obstacle_debug_visualization_line_z_offset = 0.05
     obstacle_debug_visualization_line_width = 0.03
+
+    # Optional diagnostic-only proxy conflict checks. These report current robot footprint overlaps and selected target
+    # conflicts for task-allocation validation; they do not add collision bodies, avoidance, blocking, or solver inputs.
+    inter_robot_conflict_diagnostics_enabled = False
+    inter_robot_conflict_diagnostics_mode = "disabled"
+    inter_robot_conflict_robot_footprint_radius = 0.35
+    inter_robot_conflict_safety_margin = 0.15
+    inter_robot_target_conflict_enabled = True
+    inter_robot_target_conflict_radius = 0.35
+    inter_robot_target_conflict_safety_margin = 0.15
+    inter_robot_conflict_debug_visualization_enabled = False
+    inter_robot_conflict_debug_visualization_draw_in_headless = False
+    inter_robot_conflict_debug_visualization_max_lines = 10
+    inter_robot_conflict_debug_visualization_line_width = 0.03
 
     enable_usd_debug_visuals = True
     use_camera_light_in_gui = True
@@ -858,6 +887,66 @@ def _prepare_obstacle_diagnostics_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
     cfg.component_obstacle_footprint_diagnostics = footprint.to_diagnostics()
 
 
+def _prepare_actual_base_motion_obstacle_diagnostics_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    enabled = bool(getattr(cfg, "actual_base_motion_obstacle_diagnostics_enabled", False))
+    cfg.actual_base_motion_obstacle_diagnostics_enabled = enabled
+    if not enabled:
+        cfg.actual_base_motion_obstacle_diagnostics_mode = "disabled"
+        cfg.actual_base_motion_obstacle_source = None
+    else:
+        mode = str(
+            getattr(cfg, "actual_base_motion_obstacle_diagnostics_mode", "diagnostics_only")
+        ).strip().lower()
+        if mode != "diagnostics_only":
+            raise ValueError(
+                f"Unsupported actual_base_motion_obstacle_diagnostics_mode={mode!r}; "
+                "only 'diagnostics_only' is supported."
+            )
+        source = str(getattr(cfg, "actual_base_motion_obstacle_source", "component_mesh_footprint")).strip().lower()
+        if source != "component_mesh_footprint":
+            raise ValueError(
+                f"Unsupported actual_base_motion_obstacle_source={source!r}; "
+                "only 'component_mesh_footprint' is supported."
+            )
+        if not bool(getattr(cfg, "obstacle_diagnostics_enabled", False)):
+            raise ValueError(
+                "actual base-motion obstacle diagnostics require obstacle_diagnostics_enabled=True so the "
+                "component mesh footprint is available."
+            )
+        cfg.actual_base_motion_obstacle_diagnostics_mode = mode
+        cfg.actual_base_motion_obstacle_source = source
+
+    cfg.actual_base_motion_line_sample_step = _positive_finite(
+        getattr(cfg, "actual_base_motion_line_sample_step", 0.10),
+        name="actual_base_motion_line_sample_step",
+    )
+    cfg.actual_base_motion_min_motion_distance = _non_negative_finite(
+        getattr(cfg, "actual_base_motion_min_motion_distance", 1.0e-6),
+        name="actual_base_motion_min_motion_distance",
+    )
+    max_pairs = int(getattr(cfg, "actual_base_motion_max_pairs_sample", 20))
+    if max_pairs < 0:
+        raise ValueError(f"actual_base_motion_max_pairs_sample must be non-negative, got {max_pairs!r}.")
+    cfg.actual_base_motion_max_pairs_sample = max_pairs
+
+    cfg.actual_base_motion_debug_visualization_enabled = bool(
+        getattr(cfg, "actual_base_motion_debug_visualization_enabled", False)
+    )
+    cfg.actual_base_motion_debug_visualization_draw_in_headless = bool(
+        getattr(cfg, "actual_base_motion_debug_visualization_draw_in_headless", False)
+    )
+    debug_max_lines = int(getattr(cfg, "actual_base_motion_debug_visualization_max_lines", 20))
+    if debug_max_lines < 0:
+        raise ValueError(
+            f"actual_base_motion_debug_visualization_max_lines must be non-negative, got {debug_max_lines!r}."
+        )
+    cfg.actual_base_motion_debug_visualization_max_lines = debug_max_lines
+    cfg.actual_base_motion_debug_visualization_line_width = _positive_finite(
+        getattr(cfg, "actual_base_motion_debug_visualization_line_width", 0.03),
+        name="actual_base_motion_debug_visualization_line_width",
+    )
+
+
 def _prepare_obstacle_debug_visualization_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
     enabled = bool(getattr(cfg, "obstacle_debug_visualization_enabled", False))
     cfg.obstacle_debug_visualization_enabled = enabled
@@ -867,10 +956,11 @@ def _prepare_obstacle_debug_visualization_cfg(cfg: ScanMobileManipulatorEnvCfg) 
     line_source = str(
         getattr(cfg, "obstacle_debug_visualization_line_source", "mesh_footprint_intersections")
     ).strip().lower()
-    if line_source != "mesh_footprint_intersections":
+    supported_line_sources = ("mesh_footprint_intersections", "selected_assignments")
+    if line_source not in supported_line_sources:
         raise ValueError(
             f"Unsupported obstacle_debug_visualization_line_source={line_source!r}; "
-            "only 'mesh_footprint_intersections' is supported."
+            f"expected one of {supported_line_sources!r}."
         )
     cfg.obstacle_debug_visualization_line_source = line_source
 
@@ -904,6 +994,63 @@ def _prepare_obstacle_debug_visualization_cfg(cfg: ScanMobileManipulatorEnvCfg) 
     cfg.obstacle_debug_visualization_line_width = _positive_finite(
         getattr(cfg, "obstacle_debug_visualization_line_width", 0.03),
         name="obstacle_debug_visualization_line_width",
+    )
+
+
+def _prepare_inter_robot_conflict_diagnostics_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    enabled = bool(getattr(cfg, "inter_robot_conflict_diagnostics_enabled", False))
+    cfg.inter_robot_conflict_diagnostics_enabled = enabled
+    if not enabled:
+        cfg.inter_robot_conflict_diagnostics_mode = "disabled"
+    else:
+        mode = str(getattr(cfg, "inter_robot_conflict_diagnostics_mode", "diagnostics_only")).strip().lower()
+        if mode != "diagnostics_only":
+            raise ValueError(
+                f"Unsupported inter_robot_conflict_diagnostics_mode={mode!r}; "
+                "only 'diagnostics_only' is supported."
+            )
+        cfg.inter_robot_conflict_diagnostics_mode = mode
+
+    cfg.inter_robot_conflict_robot_footprint_radius = _positive_finite(
+        getattr(cfg, "inter_robot_conflict_robot_footprint_radius", 0.35),
+        name="inter_robot_conflict_robot_footprint_radius",
+    )
+    cfg.inter_robot_conflict_safety_margin = _non_negative_finite(
+        getattr(cfg, "inter_robot_conflict_safety_margin", 0.15),
+        name="inter_robot_conflict_safety_margin",
+    )
+    cfg.inter_robot_target_conflict_enabled = bool(
+        getattr(cfg, "inter_robot_target_conflict_enabled", True)
+    )
+    target_radius = getattr(cfg, "inter_robot_target_conflict_radius", None)
+    if target_radius is None:
+        target_radius = cfg.inter_robot_conflict_robot_footprint_radius
+    cfg.inter_robot_target_conflict_radius = _positive_finite(
+        target_radius,
+        name="inter_robot_target_conflict_radius",
+    )
+    target_margin = getattr(cfg, "inter_robot_target_conflict_safety_margin", None)
+    if target_margin is None:
+        target_margin = cfg.inter_robot_conflict_safety_margin
+    cfg.inter_robot_target_conflict_safety_margin = _non_negative_finite(
+        target_margin,
+        name="inter_robot_target_conflict_safety_margin",
+    )
+    cfg.inter_robot_conflict_debug_visualization_enabled = bool(
+        getattr(cfg, "inter_robot_conflict_debug_visualization_enabled", False)
+    )
+    cfg.inter_robot_conflict_debug_visualization_draw_in_headless = bool(
+        getattr(cfg, "inter_robot_conflict_debug_visualization_draw_in_headless", False)
+    )
+    max_lines = int(getattr(cfg, "inter_robot_conflict_debug_visualization_max_lines", 10))
+    if max_lines < 0:
+        raise ValueError(
+            f"inter_robot_conflict_debug_visualization_max_lines must be non-negative, got {max_lines!r}."
+        )
+    cfg.inter_robot_conflict_debug_visualization_max_lines = max_lines
+    cfg.inter_robot_conflict_debug_visualization_line_width = _positive_finite(
+        getattr(cfg, "inter_robot_conflict_debug_visualization_line_width", 0.03),
+        name="inter_robot_conflict_debug_visualization_line_width",
     )
 
 
@@ -943,7 +1090,9 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         _prepare_component_mesh_cfg(cfg)
         _prepare_component_proxy_cfg(cfg)
         _prepare_obstacle_diagnostics_cfg(cfg)
+        _prepare_actual_base_motion_obstacle_diagnostics_cfg(cfg)
         _prepare_obstacle_debug_visualization_cfg(cfg)
+        _prepare_inter_robot_conflict_diagnostics_cfg(cfg)
         _prepare_viewpoint_cfg(cfg)
         super().__init__(cfg, render_mode, **kwargs)
 
@@ -1009,6 +1158,8 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         self.last_reach_violation = torch.zeros(self.num_envs, self.num_agents_cfg, device=self.device)
         self._usd_debug_dirty = True
         self._obstacle_debug_line_prim_paths = set()
+        self._obstacle_debug_selected_assignment_pairs: list[dict] = []
+        self._obstacle_debug_selected_assignment_skipped_reason = "missing_latest_selected_assignment"
         self._obstacle_debug_visualization_last_diagnostics = self._obstacle_debug_visualization_base_diagnostics(
             drawn_line_count=0,
             skipped_reason="not_drawn_yet",
@@ -1058,6 +1209,115 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
                 "mesh_footprint_intersection_mask": intersection_mask,
                 "mesh_footprint_penalty_matrix": mesh_footprint_penalty_matrix,
                 "mesh_footprint_aware_cost_matrix": mesh_footprint_aware_cost_matrix,
+            }
+        )
+        return fields
+
+    def get_inter_robot_conflict_diagnostics(self) -> dict:
+        enabled = bool(getattr(self.cfg, "inter_robot_conflict_diagnostics_enabled", False))
+        robot_radius = float(getattr(self.cfg, "inter_robot_conflict_robot_footprint_radius", 0.35))
+        safety_margin = float(getattr(self.cfg, "inter_robot_conflict_safety_margin", 0.15))
+        target_radius = float(getattr(self.cfg, "inter_robot_target_conflict_radius", robot_radius))
+        target_margin = float(getattr(self.cfg, "inter_robot_target_conflict_safety_margin", safety_margin))
+        fields: dict[str, object] = {
+            "inter_robot_conflict_diagnostics_enabled": enabled,
+            "inter_robot_conflict_diagnostics_mode": getattr(
+                self.cfg,
+                "inter_robot_conflict_diagnostics_mode",
+                "disabled",
+            ),
+            "inter_robot_conflict_robot_footprint_radius": robot_radius,
+            "inter_robot_conflict_safety_margin": safety_margin,
+            "inter_robot_target_conflict_enabled": bool(
+                getattr(self.cfg, "inter_robot_target_conflict_enabled", True)
+            ),
+            "inter_robot_target_conflict_radius": target_radius,
+            "inter_robot_target_conflict_safety_margin": target_margin,
+            "inter_robot_conflict_debug_visualization_enabled": bool(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_enabled", False)
+            ),
+            "inter_robot_conflict_debug_visualization_draw_in_headless": bool(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_draw_in_headless", False)
+            ),
+            "inter_robot_conflict_debug_visualization_max_lines": int(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_max_lines", 10)
+            ),
+            "inter_robot_conflict_debug_visualization_line_width": float(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_line_width", 0.03)
+            ),
+        }
+
+        overlap_pair_count = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
+        min_distance = torch.full((self.num_envs,), float("nan"), dtype=torch.float32, device=self.device)
+        min_clearance = torch.full((self.num_envs,), float("nan"), dtype=torch.float32, device=self.device)
+        overlap_pairs_sample: list[dict] = []
+        if not enabled:
+            fields.update(
+                {
+                    "inter_robot_overlap_pair_count": overlap_pair_count,
+                    "inter_robot_overlap_pairs_sample": overlap_pairs_sample,
+                    "inter_robot_min_distance": min_distance,
+                    "inter_robot_min_clearance": min_clearance,
+                    "inter_robot_overlap_any": overlap_pair_count > 0,
+                    "inter_robot_conflict_skipped_reason": "disabled",
+                }
+            )
+            return fields
+
+        if self.num_agents_cfg < 2:
+            fields.update(
+                {
+                    "inter_robot_overlap_pair_count": overlap_pair_count,
+                    "inter_robot_overlap_pairs_sample": overlap_pairs_sample,
+                    "inter_robot_min_distance": min_distance,
+                    "inter_robot_min_clearance": min_clearance,
+                    "inter_robot_overlap_any": overlap_pair_count > 0,
+                    "inter_robot_conflict_skipped_reason": "fewer_than_two_robots",
+                }
+            )
+            return fields
+
+        threshold = (2.0 * robot_radius) + safety_margin
+        min_distance.fill_(float("inf"))
+        min_clearance.fill_(float("inf"))
+        base_xy = self.base_pos[:, :, :2]
+        max_sample = 10
+        for robot_i in range(self.num_agents_cfg):
+            for robot_j in range(robot_i + 1, self.num_agents_cfg):
+                distance = torch.linalg.norm(base_xy[:, robot_i, :] - base_xy[:, robot_j, :], dim=-1)
+                clearance = distance - threshold
+                overlap = clearance < 0.0
+                overlap_pair_count += overlap.to(dtype=torch.long)
+                min_distance = torch.minimum(min_distance, distance)
+                min_clearance = torch.minimum(min_clearance, clearance)
+                if len(overlap_pairs_sample) < max_sample and bool(overlap.any()):
+                    for env_id in torch.nonzero(overlap, as_tuple=False).flatten().detach().cpu().tolist():
+                        if len(overlap_pairs_sample) >= max_sample:
+                            break
+                        overlap_pairs_sample.append(
+                            {
+                                "env_id": int(env_id),
+                                "robot_i": int(robot_i),
+                                "robot_j": int(robot_j),
+                                "robot_i_name": self.cfg.possible_agents[robot_i],
+                                "robot_j_name": self.cfg.possible_agents[robot_j],
+                                "distance": float(distance[env_id].item()),
+                                "clearance": float(clearance[env_id].item()),
+                                "threshold": threshold,
+                                "robot_footprint_radius_i": robot_radius,
+                                "robot_footprint_radius_j": robot_radius,
+                                "safety_margin": safety_margin,
+                            }
+                        )
+
+        fields.update(
+            {
+                "inter_robot_overlap_pair_count": overlap_pair_count,
+                "inter_robot_overlap_pairs_sample": overlap_pairs_sample,
+                "inter_robot_min_distance": min_distance,
+                "inter_robot_min_clearance": min_clearance,
+                "inter_robot_overlap_any": overlap_pair_count > 0,
+                "inter_robot_conflict_skipped_reason": None,
             }
         )
         return fields
@@ -1133,6 +1393,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         }
         problem.update(self._mesh_footprint_obstacle_fields(cost_matrix, viewpoint_pos))
         problem.update(self.get_obstacle_debug_visualization_diagnostics())
+        problem.update(self.get_inter_robot_conflict_diagnostics())
         return problem
 
     def get_robot_config_diagnostics(self) -> dict:
@@ -1153,18 +1414,36 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         pairs_sample: list[dict],
         line_prim_paths_sample: list[str],
     ) -> dict:
+        enabled = bool(getattr(self.cfg, "obstacle_debug_visualization_enabled", False))
+        line_source = getattr(
+            self.cfg,
+            "obstacle_debug_visualization_line_source",
+            "mesh_footprint_intersections",
+        )
+        selected_assignment_pairs = (
+            list(getattr(self, "_obstacle_debug_selected_assignment_pairs", []) or [])
+            if line_source == "selected_assignments"
+            else []
+        )
+        selected_pairs_sample = [
+            {key: value for key, value in pair.items() if not key.startswith("_")}
+            for pair in selected_assignment_pairs[:10]
+        ]
+        selected_assignment_enabled = bool(enabled and line_source == "selected_assignments")
+        if line_source != "selected_assignments":
+            selected_assignment_skipped_reason = "line_source_not_selected_assignments"
+        elif not enabled:
+            selected_assignment_skipped_reason = "disabled"
+        elif not selected_assignment_pairs:
+            selected_assignment_skipped_reason = skipped_reason
+        else:
+            selected_assignment_skipped_reason = None
         return {
-            "obstacle_debug_visualization_enabled": bool(
-                getattr(self.cfg, "obstacle_debug_visualization_enabled", False)
-            ),
+            "obstacle_debug_visualization_enabled": enabled,
             "obstacle_debug_visualization_draw_in_headless": bool(
                 getattr(self.cfg, "obstacle_debug_visualization_draw_in_headless", False)
             ),
-            "obstacle_debug_visualization_line_source": getattr(
-                self.cfg,
-                "obstacle_debug_visualization_line_source",
-                "mesh_footprint_intersections",
-            ),
+            "obstacle_debug_visualization_line_source": line_source,
             "obstacle_debug_visualization_max_lines_per_robot": int(
                 getattr(self.cfg, "obstacle_debug_visualization_max_lines_per_robot", 0)
             ),
@@ -1192,6 +1471,19 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             "obstacle_debug_visualization_skipped_reason": skipped_reason,
             "obstacle_debug_visualization_pairs_sample": pairs_sample,
             "obstacle_debug_visualization_line_prim_paths_sample": line_prim_paths_sample[:10],
+            "selected_assignment_debug_visualization_enabled": selected_assignment_enabled,
+            "selected_assignment_debug_visualization_line_count": (
+                len(selected_assignment_pairs) if selected_assignment_enabled else 0
+            ),
+            "selected_assignment_debug_visualization_pairs_sample": (
+                selected_pairs_sample if selected_assignment_enabled else []
+            ),
+            "selected_assignment_debug_visualization_intersection_count": (
+                sum(1 for pair in selected_assignment_pairs if bool(pair.get("intersects_mesh_footprint", False)))
+                if selected_assignment_enabled
+                else 0
+            ),
+            "selected_assignment_debug_visualization_skipped_reason": selected_assignment_skipped_reason,
         }
 
     def get_obstacle_debug_visualization_diagnostics(self) -> dict:
@@ -1247,7 +1539,76 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             ),
             "obstacle_line_sample_step": float(getattr(self.cfg, "obstacle_line_sample_step", 0.10)),
             "obstacle_blocked_path_penalty": float(getattr(self.cfg, "obstacle_blocked_path_penalty", 100.0)),
+            "actual_base_motion_obstacle_diagnostics_enabled": bool(
+                getattr(self.cfg, "actual_base_motion_obstacle_diagnostics_enabled", False)
+            ),
+            "actual_base_motion_obstacle_diagnostics_mode": getattr(
+                self.cfg,
+                "actual_base_motion_obstacle_diagnostics_mode",
+                "disabled",
+            ),
+            "actual_base_motion_obstacle_source": getattr(
+                self.cfg,
+                "actual_base_motion_obstacle_source",
+                None,
+            ),
+            "actual_base_motion_line_sample_step": float(
+                getattr(self.cfg, "actual_base_motion_line_sample_step", 0.10)
+            ),
+            "actual_base_motion_min_motion_distance": float(
+                getattr(self.cfg, "actual_base_motion_min_motion_distance", 1.0e-6)
+            ),
+            "actual_base_motion_max_pairs_sample": int(
+                getattr(self.cfg, "actual_base_motion_max_pairs_sample", 20)
+            ),
+            "actual_base_motion_debug_visualization_enabled": bool(
+                getattr(self.cfg, "actual_base_motion_debug_visualization_enabled", False)
+            ),
+            "actual_base_motion_debug_visualization_draw_in_headless": bool(
+                getattr(self.cfg, "actual_base_motion_debug_visualization_draw_in_headless", False)
+            ),
+            "actual_base_motion_debug_visualization_max_lines": int(
+                getattr(self.cfg, "actual_base_motion_debug_visualization_max_lines", 20)
+            ),
+            "actual_base_motion_debug_visualization_line_width": float(
+                getattr(self.cfg, "actual_base_motion_debug_visualization_line_width", 0.03)
+            ),
             **self.get_obstacle_debug_visualization_diagnostics(),
+            "inter_robot_conflict_diagnostics_enabled": bool(
+                getattr(self.cfg, "inter_robot_conflict_diagnostics_enabled", False)
+            ),
+            "inter_robot_conflict_diagnostics_mode": getattr(
+                self.cfg,
+                "inter_robot_conflict_diagnostics_mode",
+                "disabled",
+            ),
+            "inter_robot_conflict_robot_footprint_radius": float(
+                getattr(self.cfg, "inter_robot_conflict_robot_footprint_radius", 0.35)
+            ),
+            "inter_robot_conflict_safety_margin": float(
+                getattr(self.cfg, "inter_robot_conflict_safety_margin", 0.15)
+            ),
+            "inter_robot_target_conflict_enabled": bool(
+                getattr(self.cfg, "inter_robot_target_conflict_enabled", True)
+            ),
+            "inter_robot_target_conflict_radius": float(
+                getattr(self.cfg, "inter_robot_target_conflict_radius", 0.35)
+            ),
+            "inter_robot_target_conflict_safety_margin": float(
+                getattr(self.cfg, "inter_robot_target_conflict_safety_margin", 0.15)
+            ),
+            "inter_robot_conflict_debug_visualization_enabled": bool(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_enabled", False)
+            ),
+            "inter_robot_conflict_debug_visualization_draw_in_headless": bool(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_draw_in_headless", False)
+            ),
+            "inter_robot_conflict_debug_visualization_max_lines": int(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_max_lines", 10)
+            ),
+            "inter_robot_conflict_debug_visualization_line_width": float(
+                getattr(self.cfg, "inter_robot_conflict_debug_visualization_line_width", 0.03)
+            ),
         }
 
     def get_robot_visual_diagnostics(self) -> dict:
@@ -1688,11 +2049,16 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         if not self.cfg.enable_usd_debug_visuals:
             self._record_obstacle_debug_visualization_skip("usd_debug_visuals_disabled")
             return False
-        if not bool(getattr(self.cfg, "obstacle_diagnostics_enabled", False)):
-            self._record_obstacle_debug_visualization_skip("obstacle_diagnostics_disabled")
-            return False
-        if getattr(self.cfg, "obstacle_debug_visualization_line_source", None) != "mesh_footprint_intersections":
+        line_source = str(
+            getattr(self.cfg, "obstacle_debug_visualization_line_source", "mesh_footprint_intersections")
+        )
+        if line_source not in ("mesh_footprint_intersections", "selected_assignments"):
             self._record_obstacle_debug_visualization_skip("unsupported_line_source")
+            return False
+        if line_source == "mesh_footprint_intersections" and not bool(
+            getattr(self.cfg, "obstacle_diagnostics_enabled", False)
+        ):
+            self._record_obstacle_debug_visualization_skip("obstacle_diagnostics_disabled")
             return False
         draw_in_headless = bool(getattr(self.cfg, "obstacle_debug_visualization_draw_in_headless", False))
         if not self.sim.has_gui() and not draw_in_headless:
@@ -1706,15 +2072,25 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
     def _ensure_obstacle_debug_line_material(self, stage):
         from pxr import Gf, Sdf, UsdShade
 
-        material_path = "/World/Materials/scan_obstacle_blocked_line"
+        line_source = str(
+            getattr(self.cfg, "obstacle_debug_visualization_line_source", "mesh_footprint_intersections")
+        )
+        if line_source == "selected_assignments":
+            material_path = "/World/Materials/scan_selected_assignment_line"
+            diffuse_color = Gf.Vec3f(0.05, 0.95, 0.30)
+            emissive_color = Gf.Vec3f(0.0, 0.35, 0.08)
+        else:
+            material_path = "/World/Materials/scan_obstacle_blocked_line"
+            diffuse_color = Gf.Vec3f(1.0, 0.05, 0.02)
+            emissive_color = Gf.Vec3f(0.35, 0.0, 0.0)
         material = UsdShade.Material.Get(stage, material_path)
         if material and material.GetPrim().IsValid():
             return material
         material = UsdShade.Material.Define(stage, material_path)
         shader = UsdShade.Shader.Define(stage, f"{material_path}/Shader")
         shader.CreateIdAttr("UsdPreviewSurface")
-        shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(1.0, 0.05, 0.02))
-        shader.CreateInput("emissiveColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(0.35, 0.0, 0.0))
+        shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(diffuse_color)
+        shader.CreateInput("emissiveColor", Sdf.ValueTypeNames.Color3f).Set(emissive_color)
         shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.35)
         material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
         return material
@@ -1727,7 +2103,145 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
                 UsdGeom.Imageable(prim).MakeInvisible()
         self._obstacle_debug_line_prim_paths = set(previous_paths | active_paths)
 
+    def clear_obstacle_debug_selected_assignments(self) -> None:
+        self._obstacle_debug_selected_assignment_pairs = []
+        self._obstacle_debug_selected_assignment_skipped_reason = "missing_latest_selected_assignment"
+
+    def set_obstacle_debug_selected_assignments(self, assignment: torch.Tensor, problem: dict | None = None) -> None:
+        """Store solver-selected assignment pairs for visual-only debug line drawing."""
+        line_source = str(
+            getattr(self.cfg, "obstacle_debug_visualization_line_source", "mesh_footprint_intersections")
+        )
+        if line_source != "selected_assignments":
+            return
+        if not isinstance(assignment, torch.Tensor):
+            self.clear_obstacle_debug_selected_assignments()
+            self._obstacle_debug_selected_assignment_skipped_reason = "invalid_latest_selected_assignment"
+            return
+        if assignment.ndim != 2:
+            self.clear_obstacle_debug_selected_assignments()
+            self._obstacle_debug_selected_assignment_skipped_reason = "invalid_latest_selected_assignment_shape"
+            return
+        problem = self.get_assignment_problem() if problem is None else problem
+        pairs, skipped_reason = self._build_selected_assignment_debug_line_pairs(assignment, problem)
+        self._obstacle_debug_selected_assignment_pairs = pairs
+        self._obstacle_debug_selected_assignment_skipped_reason = skipped_reason
+        self._obstacle_debug_visualization_last_diagnostics = self._obstacle_debug_visualization_base_diagnostics(
+            drawn_line_count=0,
+            skipped_reason=skipped_reason or "pending_usd_draw",
+            pairs_sample=[
+                {key: value for key, value in pair.items() if not key.startswith("_")}
+                for pair in pairs[:10]
+            ],
+            line_prim_paths_sample=[],
+        )
+        self._usd_debug_dirty = True
+
+    def _build_selected_assignment_debug_line_pairs(
+        self,
+        assignment: torch.Tensor,
+        problem: dict,
+    ) -> tuple[list[dict], str | None]:
+        max_lines_per_robot = int(getattr(self.cfg, "obstacle_debug_visualization_max_lines_per_robot", 0))
+        max_total_lines = int(getattr(self.cfg, "obstacle_debug_visualization_max_total_lines", 0))
+        if max_lines_per_robot <= 0 or max_total_lines <= 0:
+            return [], "line_limit_zero"
+
+        viewpoint_pos = problem.get("viewpoint_pos")
+        base_pos_tensor = problem.get("base_pos", self.base_pos)
+        if not isinstance(viewpoint_pos, torch.Tensor) or not isinstance(base_pos_tensor, torch.Tensor):
+            return [], "missing_assignment_line_endpoint_tensors"
+
+        assignment = assignment.detach().to(device=self.device, dtype=torch.long)
+        if tuple(assignment.shape) != (self.num_envs, self.num_agents_cfg):
+            return [], "invalid_latest_selected_assignment_shape"
+
+        straight_line_cost = problem.get("straight_line_cost_matrix", problem.get("cost_matrix"))
+        aware_cost = problem.get("mesh_footprint_aware_cost_matrix")
+        penalty_matrix = problem.get("mesh_footprint_penalty_matrix")
+        intersection_mask = problem.get("mesh_footprint_intersection_mask")
+        if isinstance(intersection_mask, torch.Tensor):
+            intersection_mask = intersection_mask.to(dtype=torch.bool)
+        viewpoint_ids = list(problem.get("viewpoint_ids", range(self.num_viewpoints)))
+        z_mode = str(getattr(self.cfg, "obstacle_debug_visualization_line_z_mode", "max_endpoint"))
+        z_value = float(getattr(self.cfg, "obstacle_debug_visualization_line_z_value", 0.20))
+        z_offset = float(getattr(self.cfg, "obstacle_debug_visualization_line_z_offset", 0.05))
+
+        pairs: list[dict] = []
+        for env_id in range(self.num_envs):
+            for agent_id in range(self.num_agents_cfg):
+                if len(pairs) >= max_total_lines:
+                    return pairs, None
+                viewpoint_index = int(assignment[env_id, agent_id].item())
+                if viewpoint_index < 0:
+                    continue
+                if viewpoint_index >= self.num_viewpoints:
+                    continue
+                base_pos = base_pos_tensor[env_id, agent_id].detach().cpu().tolist()
+                end_pos = viewpoint_pos[env_id, viewpoint_index].detach().cpu().tolist()
+                if z_mode == "fixed":
+                    line_z = z_value + z_offset
+                else:
+                    line_z = max(float(base_pos[2]), float(end_pos[2]), 0.0) + z_offset
+                intersects_mesh_footprint = (
+                    bool(intersection_mask[env_id, agent_id, viewpoint_index].detach().cpu().item())
+                    if isinstance(intersection_mask, torch.Tensor)
+                    else False
+                )
+                pair = {
+                    "env_id": env_id,
+                    "robot_id": agent_id,
+                    "robot_name": str(self.cfg.possible_agents[agent_id]),
+                    "viewpoint_id": viewpoint_ids[viewpoint_index]
+                    if viewpoint_index < len(viewpoint_ids)
+                    else viewpoint_index,
+                    "viewpoint_index": viewpoint_index,
+                    "straight_line_cost": None,
+                    "obstacle_aware_cost": None,
+                    "obstacle_penalty": None,
+                    "intersects_mesh_footprint": intersects_mesh_footprint,
+                    "line_source": "selected_assignments",
+                    "_line_start": (float(base_pos[0]), float(base_pos[1]), line_z),
+                    "_line_end": (float(end_pos[0]), float(end_pos[1]), line_z),
+                }
+                if isinstance(straight_line_cost, torch.Tensor):
+                    pair["straight_line_cost"] = float(
+                        straight_line_cost[env_id, agent_id, viewpoint_index].detach().cpu().item()
+                    )
+                if isinstance(aware_cost, torch.Tensor):
+                    pair["obstacle_aware_cost"] = float(
+                        aware_cost[env_id, agent_id, viewpoint_index].detach().cpu().item()
+                    )
+                if isinstance(penalty_matrix, torch.Tensor):
+                    pair["obstacle_penalty"] = float(
+                        penalty_matrix[env_id, agent_id, viewpoint_index].detach().cpu().item()
+                    )
+                pairs.append(pair)
+
+        if not pairs:
+            return [], "no_selected_assignments"
+        return pairs, None
+
     def _select_obstacle_debug_line_pairs(self, problem: dict) -> tuple[list[dict], str | None]:
+        line_source = str(
+            getattr(self.cfg, "obstacle_debug_visualization_line_source", "mesh_footprint_intersections")
+        )
+        if line_source == "selected_assignments":
+            pairs = list(getattr(self, "_obstacle_debug_selected_assignment_pairs", []) or [])
+            if not pairs:
+                skipped_reason = getattr(
+                    self,
+                    "_obstacle_debug_selected_assignment_skipped_reason",
+                    "missing_latest_selected_assignment",
+                )
+                return [], skipped_reason
+            max_total_lines = int(getattr(self.cfg, "obstacle_debug_visualization_max_total_lines", 0))
+            if max_total_lines <= 0:
+                return [], "line_limit_zero"
+            return pairs[:max_total_lines], None
+        if line_source != "mesh_footprint_intersections":
+            return [], "unsupported_line_source"
+
         mask = problem.get("mesh_footprint_intersection_mask")
         if not isinstance(mask, torch.Tensor):
             return [], "missing_mesh_footprint_intersection_mask"
@@ -1818,13 +2332,17 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
 
         material = self._ensure_obstacle_debug_line_material(stage)
         line_width = float(getattr(self.cfg, "obstacle_debug_visualization_line_width", 0.03))
+        line_source = str(
+            getattr(self.cfg, "obstacle_debug_visualization_line_source", "mesh_footprint_intersections")
+        )
+        prim_prefix = "SelectedAssignment" if line_source == "selected_assignments" else "BlockedPath"
         for line_index, pair in enumerate(selected_pairs):
             env_id = int(pair["env_id"])
             if env_id >= len(self.scene.env_prim_paths):
                 continue
             root_path = f"{self.scene.env_prim_paths[env_id]}/ObstacleDebugLines"
             UsdGeom.Xform.Define(stage, root_path)
-            prim_path = f"{root_path}/BlockedPath_{line_index:03d}"
+            prim_path = f"{root_path}/{prim_prefix}_{line_index:03d}"
             curve = UsdGeom.BasisCurves.Define(stage, prim_path)
             curve.CreateTypeAttr("linear")
             curve.CreateCurveVertexCountsAttr([2])
@@ -2157,6 +2675,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         for agent in self.cfg.possible_agents:
             self.actions[agent][env_ids] = 0.0
             self.previous_actions[agent][env_ids] = 0.0
+        self.clear_obstacle_debug_selected_assignments()
         self._usd_debug_dirty = True
         self._update_usd_debug_visuals()
         self._run_reset_diagnostics()

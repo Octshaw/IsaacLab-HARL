@@ -50,12 +50,29 @@ obstacle_diagnostics:
   line_sample_step: 0.10
   blocked_path_penalty: 100.0
 
+actual_base_motion_obstacle_diagnostics:
+  # Diagnostic-only actual proxy-base motion crossing checks:
+  # previous base XY -> current base XY against the mesh footprint.
+  # This does not change solver inputs, masks, reward, controller behavior, or proxy dynamics.
+  enabled: true
+  mode: diagnostics_only
+  obstacle_source: component_mesh_footprint
+  line_sample_step: 0.10
+  min_motion_distance: 1.0e-6
+  max_pairs_sample: 20
+  debug_visualization:
+    enabled: false
+    draw_in_headless: false
+    max_lines: 20
+    line_width: 0.03
+
 obstacle_debug_visualization:
-  # Currently enabled for manual GUI inspection of mesh-footprint debug lines.
+  # Currently enabled for manual GUI inspection of actual solver-selected assignment lines.
+  # Use line_source: mesh_footprint_intersections to inspect blocked candidate pairs instead.
   # Set enabled: false for smoke-only runs that should not author line prims.
   enabled: true
   draw_in_headless: false
-  line_source: mesh_footprint_intersections
+  line_source: selected_assignments
   max_lines_per_robot: 5
   max_total_lines: 20
   prefer_shortest_blocked_pairs: true
@@ -63,6 +80,51 @@ obstacle_debug_visualization:
   line_z_value: 0.20
   line_z_offset: 0.05
   line_width: 0.03
+
+inter_robot_conflict_diagnostics:
+  # Diagnostic-only proxy checks for task-allocation validation; no collision, blocking, or avoidance is applied.
+  enabled: true
+  mode: diagnostics_only
+  robot_footprint_radius: 0.35
+  safety_margin: 0.15
+  target_conflict_enabled: true
+  target_conflict_radius: 0.35
+  target_conflict_safety_margin: 0.15
+  debug_visualization:
+    enabled: true
+    draw_in_headless: false
+    max_lines: 10
+    line_width: 0.03
+
+selected_target_conflict_candidate_comparison:
+  # Diagnostic-only copied candidate comparison. Candidate assignments are never executed by env.step(...).
+  enabled: true
+  mode: diagnostic_only
+  candidate_generator: sequential_robot_order
+  robot_order: robot_index
+  target_conflict_radius: 0.35
+  target_conflict_safety_margin: 0.15
+  selected_target_conflict_penalty: 100.0
+  compare_methods:
+    - nearest
+    - greedy
+  include_random_as_baseline_only: true
+  max_pairs_sample: 20
+
+conflict_aware_baseline:
+  # Gated baseline variants only. Original random/nearest/greedy behavior is unchanged.
+  enabled: true
+  methods:
+    - greedy_conflict_aware
+    - nearest_conflict_aware
+  mode: gated_solver_variant
+  top_k: 10
+  target_conflict_radius: 0.35
+  target_conflict_safety_margin: 0.15
+  target_conflict_penalty: 100.0
+  duplicate_penalty: 1000000.0
+  fallback_to_base_method: true
+  max_pairs_sample: 20
 
 viewpoints:
   csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv

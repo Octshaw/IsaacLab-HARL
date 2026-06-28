@@ -326,9 +326,46 @@ def _obstacle_diagnostics_summary(problem: dict, *, agents: list[str], viewpoint
         "obstacle_debug_visualization_skipped_reason",
         "obstacle_debug_visualization_pairs_sample",
         "obstacle_debug_visualization_line_prim_paths_sample",
+        "selected_assignment_debug_visualization_enabled",
+        "selected_assignment_debug_visualization_line_count",
+        "selected_assignment_debug_visualization_pairs_sample",
+        "selected_assignment_debug_visualization_intersection_count",
+        "selected_assignment_debug_visualization_skipped_reason",
     ):
         if key in problem:
             summary[key] = problem[key]
+    return summary
+
+
+def _inter_robot_conflict_diagnostics_summary(problem: dict) -> dict:
+    summary = {}
+    for key in (
+        "inter_robot_conflict_diagnostics_enabled",
+        "inter_robot_conflict_diagnostics_mode",
+        "inter_robot_conflict_robot_footprint_radius",
+        "inter_robot_conflict_safety_margin",
+        "inter_robot_target_conflict_enabled",
+        "inter_robot_target_conflict_radius",
+        "inter_robot_target_conflict_safety_margin",
+        "inter_robot_conflict_debug_visualization_enabled",
+        "inter_robot_conflict_debug_visualization_draw_in_headless",
+        "inter_robot_conflict_debug_visualization_max_lines",
+        "inter_robot_conflict_debug_visualization_line_width",
+        "inter_robot_conflict_skipped_reason",
+        "inter_robot_overlap_pairs_sample",
+    ):
+        if key in problem:
+            summary[key] = problem[key]
+    for key in (
+        "inter_robot_overlap_pair_count",
+        "inter_robot_min_distance",
+        "inter_robot_min_clearance",
+        "inter_robot_overlap_any",
+    ):
+        value = problem.get(key)
+        if isinstance(value, torch.Tensor):
+            summary[f"{key}_shape"] = list(value.shape)
+            summary[f"{key}_sample"] = value.detach().cpu().flatten()[:10].tolist()
     return summary
 
 
@@ -463,6 +500,7 @@ def _reset_diagnostics(
     if capability_diagnostics:
         result["capability_diagnostics"] = capability_diagnostics
     result.update(_obstacle_diagnostics_summary(problem, agents=list(wrapper.agents), viewpoint_ids=viewpoint_ids))
+    result.update(_inter_robot_conflict_diagnostics_summary(problem))
     return result
 
 
@@ -559,6 +597,17 @@ def main() -> None:
         "obstacle_debug_visualization_line_z_value",
         "obstacle_debug_visualization_line_z_offset",
         "obstacle_debug_visualization_line_width",
+        "inter_robot_conflict_diagnostics_enabled",
+        "inter_robot_conflict_diagnostics_mode",
+        "inter_robot_conflict_robot_footprint_radius",
+        "inter_robot_conflict_safety_margin",
+        "inter_robot_target_conflict_enabled",
+        "inter_robot_target_conflict_radius",
+        "inter_robot_target_conflict_safety_margin",
+        "inter_robot_conflict_debug_visualization_enabled",
+        "inter_robot_conflict_debug_visualization_draw_in_headless",
+        "inter_robot_conflict_debug_visualization_max_lines",
+        "inter_robot_conflict_debug_visualization_line_width",
     ):
         value = getattr(args_cli, attr, None)
         if value is not None:

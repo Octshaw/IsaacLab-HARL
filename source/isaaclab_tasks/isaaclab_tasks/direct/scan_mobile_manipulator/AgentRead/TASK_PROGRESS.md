@@ -4,250 +4,189 @@ Compact handoff for the assignment-based scan-mobile-manipulator work.
 
 ## Current Status
 
-Phase 7B-3 longer diagnostic-only obstacle-aware candidate comparisons are complete. A post-7B-3 Scheme B
-mesh-sampled jittered viewpoint generator is also implemented, with side-balanced proxy placement for the active
-N=50 GUI inspection CSV.
+Phase 9A RL/dynamic-policy readiness check is complete at audit/smoke level.
 
-Current milestone:
+Phase 7B through Phase 8 wrap-up is complete and documented. Phase 9A confirms that the N=50, M=3 RL wrapper is
+shape-compatible, but current observations/rewards are not yet strong enough for meaningful dynamic-policy evaluation
+against the Phase 8 stagnation pattern.
+
+Do not start RL training or formal RL evaluation until a future task explicitly scopes Phase 9B or later. Do not add
+more handcrafted baseline rules unless a future task explicitly scopes them.
+
+## Latest Documentation
+
+Created:
 
 ```text
-mesh-footprint obstacle diagnostics
-obstacle-aware candidate comparison
-GUI red-line debug visualization
-BasisCurves visibility fix
-GUI-safe timed inspection pause
-longer diagnostic-only candidate comparison summaries
-OBJ mesh-sampled jittered viewpoint CSV generation
-side-balanced OBJ-derived proxy-surface viewpoint placement
-configurable GUI debug camera pose
-visual-only USD ground grid for GUI inspection
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE7B_TO_PHASE8_BASELINE_DIAGNOSTIC_WRAPUP.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_PLAN.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_CHECK_REPORT.md
 ```
 
-## Latest Completed Work
-
-Added Scheme B irregular viewpoint generation from the component OBJ mesh, then refined the active N=50 CSV to avoid
-two-cluster sampling by cycling scanner poses across the +X, -X, +Y, and -Y sides of the component proxy.
-
-New files / outputs:
+Archived the previous progress file:
 
 ```text
-scripts/environments/generate_mesh_viewpoint_csv.py
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/generate_component_mesh_jittered_viewpoints.yaml
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv
-results/assignment_diagnostics/component_mesh_jittered_n50_generation.json
-results/assignment_diagnostics/jittered_n50_side_balanced_smoke.json
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B8_WRAPUP_20260628.md
 ```
 
-The generator samples OBJ mesh triangles by area, creates jittered targets, offsets viewpoints using a configurable
-direction mode, and writes the existing strict `scanner_pose_world_quat_wxyz_v1` CSV format. The default config uses
-`normal_mode: radial_xy`, `placement_mode: proxy_surface_radial`, `sampling_mode: proxy_side_balanced`, and a moderate
-z window so the generated views remain mobile-scan friendly while no longer forming a regular bbox grid. The current
-generated side counts are +X=13, -X=13, +Y=12, -Y=12. `proxy_surface_radial` samples OBJ-derived target heights/directions
-but places scanner poses outside the active bbox proxy and orients them toward the nearest proxy surface point, matching
-the current static feasibility screen. `normal_mode: triangle_normal` is available for face-normal offset experiments.
+The Phase 9A readiness check changed markdown only. No Python, solver, environment, reward, controller, HARL, or
+training files were changed.
 
-Added GUI camera scenario settings for inspection runs:
+Phase 9A ran one wrapper compatibility smoke and wrote:
 
 ```text
-visualization.gui_camera_enabled
-visualization.gui_camera_eye
-visualization.gui_camera_target
+results/assignment_diagnostics/phase9a_rl_readiness_n50_m3_smoke.json
 ```
 
-The active `algorithm_proxy_component_mesh.yaml` sets a front-biased default camera at eye `[0.0, -7.5, 3.2]` looking at
-`[0.0, 0.0, 1.1]`. This is synced into Isaac Lab's native `cfg.viewer.eye/lookat` before `DirectMARLEnv` creates its
-`ViewportCameraController`; otherwise the default viewer controller overwrites camera changes made during `_setup_scene`.
-The smoke/evaluator CLIs also accept `--gui_camera_eye`, `--gui_camera_target`, and `--no-gui_camera_enabled` overrides.
+## Phase 8 Baseline Reference
 
-The same scenario now enables a visual-only USD ground grid under the debug scene. Relevant keys are:
+Scenario:
 
 ```text
-visualization.ground_grid_enabled
-visualization.ground_grid_half_extent
-visualization.ground_grid_spacing
-visualization.ground_grid_z
-visualization.ground_grid_line_width
-```
-
-This grid is a `UsdGeom.BasisCurves` visual aid only; it does not add a collision plane, physics object, reward term,
-assignment cost, or mask change.
-
-Ran Phase 7B-3 diagnostics on `algorithm_proxy_component_mesh.yaml` with `random`, `nearest`, and `greedy`.
-
-Final output directories:
-
-```text
-results/assignment_evaluation/phase7b3_long_diag_n50_e3_s50/
-results/assignment_evaluation/phase7b3_long_diag_n50_e10_s100/
-```
-
-Added:
-
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/PHASE7B3_LONG_DIAGNOSTIC_COMPARISON_REPORT.md
-```
-
-Modified:
-
-```text
-scripts/environments/generate_mesh_viewpoint_csv.py
-scripts/environments/test_assignment_harl_wrapper_smoke.py
-scripts/environments/evaluate_assignment_methods.py
 source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/generate_component_mesh_jittered_viewpoints.yaml
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scenario_config.py
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scan_mobile_manipulator_env.py
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md
 ```
 
-The evaluator change is reporting-only: it adds compact obstacle-aware `per_step_summary`, `per_episode_summary`, and
-alias metric names such as `baseline_selected_intersection_rate` and `candidate_selected_intersection_rate`. It does
-not change solver semantics or environment behavior.
-
-Latest verification:
+Run shape:
 
 ```text
-py_compile passed for the generator, smoke script, evaluator, scenario_config.py, and scan_mobile_manipulator_env.py.
-Regenerated component_mesh_jittered_n50.csv with proxy_side_balanced side counts +X=13, -X=13, +Y=12, -Y=12.
-Headless smoke passed with component_mesh_jittered_n50.csv; permanently_unavailable_viewpoints=[] and
-available_viewpoints_per_agent=[[50.0, 50.0, 47.0]].
-Follow-up camera fix py_compile passed after syncing gui_camera settings into cfg.viewer.eye/lookat.
-Ground-grid GUI helper py_compile passed, and headless smoke confirmed `ground_grid_enabled=True` plus grid parameters in
-scenario diagnostics.
+N = 50
+M = 3
+num_episodes = 10
+max_steps = 300
+methods = random, nearest, greedy, nearest_conflict_aware, greedy_conflict_aware
 ```
 
-## Active Architecture / Implementation Path
-
-Obstacle diagnostics are still diagnostic-only:
+Main table:
 
 ```text
-component OBJ -> approximate XY mesh footprint -> diagnostic line-intersection tensors
+random:
+  success_rate = 0.0
+  final_coverage = 0.004
+  coverage_auc = 0.0038
+  selected_target_conflict_rate = 0.4157
+  inter_robot_overlap_rate = 0.6759
+  actual_base_motion_intersection_rate = 0.9050
+
+nearest / greedy:
+  success_rate = 0.0
+  final_coverage = 0.900
+  coverage_auc = 0.7468
+  selected_target_conflict_rate = 0.7191
+  inter_robot_overlap_rate = 0.6689
+  actual_base_motion_intersection_rate = 0.0167
+
+nearest_conflict_aware / greedy_conflict_aware:
+  success_rate = 0.0
+  final_coverage = 0.900
+  coverage_auc = 0.7468
+  selected_target_conflict_rate = 0.6622
+  inter_robot_overlap_rate = 0.5753
+  actual_base_motion_intersection_rate = 0.1237
 ```
 
-Important active fields:
+Stagnation:
 
 ```text
-straight_line_cost_matrix
-mesh_footprint_intersection_mask
-mesh_footprint_penalty_matrix
+final_uncovered_viewpoint_ids = [0, 20, 24, 36, 48]
+mean last coverage gain step = 116
+mean no-progress steps after last gain = 182
+late repeated assignments:
+  robot_0 -> viewpoint 20
+  robot_1 -> viewpoint 48
+  robot_2 -> viewpoint 36
+```
+
+Interpretation: conflict-aware ablations reduce selected-target and inter-robot conflict metrics, but they do not
+improve final coverage and they increase actual proxy base-motion component-footprint crossing risk. The evidence now
+points toward RL/dynamic-policy readiness work rather than more handcrafted baseline variants.
+
+## Diagnostic Boundaries
+
+The following remain diagnostic-only:
+
+```text
 mesh_footprint_aware_cost_matrix
+selected assignment lines
+selected_target_conflict metrics
+inter_robot_overlap metrics
+actual proxy base-motion crossing metrics
 ```
 
-`mesh_footprint_aware_cost_matrix` is not promoted into live solver inputs.
-
-The Phase 7B-3 evaluator comparison still uses:
+The following were not changed by the wrap-up:
 
 ```text
-baseline: normal assignment problem with cost_matrix
-candidate: copied assignment problem with cost_matrix replaced by mesh_footprint_aware_cost_matrix
+cost_matrix
+available_mask
+feasible_mask
+static_geometric_feasible_mask
+solver behavior
+reward
+controller
+assignment_controller.py
+HARL
+training
+environment dynamics
+collision / IK / raycast / path planning
 ```
 
-The component bbox remains metadata/debug only and is not used as hard obstacle blocking.
+## Verification
 
-Red obstacle debug lines are direct robot-base-XY to viewpoint-XY diagnostic segments, not planned robot paths. Robot
-motion may differ from red lines; this is expected.
+No `py_compile` was required because this task changed markdown only.
 
-The mesh-sampled viewpoint generator is an offline CSV-generation utility. It does not change solver inputs, masks,
-reward, controller behavior, HARL, or training.
-
-## Latest Verification
-
-Latest verification:
+Phase 9A smoke:
 
 ```text
-conda run -p C:\isaacenvs\isaac45_harl python -c "import sys; print(sys.executable)"
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/generate_mesh_viewpoint_csv.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/viewpoint_csv.py
-conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/generate_mesh_viewpoint_csv.py --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/generate_component_mesh_jittered_viewpoints.yaml
-conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/test_assignment_harl_wrapper_smoke.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --num_envs 1 --max_steps 1 --headless --device cpu --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml --result_file results/assignment_diagnostics/jittered_n50_proxy_nearest_aligned_smoke.json
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_methods.py
-conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/evaluate_assignment_methods.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --methods random nearest greedy --num_envs 1 --num_episodes 3 --max_steps 50 --headless --device cpu --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml --output_dir results/assignment_evaluation --output_name phase7b3_long_diag_n50_e3_s50 --no-write_assignment_history --compare_obstacle_aware_candidates
-conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/evaluate_assignment_methods.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --methods random nearest greedy --num_envs 1 --num_episodes 10 --max_steps 100 --headless --device cpu --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml --output_dir results/assignment_evaluation --output_name phase7b3_long_diag_n50_e10_s100 --no-write_assignment_history --compare_obstacle_aware_candidates
+conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/test_assignment_harl_wrapper_smoke.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --num_envs 1 --max_steps 1 --headless --device cpu --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml --result_file results/assignment_diagnostics/phase9a_rl_readiness_n50_m3_smoke.json
 ```
 
-Results passed. `component_mesh_jittered_n50.csv` was read back successfully with the strict CSV loader: N=50,
-z range approximately 0.659-1.688 m. The first mesh-offset version placed scanner poses inside the active hardcoded
-proxy bbox and produced all-infeasible viewpoints; the current proxy-radial/nearest-surface version passed wrapper smoke
-with `permanently_unavailable_viewpoints=[]`. Final `git diff --check` and `git status` should be read from the latest
-handoff or final Codex response after final checks.
-
-Phase 7B-3 key diagnostic results:
+Result:
 
 ```text
-short run, e3/s50:
-  random baseline_selected_intersection_rate=0.54
-  nearest baseline/candidate selected_intersection_rate=0.0/0.0, changed_rate=0.0
-  greedy baseline/candidate selected_intersection_rate=0.0/0.0, changed_rate=0.0
-
-larger run, e10/s100:
-  random baseline_selected_intersection_rate=0.67
-  nearest baseline/candidate selected_intersection_rate=0.043333/0.043333, changed_rate=0.0
-  greedy baseline/candidate selected_intersection_rate=0.043333/0.043333, changed_rate=0.0
+[OK] assignment HARL wrapper smoke passed
+num_agents = 3
+num_viewpoints = 50
+noop_id = 50
+available_actions_shape = [1, 3, 51]
+available_mask_shape = [1, 3, 50]
+cost_matrix_shape = [1, 3, 50]
 ```
 
-## Known Issues / Limitations
+Required final checks for this handoff:
 
-- Synthetic N=50 viewpoints remain smoke/interface data only, not final benchmark evidence.
-- Current synthetic N=50 scenario does not strongly stress nearest/greedy obstacle effects.
-- `component_mesh_jittered_n50.csv` is a diagnostic OBJ-derived candidate set, not a final planned benchmark CSV.
-- The default jittered generator config filters z to a mobile-scan-friendly band; remove/adjust `min_z` and `max_z`
-  for full-surface sampling.
-- Obstacle-aware candidate assignments did not differ from baseline nearest/greedy in Phase 7B-3.
-- Mesh footprint is approximate XY diagnostic geometry, not 3D collision.
-- Red debug lines are direct diagnostic segments, not planned robot paths.
-- Current hybrid scenario keeps obstacle debug visualization enabled for manual GUI inspection; set it false for
-  smoke-only runs if desired.
-
-## Do Not Do
-
-- Do not promote `mesh_footprint_aware_cost_matrix` into solver inputs yet.
-- Do not replace `cost_matrix`.
-- Do not change `available_mask`, `feasible_mask`, or `static_geometric_feasible_mask`.
-- Do not change solver default behavior, reward, controller, `assignment_controller.py`, HARL, or training.
-- Do not add RL evaluation.
-- Do not add bbox hard blocking or mesh-footprint hard blocking.
-- Do not add inter-robot conflict avoidance or dynamic reassignment yet.
-- Do not add real robot articulation, IK, collision, joint limits, or raycast coverage.
-- Do not require or use the final real planned CSV.
-- Do not treat temporary/synthetic CSVs as final benchmark evidence.
+```text
+git diff --check
+git status --short
+```
 
 ## Next Step
 
-Recommended next task:
+Recommended next task: scoped Phase 9B technical RL smoke planning or an observation/reward design phase.
+
+Start from:
 
 ```text
-Use component_mesh_jittered_n50.csv in GUI/evaluator runs for nearest/greedy visual inspection, then decide whether
-the irregular OBJ-derived viewpoints better stress obstacle diagnostics before starting Phase 7B-4.
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_CHECK_REPORT.md
 ```
 
-Suggested override path for existing scenarios:
+Do not evaluate old checkpoints on N=50. Old assignment checkpoints found in `results/isaaclab/.../assignment_happo_*`
+have 13-class categorical heads, which means fixed N=12 plus noop. Old `scan_happo` checkpoints are 9D continuous
+policies.
 
-```text
---viewpoint_csv_path source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv --expect_num_viewpoints 50
-```
-
-Interpretation:
-
-```text
-The diagnostic tooling is ready for a later gated solver-cost experiment, but current synthetic N=50 evidence alone is
-weak because nearest/greedy baseline intersection rates were low and candidate costs did not change assignments or
-reduce obstacle penalty. Prefer a more obstacle-stressing scenario before making solver-behavior claims.
-```
+If proceeding to Phase 9B, first decide whether it is only a no-checkpoint action/mask technical smoke or whether an
+observation/reward design update is needed before any meaningful dynamic-policy evaluation.
 
 ## Detailed Reports / Archives
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/PHASE7B3_LONG_DIAGNOSTIC_COMPARISON_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/PHASE7B_OBSTACLE_DIAGNOSTICS_CHECKPOINT_SUMMARY.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/NEXT_PHASE_7B3_LONG_DIAGNOSTIC_COMPARISON_PLAN.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B_CHECKPOINT_20260623.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/GUI_SAFE_INSPECTION_PAUSE_PATCH_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/GUI_INSPECTION_PAUSE_PATCH_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/OBSTACLE_DEBUG_LINE_VISIBILITY_PATCH_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/OBSTACLE_DIAGNOSTIC_GUI_LINE_VISUALIZATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/OBSTACLE_AWARE_CANDIDATE_COMPARISON_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/MESH_FOOTPRINT_OBSTACLE_DIAGNOSTICS_MVP_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/HYBRID_ALGORITHM_COMPONENT_MESH_SCENARIO_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260623/ALGORITHM_SCENARIO_DECOUPLING_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE7B_TO_PHASE8_BASELINE_DIAGNOSTIC_WRAPUP.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_PLAN.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_CHECK_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE8_REAL_COMPONENT_PROXY_BASELINE_VALIDATION_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B8_WRAPUP_20260628.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE8_BASELINE_VALIDATION_20260628.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260625/PHASE7E_ACTUAL_BASE_MOTION_CROSSING_DIAGNOSTICS_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260625/PHASE7D2_CONFLICT_AWARE_BASELINE_VARIANTS_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260625/PHASE7D1_TARGET_CONFLICT_CANDIDATE_COMPARISON_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260624/PHASE7C_INTER_ROBOT_PROXY_CONFLICT_DIAGNOSTICS_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260624/PHASE7B4A_SELECTED_ASSIGNMENT_VISUALIZATION_REPORT.md
 ```

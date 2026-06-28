@@ -43,7 +43,8 @@ from scenario_config import load_scenario_config, smoke_defaults_from_config, va
 from isaaclab.app import AppLauncher
 
 
-METHODS = ("random", "nearest", "greedy")
+CONFLICT_AWARE_METHODS = ("greedy_conflict_aware", "nearest_conflict_aware")
+METHODS = ("random", "nearest", "greedy", *CONFLICT_AWARE_METHODS)
 
 pre_parser = argparse.ArgumentParser(add_help=False)
 pre_parser.add_argument("--scenario_config", type=str, default=None, help="Optional scenario YAML/JSON config.")
@@ -262,6 +263,8 @@ print(
     f"assignment_stall_window={args_cli.assignment_stall_window} "
     f"assignment_pair_cooldown={args_cli.assignment_pair_cooldown} "
     f"compare_obstacle_aware_candidates={bool(args_cli.compare_obstacle_aware_candidates)} "
+    f"target_conflict_candidate_comparison={bool(getattr(args_cli, 'target_conflict_candidate_comparison_enabled', False))} "
+    f"conflict_aware_baseline={bool(getattr(args_cli, 'conflict_aware_baseline_enabled', False))} "
     f"write_controller_state_trace={bool(args_cli.write_controller_state_trace)} "
     f"controller_trace_pairs={args_cli.controller_trace_pairs or args_cli.controller_trace_agent_viewpoint_pairs}",
     flush=True,
@@ -327,6 +330,55 @@ PER_EPISODE_FIELDS = [
     "valid_action_rate",
     "new_viewpoints_total",
     "episode_length",
+    "inter_robot_overlap_step_count",
+    "inter_robot_overlap_rate",
+    "inter_robot_overlap_pair_count_total",
+    "inter_robot_min_distance_min",
+    "inter_robot_min_distance_mean",
+    "inter_robot_min_clearance_min",
+    "inter_robot_min_clearance_mean",
+    "selected_target_conflict_step_count",
+    "selected_target_conflict_rate",
+    "selected_target_conflict_pair_count_total",
+    "selected_target_min_distance_min",
+    "selected_target_min_distance_mean",
+    "selected_target_min_clearance_min",
+    "selected_target_min_clearance_mean",
+    "selected_target_skipped_robot_count_total",
+    "selected_target_valid_robot_count_mean",
+    "actual_base_motion_intersection_step_count",
+    "actual_base_motion_intersection_rate",
+    "actual_base_motion_intersection_pair_count_total",
+    "actual_base_motion_intersection_pair_count_mean",
+    "actual_base_motion_min_distance_to_footprint_min",
+    "actual_base_motion_min_distance_to_footprint_mean",
+    "actual_base_motion_valid_robot_count_mean",
+    "actual_base_motion_skipped_robot_count_total",
+    "baseline_selected_target_conflict_step_count",
+    "baseline_selected_target_conflict_rate_mean",
+    "baseline_selected_target_conflict_pair_count_total",
+    "baseline_selected_target_min_distance_min",
+    "baseline_selected_target_min_clearance_min",
+    "baseline_selected_target_conflict_penalty_sum_total",
+    "candidate_selected_target_conflict_step_count",
+    "candidate_selected_target_conflict_rate_mean",
+    "candidate_selected_target_conflict_pair_count_total",
+    "candidate_selected_target_min_distance_min",
+    "candidate_selected_target_min_clearance_min",
+    "candidate_selected_target_conflict_penalty_sum_total",
+    "candidate_changed_assignment_rate_mean",
+    "candidate_changed_assignment_count_total",
+    "conflict_aware_solver_enabled",
+    "conflict_aware_fallback_step_count",
+    "conflict_aware_fallback_rate",
+    "conflict_aware_candidate_combination_count_mean",
+    "conflict_aware_selected_score_mean",
+    "conflict_aware_selected_unary_cost_sum_mean",
+    "conflict_aware_selected_target_conflict_pair_count_total",
+    "conflict_aware_selected_target_conflict_penalty_sum_total",
+    "conflict_aware_selected_duplicate_pair_count_total",
+    "conflict_aware_changed_vs_base_count_total",
+    "conflict_aware_changed_vs_base_rate_mean",
 ]
 
 SUMMARY_FIELDS = [
@@ -340,6 +392,55 @@ SUMMARY_FIELDS = [
     "mean_duplicate_count",
     "mean_noop_rate",
     "mean_valid_action_rate",
+    "inter_robot_overlap_step_count_total",
+    "inter_robot_overlap_rate_mean",
+    "inter_robot_overlap_pair_count_total",
+    "inter_robot_min_distance_min",
+    "inter_robot_min_distance_mean",
+    "inter_robot_min_clearance_min",
+    "inter_robot_min_clearance_mean",
+    "selected_target_conflict_step_count_total",
+    "selected_target_conflict_rate_mean",
+    "selected_target_conflict_pair_count_total",
+    "selected_target_min_distance_min",
+    "selected_target_min_distance_mean",
+    "selected_target_min_clearance_min",
+    "selected_target_min_clearance_mean",
+    "selected_target_skipped_robot_count_total",
+    "selected_target_valid_robot_count_mean",
+    "actual_base_motion_intersection_step_count_total",
+    "actual_base_motion_intersection_rate_mean",
+    "actual_base_motion_intersection_pair_count_total",
+    "actual_base_motion_intersection_pair_count_mean",
+    "actual_base_motion_min_distance_to_footprint_min",
+    "actual_base_motion_min_distance_to_footprint_mean",
+    "actual_base_motion_valid_robot_count_mean",
+    "actual_base_motion_skipped_robot_count_total",
+    "baseline_selected_target_conflict_step_count",
+    "baseline_selected_target_conflict_rate_mean",
+    "baseline_selected_target_conflict_pair_count_total",
+    "baseline_selected_target_min_distance_min",
+    "baseline_selected_target_min_clearance_min",
+    "baseline_selected_target_conflict_penalty_sum_total",
+    "candidate_selected_target_conflict_step_count",
+    "candidate_selected_target_conflict_rate_mean",
+    "candidate_selected_target_conflict_pair_count_total",
+    "candidate_selected_target_min_distance_min",
+    "candidate_selected_target_min_clearance_min",
+    "candidate_selected_target_conflict_penalty_sum_total",
+    "candidate_changed_assignment_rate_mean",
+    "candidate_changed_assignment_count_total",
+    "conflict_aware_solver_enabled",
+    "conflict_aware_fallback_step_count_total",
+    "conflict_aware_fallback_rate_mean",
+    "conflict_aware_candidate_combination_count_mean",
+    "conflict_aware_selected_score_mean",
+    "conflict_aware_selected_unary_cost_sum_mean",
+    "conflict_aware_selected_target_conflict_pair_count_total",
+    "conflict_aware_selected_target_conflict_penalty_sum_total",
+    "conflict_aware_selected_duplicate_pair_count_total",
+    "conflict_aware_changed_vs_base_count_total",
+    "conflict_aware_changed_vs_base_rate_mean",
 ]
 
 ASSIGNMENT_HISTORY_FIELDS = [
@@ -363,7 +464,11 @@ ASSIGNMENT_HISTORY_FIELDS = [
     "cooldown_remaining_after_step",
     "stall_count_before_step",
     "stall_count_after_step",
+    "actual_base_motion_intersects_component",
+    "actual_base_motion_distance",
 ]
+
+_FOOTPRINT_CELL_CENTER_CACHE: dict[int, tuple[tuple[float, float], ...]] = {}
 
 RETRY_FALLBACK_EVENT_FIELDS = [
     "method",
@@ -530,6 +635,16 @@ def _clone_env_cfg(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEn
         "obstacle_footprint_inflation_radius",
         "obstacle_line_sample_step",
         "obstacle_blocked_path_penalty",
+        "actual_base_motion_obstacle_diagnostics_enabled",
+        "actual_base_motion_obstacle_diagnostics_mode",
+        "actual_base_motion_obstacle_source",
+        "actual_base_motion_line_sample_step",
+        "actual_base_motion_min_motion_distance",
+        "actual_base_motion_max_pairs_sample",
+        "actual_base_motion_debug_visualization_enabled",
+        "actual_base_motion_debug_visualization_draw_in_headless",
+        "actual_base_motion_debug_visualization_max_lines",
+        "actual_base_motion_debug_visualization_line_width",
         "obstacle_debug_visualization_enabled",
         "obstacle_debug_visualization_draw_in_headless",
         "obstacle_debug_visualization_line_source",
@@ -540,6 +655,17 @@ def _clone_env_cfg(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEn
         "obstacle_debug_visualization_line_z_value",
         "obstacle_debug_visualization_line_z_offset",
         "obstacle_debug_visualization_line_width",
+        "inter_robot_conflict_diagnostics_enabled",
+        "inter_robot_conflict_diagnostics_mode",
+        "inter_robot_conflict_robot_footprint_radius",
+        "inter_robot_conflict_safety_margin",
+        "inter_robot_target_conflict_enabled",
+        "inter_robot_target_conflict_radius",
+        "inter_robot_target_conflict_safety_margin",
+        "inter_robot_conflict_debug_visualization_enabled",
+        "inter_robot_conflict_debug_visualization_draw_in_headless",
+        "inter_robot_conflict_debug_visualization_max_lines",
+        "inter_robot_conflict_debug_visualization_line_width",
     ):
         value = getattr(args_cli, attr, None)
         if value is not None:
@@ -606,6 +732,708 @@ def _validate_assignment(problem: dict, assignment: torch.Tensor) -> None:
         env_id, agent_id = int(bad[0].item()), int(bad[1].item())
         viewpoint_id = int(assignment[env_id, agent_id].item())
         raise RuntimeError(f"selected unavailable viewpoint {viewpoint_id} for env {env_id}, agent {agent_id}")
+
+
+def _set_selected_assignment_debug_visualization(unwrapped, assignment: torch.Tensor, problem: dict) -> None:
+    setter = getattr(unwrapped, "set_obstacle_debug_selected_assignments", None)
+    if callable(setter):
+        setter(assignment, problem)
+
+
+def _update_selected_assignment_debug_runtime_diagnostics(
+    diagnostics: dict | None,
+    unwrapped,
+    *,
+    method: str,
+    step: torch.Tensor | None,
+) -> None:
+    if diagnostics is None:
+        return
+    getter = getattr(unwrapped, "get_obstacle_debug_visualization_diagnostics", None)
+    if not callable(getter):
+        return
+    debug = getter()
+    if "selected_assignment_debug_visualization_enabled" not in debug:
+        return
+    snapshot = dict(debug)
+    snapshot["method"] = method
+    if isinstance(step, torch.Tensor):
+        snapshot["step_by_env"] = [int(value) for value in step.detach().cpu().flatten().tolist()]
+    diagnostics["selected_assignment_debug_visualization_latest"] = snapshot
+
+
+def _zero_conflict_metrics(
+    num_envs: int,
+    device: torch.device,
+    *,
+    pair_prefix: str,
+    metric_prefix: str,
+    skipped_reason: str,
+) -> dict:
+    pair_count = torch.zeros(num_envs, dtype=torch.long, device=device)
+    min_values = torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device)
+    return {
+        f"{pair_prefix}_pair_count": pair_count,
+        f"{pair_prefix}_pairs_sample": [],
+        f"{metric_prefix}_min_distance": min_values.clone(),
+        f"{metric_prefix}_min_clearance": min_values.clone(),
+        f"{pair_prefix}_any": pair_count > 0,
+        f"{pair_prefix}_skipped_reason": skipped_reason,
+    }
+
+
+def _selected_target_conflict_diagnostics(problem: dict, assignment: torch.Tensor, viewpoint_ids: list[int]) -> dict:
+    num_envs = int(problem["num_envs"])
+    num_agents = int(problem["num_agents"])
+    device = assignment.device
+    diagnostics_enabled = bool(problem.get("inter_robot_conflict_diagnostics_enabled", False))
+    target_enabled = bool(problem.get("inter_robot_target_conflict_enabled", False))
+    if not diagnostics_enabled:
+        metrics = _zero_conflict_metrics(
+            num_envs,
+            device,
+            pair_prefix="selected_target_conflict",
+            metric_prefix="selected_target",
+            skipped_reason="inter_robot_conflict_diagnostics_disabled",
+        )
+        metrics["selected_target_valid_robot_count"] = torch.zeros(num_envs, dtype=torch.long, device=device)
+        metrics["selected_target_skipped_robot_count"] = torch.full(
+            (num_envs,),
+            num_agents,
+            dtype=torch.long,
+            device=device,
+        )
+        return metrics
+    if not target_enabled:
+        metrics = _zero_conflict_metrics(
+            num_envs,
+            device,
+            pair_prefix="selected_target_conflict",
+            metric_prefix="selected_target",
+            skipped_reason="target_conflict_disabled",
+        )
+        metrics["selected_target_valid_robot_count"] = torch.zeros(num_envs, dtype=torch.long, device=device)
+        metrics["selected_target_skipped_robot_count"] = torch.full(
+            (num_envs,),
+            num_agents,
+            dtype=torch.long,
+            device=device,
+        )
+        return metrics
+
+    viewpoint_pos = problem.get("viewpoint_pos")
+    if not isinstance(viewpoint_pos, torch.Tensor):
+        metrics = _zero_conflict_metrics(
+            num_envs,
+            device,
+            pair_prefix="selected_target_conflict",
+            metric_prefix="selected_target",
+            skipped_reason="missing_viewpoint_pos",
+        )
+        metrics["selected_target_valid_robot_count"] = torch.zeros(num_envs, dtype=torch.long, device=device)
+        metrics["selected_target_skipped_robot_count"] = torch.full(
+            (num_envs,),
+            num_agents,
+            dtype=torch.long,
+            device=device,
+        )
+        return metrics
+
+    target_radius = float(problem.get("inter_robot_target_conflict_radius", 0.35))
+    target_margin = float(problem.get("inter_robot_target_conflict_safety_margin", 0.15))
+    threshold = (2.0 * target_radius) + target_margin
+    pair_count = torch.zeros(num_envs, dtype=torch.long, device=device)
+    min_distance = torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device)
+    min_clearance = torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device)
+    valid_robot_count = (assignment >= 0).sum(dim=1).to(dtype=torch.long)
+    skipped_robot_count = (assignment < 0).sum(dim=1).to(dtype=torch.long)
+    pairs_sample: list[dict] = []
+    max_sample = 10
+
+    if num_agents >= 2:
+        min_distance.fill_(float("inf"))
+        min_clearance.fill_(float("inf"))
+        has_candidate_pair = torch.zeros(num_envs, dtype=torch.bool, device=device)
+        viewpoint_xy = viewpoint_pos[:, :, :2]
+        for robot_i in range(num_agents):
+            selected_i = assignment[:, robot_i]
+            valid_i = selected_i >= 0
+            safe_i = selected_i.clamp(min=0)
+            target_i = viewpoint_xy[torch.arange(num_envs, device=device), safe_i]
+            for robot_j in range(robot_i + 1, num_agents):
+                selected_j = assignment[:, robot_j]
+                valid_j = selected_j >= 0
+                pair_valid = valid_i & valid_j
+                if not bool(pair_valid.any()):
+                    continue
+                safe_j = selected_j.clamp(min=0)
+                target_j = viewpoint_xy[torch.arange(num_envs, device=device), safe_j]
+                distance = torch.linalg.norm(target_i - target_j, dim=-1)
+                clearance = distance - threshold
+                conflict = pair_valid & (clearance < 0.0)
+                pair_count += conflict.to(dtype=torch.long)
+                has_candidate_pair |= pair_valid
+                min_distance = torch.where(pair_valid, torch.minimum(min_distance, distance), min_distance)
+                min_clearance = torch.where(pair_valid, torch.minimum(min_clearance, clearance), min_clearance)
+                if len(pairs_sample) < max_sample and bool(conflict.any()):
+                    for env_id in torch.nonzero(conflict, as_tuple=False).flatten().detach().cpu().tolist():
+                        if len(pairs_sample) >= max_sample:
+                            break
+                        viewpoint_i_index = int(selected_i[env_id].item())
+                        viewpoint_j_index = int(selected_j[env_id].item())
+                        pairs_sample.append(
+                            {
+                                "env_id": int(env_id),
+                                "robot_i": int(robot_i),
+                                "robot_j": int(robot_j),
+                                "viewpoint_i": viewpoint_ids[viewpoint_i_index]
+                                if viewpoint_i_index < len(viewpoint_ids)
+                                else viewpoint_i_index,
+                                "viewpoint_j": viewpoint_ids[viewpoint_j_index]
+                                if viewpoint_j_index < len(viewpoint_ids)
+                                else viewpoint_j_index,
+                                "distance": float(distance[env_id].item()),
+                                "clearance": float(clearance[env_id].item()),
+                                "threshold": threshold,
+                                "target_conflict_radius_i": target_radius,
+                                "target_conflict_radius_j": target_radius,
+                                "target_conflict_safety_margin": target_margin,
+                            }
+                        )
+        min_distance = torch.where(has_candidate_pair, min_distance, torch.full_like(min_distance, float("nan")))
+        min_clearance = torch.where(has_candidate_pair, min_clearance, torch.full_like(min_clearance, float("nan")))
+
+    return {
+        "selected_target_conflict_pair_count": pair_count,
+        "selected_target_conflict_pairs_sample": pairs_sample,
+        "selected_target_min_distance": min_distance,
+        "selected_target_min_clearance": min_clearance,
+        "selected_target_conflict_any": pair_count > 0,
+        "selected_target_valid_robot_count": valid_robot_count,
+        "selected_target_skipped_robot_count": skipped_robot_count,
+        "selected_target_conflict_skipped_reason": None,
+    }
+
+
+def _compact_conflict_snapshot(metrics: dict, *, pair_prefix: str, metric_prefix: str) -> dict:
+    snapshot = {}
+    for key in (
+        f"{pair_prefix}_pair_count",
+        f"{pair_prefix}_pairs_sample",
+        f"{metric_prefix}_min_distance",
+        f"{metric_prefix}_min_clearance",
+        f"{pair_prefix}_any",
+        f"{pair_prefix}_skipped_reason",
+    ):
+        if key in metrics:
+            snapshot[key] = metrics[key]
+    if pair_prefix == "inter_robot_overlap" and "inter_robot_conflict_skipped_reason" in metrics:
+        snapshot["inter_robot_conflict_skipped_reason"] = metrics["inter_robot_conflict_skipped_reason"]
+    return snapshot
+
+
+def _update_inter_robot_runtime_diagnostics(
+    diagnostics: dict | None,
+    *,
+    method: str,
+    step: torch.Tensor,
+    current_overlap: dict,
+    selected_target: dict,
+) -> None:
+    if diagnostics is None:
+        return
+    diagnostics["inter_robot_conflict_runtime_latest"] = {
+        "method": method,
+        "step_by_env": [int(value) for value in step.detach().cpu().flatten().tolist()],
+        "current_robot_overlap": _compact_conflict_snapshot(
+            current_overlap,
+            pair_prefix="inter_robot_overlap",
+            metric_prefix="inter_robot",
+        ),
+        "selected_target_conflict": _compact_conflict_snapshot(
+            selected_target,
+            pair_prefix="selected_target_conflict",
+            metric_prefix="selected_target",
+        ),
+        "selected_target_valid_robot_count": selected_target.get("selected_target_valid_robot_count"),
+        "selected_target_skipped_robot_count": selected_target.get("selected_target_skipped_robot_count"),
+    }
+
+
+def _target_conflict_candidate_config() -> dict:
+    compare_methods = getattr(args_cli, "target_conflict_candidate_compare_methods", None)
+    if compare_methods is None:
+        compare_methods = ["nearest", "greedy"]
+    if isinstance(compare_methods, str):
+        compare_methods = [compare_methods]
+    compare_methods = [str(method).strip().lower() for method in compare_methods if str(method).strip()]
+    return {
+        "enabled": bool(getattr(args_cli, "target_conflict_candidate_comparison_enabled", False)),
+        "mode": str(getattr(args_cli, "target_conflict_candidate_comparison_mode", "diagnostic_only")).strip().lower(),
+        "candidate_generator": str(
+            getattr(args_cli, "target_conflict_candidate_generator", "sequential_robot_order")
+        ).strip().lower(),
+        "robot_order": str(getattr(args_cli, "target_conflict_candidate_robot_order", "robot_index")).strip().lower(),
+        "target_conflict_radius": float(getattr(args_cli, "target_conflict_candidate_radius", 0.35)),
+        "target_conflict_safety_margin": float(
+            getattr(args_cli, "target_conflict_candidate_safety_margin", 0.15)
+        ),
+        "selected_target_conflict_penalty": float(getattr(args_cli, "target_conflict_candidate_penalty", 100.0)),
+        "compare_methods": compare_methods,
+        "include_random_as_baseline_only": bool(
+            getattr(args_cli, "target_conflict_candidate_include_random_as_baseline_only", True)
+        ),
+        "max_pairs_sample": int(getattr(args_cli, "target_conflict_candidate_max_pairs_sample", 20)),
+    }
+
+
+def _conflict_aware_baseline_config(method: str | None = None) -> dict:
+    configured_methods = getattr(args_cli, "conflict_aware_baseline_methods", None)
+    if configured_methods is None:
+        methods = list(CONFLICT_AWARE_METHODS)
+    else:
+        methods = [str(value).strip().lower() for value in configured_methods]
+
+    configured_enabled = getattr(args_cli, "conflict_aware_baseline_enabled", None)
+    if configured_enabled is None:
+        enabled = method in CONFLICT_AWARE_METHODS if method is not None else False
+    else:
+        enabled = bool(configured_enabled)
+    if method is not None:
+        enabled = bool(enabled and str(method).strip().lower() in methods)
+
+    return {
+        "enabled": enabled,
+        "methods": methods,
+        "mode": str(getattr(args_cli, "conflict_aware_baseline_mode", "gated_solver_variant")).strip().lower(),
+        "top_k": int(getattr(args_cli, "conflict_aware_baseline_top_k", 10)),
+        "target_conflict_radius": float(getattr(args_cli, "conflict_aware_baseline_target_conflict_radius", 0.35)),
+        "target_conflict_safety_margin": float(
+            getattr(args_cli, "conflict_aware_baseline_target_conflict_safety_margin", 0.15)
+        ),
+        "target_conflict_penalty": float(getattr(args_cli, "conflict_aware_baseline_target_conflict_penalty", 100.0)),
+        "duplicate_penalty": float(getattr(args_cli, "conflict_aware_baseline_duplicate_penalty", 1_000_000.0)),
+        "fallback_to_base_method": bool(
+            getattr(args_cli, "conflict_aware_baseline_fallback_to_base_method", True)
+        ),
+        "max_pairs_sample": int(getattr(args_cli, "conflict_aware_baseline_max_pairs_sample", 20)),
+    }
+
+
+def _attach_conflict_aware_baseline_config(problem: dict, *, method: str | None) -> dict:
+    config = _conflict_aware_baseline_config(method)
+    updated = dict(problem)
+    updated.update(
+        {
+            "conflict_aware_baseline_enabled": bool(config["enabled"]),
+            "conflict_aware_baseline_methods": tuple(config["methods"]),
+            "conflict_aware_baseline_mode": config["mode"],
+            "conflict_aware_top_k": int(config["top_k"]),
+            "conflict_aware_target_conflict_radius": float(config["target_conflict_radius"]),
+            "conflict_aware_target_conflict_safety_margin": float(config["target_conflict_safety_margin"]),
+            "conflict_aware_target_conflict_penalty": float(config["target_conflict_penalty"]),
+            "conflict_aware_duplicate_penalty": float(config["duplicate_penalty"]),
+            "conflict_aware_fallback_to_base_method": bool(config["fallback_to_base_method"]),
+            "conflict_aware_max_pairs_sample": int(config["max_pairs_sample"]),
+        }
+    )
+    return updated
+
+
+def _target_conflict_threshold(config: dict) -> float:
+    return (2.0 * float(config["target_conflict_radius"])) + float(config["target_conflict_safety_margin"])
+
+
+def _target_conflict_required_tensors(problem: dict) -> tuple[dict[str, torch.Tensor] | None, str | None]:
+    required = {
+        "cost_matrix": problem.get("cost_matrix"),
+        "available_mask": problem.get("available_mask"),
+        "viewpoint_pos": problem.get("viewpoint_pos"),
+    }
+    missing = [name for name, value in required.items() if not isinstance(value, torch.Tensor)]
+    if missing:
+        return None, f"missing_required_tensors:{','.join(missing)}"
+    cost_shape = tuple(required["cost_matrix"].shape)
+    if tuple(required["available_mask"].shape) != cost_shape:
+        return None, f"available_mask_shape_mismatch expected={cost_shape} got={tuple(required['available_mask'].shape)}"
+    expected_viewpoint_shape = (cost_shape[0], cost_shape[2])
+    if tuple(required["viewpoint_pos"].shape[:2]) != expected_viewpoint_shape:
+        return None, (
+            "viewpoint_pos_shape_mismatch "
+            f"expected_prefix={expected_viewpoint_shape} got={tuple(required['viewpoint_pos'].shape)}"
+        )
+    return required, None
+
+
+def _target_conflict_assignment_metrics(
+    *,
+    assignment: torch.Tensor,
+    viewpoint_pos: torch.Tensor,
+    viewpoint_ids: list[int],
+    agents: list[str],
+    config: dict,
+    max_pairs_sample: int | None = None,
+) -> dict:
+    num_envs, num_agents = assignment.shape
+    device = assignment.device
+    threshold = _target_conflict_threshold(config)
+    penalty_value = float(config["selected_target_conflict_penalty"])
+    max_pairs_sample = int(config["max_pairs_sample"] if max_pairs_sample is None else max_pairs_sample)
+
+    pair_count = torch.zeros(num_envs, dtype=torch.long, device=device)
+    conflict_pair_count = torch.zeros(num_envs, dtype=torch.long, device=device)
+    min_distance = torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device)
+    min_clearance = torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device)
+    penalty_sum = torch.zeros(num_envs, dtype=torch.float32, device=device)
+    conflict_pairs_sample: list[dict] = []
+
+    if num_agents < 2:
+        return {
+            "pair_count": pair_count,
+            "conflict_pair_count": conflict_pair_count,
+            "conflict_rate": torch.zeros(num_envs, dtype=torch.float32, device=device),
+            "min_distance": min_distance,
+            "min_clearance": min_clearance,
+            "penalty_sum": penalty_sum,
+            "conflict_pairs_sample": conflict_pairs_sample,
+        }
+
+    min_distance.fill_(float("inf"))
+    min_clearance.fill_(float("inf"))
+    has_pair = torch.zeros(num_envs, dtype=torch.bool, device=device)
+    viewpoint_xy = viewpoint_pos[:, :, :2]
+    env_indices = torch.arange(num_envs, device=device)
+    for robot_i in range(num_agents):
+        selected_i = assignment[:, robot_i]
+        valid_i = selected_i >= 0
+        safe_i = selected_i.clamp(min=0)
+        target_i = viewpoint_xy[env_indices, safe_i]
+        for robot_j in range(robot_i + 1, num_agents):
+            selected_j = assignment[:, robot_j]
+            valid_j = selected_j >= 0
+            pair_valid = valid_i & valid_j
+            if not bool(pair_valid.any()):
+                continue
+            safe_j = selected_j.clamp(min=0)
+            target_j = viewpoint_xy[env_indices, safe_j]
+            distance = torch.linalg.norm(target_i - target_j, dim=-1)
+            clearance = distance - threshold
+            conflict = pair_valid & (clearance < 0.0)
+            pair_count += pair_valid.to(dtype=torch.long)
+            conflict_pair_count += conflict.to(dtype=torch.long)
+            penalty_sum += conflict.to(dtype=torch.float32) * penalty_value
+            has_pair |= pair_valid
+            min_distance = torch.where(pair_valid, torch.minimum(min_distance, distance), min_distance)
+            min_clearance = torch.where(pair_valid, torch.minimum(min_clearance, clearance), min_clearance)
+            if len(conflict_pairs_sample) < max_pairs_sample and bool(conflict.any()):
+                for env_id in torch.nonzero(conflict, as_tuple=False).flatten().detach().cpu().tolist():
+                    if len(conflict_pairs_sample) >= max_pairs_sample:
+                        break
+                    viewpoint_i_index = int(selected_i[env_id].item())
+                    viewpoint_j_index = int(selected_j[env_id].item())
+                    conflict_pairs_sample.append(
+                        {
+                            "env_id": int(env_id),
+                            "robot_i": int(robot_i),
+                            "robot_j": int(robot_j),
+                            "robot_i_name": agents[robot_i] if robot_i < len(agents) else f"robot_{robot_i}",
+                            "robot_j_name": agents[robot_j] if robot_j < len(agents) else f"robot_{robot_j}",
+                            "viewpoint_i": _viewpoint_id_from_assignment(viewpoint_ids, viewpoint_i_index),
+                            "viewpoint_j": _viewpoint_id_from_assignment(viewpoint_ids, viewpoint_j_index),
+                            "distance": float(distance[env_id].item()),
+                            "clearance": float(clearance[env_id].item()),
+                            "threshold": threshold,
+                            "selected_target_conflict_penalty": penalty_value,
+                        }
+                    )
+
+    min_distance = torch.where(has_pair, min_distance, torch.full_like(min_distance, float("nan")))
+    min_clearance = torch.where(has_pair, min_clearance, torch.full_like(min_clearance, float("nan")))
+    conflict_rate = conflict_pair_count.to(dtype=torch.float32) / pair_count.clamp(min=1).to(dtype=torch.float32)
+    return {
+        "pair_count": pair_count,
+        "conflict_pair_count": conflict_pair_count,
+        "conflict_rate": conflict_rate,
+        "min_distance": min_distance,
+        "min_clearance": min_clearance,
+        "penalty_sum": penalty_sum,
+        "conflict_pairs_sample": conflict_pairs_sample,
+    }
+
+
+def _target_conflict_candidate_assignment(problem: dict, *, config: dict) -> tuple[torch.Tensor | None, str | None]:
+    tensors, reason = _target_conflict_required_tensors(problem)
+    if tensors is None:
+        return None, reason
+    if config["candidate_generator"] != "sequential_robot_order":
+        return None, f"unsupported_candidate_generator:{config['candidate_generator']}"
+    if config["robot_order"] != "robot_index":
+        return None, f"unsupported_robot_order:{config['robot_order']}"
+
+    cost_matrix = tensors["cost_matrix"]
+    available_mask = tensors["available_mask"].to(dtype=torch.bool)
+    viewpoint_pos = tensors["viewpoint_pos"]
+    num_envs, num_agents, num_viewpoints = cost_matrix.shape
+    device = cost_matrix.device
+    threshold = _target_conflict_threshold(config)
+    penalty_value = float(config["selected_target_conflict_penalty"])
+    viewpoint_xy = viewpoint_pos[:, :, :2]
+    candidate = torch.full((num_envs, num_agents), -1, dtype=torch.long, device=device)
+
+    for env_id in range(num_envs):
+        selected: list[int] = []
+        for robot_id in range(num_agents):
+            available_indices = torch.nonzero(available_mask[env_id, robot_id], as_tuple=False).flatten()
+            if available_indices.numel() == 0:
+                continue
+            nonduplicate = [int(index.item()) for index in available_indices if int(index.item()) not in selected]
+            candidate_indices = nonduplicate
+            if not candidate_indices:
+                candidate_indices = [int(index.item()) for index in available_indices]
+            best_index = -1
+            best_score = float("inf")
+            for viewpoint_index in candidate_indices:
+                score = float(cost_matrix[env_id, robot_id, viewpoint_index].item())
+                for previous_index in selected:
+                    distance = torch.linalg.norm(
+                        viewpoint_xy[env_id, viewpoint_index] - viewpoint_xy[env_id, previous_index]
+                    )
+                    if float(distance.item()) < threshold:
+                        score += penalty_value
+                if score < best_score:
+                    best_score = score
+                    best_index = viewpoint_index
+            if best_index >= 0:
+                candidate[env_id, robot_id] = int(best_index)
+                selected.append(int(best_index))
+    return candidate, "sequential_robot_order_target_conflict_penalty"
+
+
+def _target_conflict_changed_pairs_sample(
+    *,
+    baseline_assignment: torch.Tensor,
+    candidate_assignment: torch.Tensor,
+    cost_matrix: torch.Tensor | None,
+    agents: list[str],
+    viewpoint_ids: list[int],
+    step: torch.Tensor | None,
+    episode_index: torch.Tensor | None,
+    limit: int,
+) -> list[dict]:
+    rows = []
+    changed = baseline_assignment != candidate_assignment
+    for env_id_tensor, agent_id_tensor in torch.nonzero(changed, as_tuple=False):
+        if len(rows) >= limit:
+            break
+        env_id = int(env_id_tensor.item())
+        agent_id = int(agent_id_tensor.item())
+        baseline_index = int(baseline_assignment[env_id, agent_id].item())
+        candidate_index = int(candidate_assignment[env_id, agent_id].item())
+        step_value = (
+            int(step.flatten()[env_id].item())
+            if isinstance(step, torch.Tensor) and step.numel() > env_id
+            else None
+        )
+        episode_value = (
+            int(episode_index.flatten()[env_id].item())
+            if isinstance(episode_index, torch.Tensor) and episode_index.numel() > env_id
+            else None
+        )
+        rows.append(
+            {
+                "env_id": env_id,
+                "episode_index": episode_value,
+                "step": step_value,
+                "robot_id": agent_id,
+                "robot_name": agents[agent_id] if agent_id < len(agents) else f"robot_{agent_id}",
+                "baseline_viewpoint_id": _viewpoint_id_from_assignment(viewpoint_ids, baseline_index),
+                "candidate_viewpoint_id": _viewpoint_id_from_assignment(viewpoint_ids, candidate_index),
+                "baseline_cost": _assignment_pair_value(cost_matrix, env_id, agent_id, baseline_index),
+                "candidate_cost": _assignment_pair_value(cost_matrix, env_id, agent_id, candidate_index),
+            }
+        )
+    return rows
+
+
+def _target_conflict_metric_total(metrics: dict, key: str, *, as_int: bool = False) -> float | int:
+    value = metrics[key]
+    total = value.sum().item() if isinstance(value, torch.Tensor) else sum(value)
+    return int(total) if as_int else float(total)
+
+
+def _target_conflict_metric_min(metrics: dict, key: str) -> float:
+    value = metrics[key]
+    if not isinstance(value, torch.Tensor):
+        return float("nan")
+    finite = value[torch.isfinite(value)]
+    return float(finite.min().item()) if finite.numel() > 0 else float("nan")
+
+
+def _compare_target_conflict_candidate_step(
+    *,
+    method: str,
+    step: torch.Tensor,
+    episode_index: torch.Tensor | None,
+    problem: dict,
+    baseline_assignment: torch.Tensor,
+    agents: list[str],
+    viewpoint_ids: list[int],
+) -> dict:
+    config = _target_conflict_candidate_config()
+    tensors, tensor_reason = _target_conflict_required_tensors(problem)
+    candidate_reason = "disabled"
+    candidate_assignment = None
+    candidate_available = False
+    candidate_metrics = None
+    baseline_metrics = None
+    decision_count = int(baseline_assignment.numel())
+    changed_count = 0
+    changed_rate = 0.0
+
+    row = {
+        "method": method,
+        "steps": 1,
+        "target_conflict_candidate_comparison_enabled": bool(config["enabled"]),
+        "target_conflict_candidate_available": False,
+        "target_conflict_candidate_reason": candidate_reason,
+        "candidate_assignment_decision_count": decision_count,
+        "candidate_changed_assignment_count": 0,
+        "candidate_changed_assignment_rate": 0.0,
+        "baseline_selected_target_pair_count": 0,
+        "baseline_selected_target_conflict_pair_count": 0,
+        "baseline_selected_target_conflict_rate": 0.0,
+        "baseline_selected_target_min_distance": float("nan"),
+        "baseline_selected_target_min_clearance": float("nan"),
+        "baseline_selected_target_conflict_penalty_sum": 0.0,
+        "candidate_selected_target_pair_count": 0,
+        "candidate_selected_target_conflict_pair_count": 0,
+        "candidate_selected_target_conflict_rate": 0.0,
+        "candidate_selected_target_min_distance": float("nan"),
+        "candidate_selected_target_min_clearance": float("nan"),
+        "candidate_selected_target_conflict_penalty_sum": 0.0,
+        "candidate_changed_pairs_sample": [],
+        "baseline_target_conflict_pairs_sample": [],
+        "candidate_target_conflict_pairs_sample": [],
+        "step_min": int(step.min().item()) if isinstance(step, torch.Tensor) and step.numel() > 0 else 0,
+        "step_max": int(step.max().item()) if isinstance(step, torch.Tensor) and step.numel() > 0 else 0,
+        "episode_index_min": (
+            int(episode_index.min().item())
+            if isinstance(episode_index, torch.Tensor) and episode_index.numel() > 0
+            else 0
+        ),
+        "episode_index_max": (
+            int(episode_index.max().item())
+            if isinstance(episode_index, torch.Tensor) and episode_index.numel() > 0
+            else 0
+        ),
+    }
+
+    if tensors is None:
+        row["target_conflict_candidate_reason"] = tensor_reason
+        return row
+
+    baseline_metrics = _target_conflict_assignment_metrics(
+        assignment=baseline_assignment,
+        viewpoint_pos=tensors["viewpoint_pos"],
+        viewpoint_ids=viewpoint_ids,
+        agents=agents,
+        config=config,
+    )
+    row.update(
+        {
+            "baseline_selected_target_pair_count": _target_conflict_metric_total(
+                baseline_metrics, "pair_count", as_int=True
+            ),
+            "baseline_selected_target_conflict_pair_count": _target_conflict_metric_total(
+                baseline_metrics, "conflict_pair_count", as_int=True
+            ),
+            "baseline_selected_target_conflict_rate": float(baseline_metrics["conflict_rate"].mean().item()),
+            "baseline_selected_target_min_distance": _target_conflict_metric_min(baseline_metrics, "min_distance"),
+            "baseline_selected_target_min_clearance": _target_conflict_metric_min(baseline_metrics, "min_clearance"),
+            "baseline_selected_target_conflict_penalty_sum": _target_conflict_metric_total(
+                baseline_metrics, "penalty_sum"
+            ),
+            "baseline_target_conflict_pairs_sample": list(baseline_metrics["conflict_pairs_sample"]),
+            "_baseline_pair_count_tensor": baseline_metrics["pair_count"],
+            "_baseline_conflict_pair_count_tensor": baseline_metrics["conflict_pair_count"],
+            "_baseline_conflict_rate_tensor": baseline_metrics["conflict_rate"],
+            "_baseline_min_distance_tensor": baseline_metrics["min_distance"],
+            "_baseline_min_clearance_tensor": baseline_metrics["min_clearance"],
+            "_baseline_penalty_sum_tensor": baseline_metrics["penalty_sum"],
+        }
+    )
+
+    if not bool(config["enabled"]):
+        row["target_conflict_candidate_reason"] = "disabled"
+        return row
+    if config["mode"] != "diagnostic_only":
+        row["target_conflict_candidate_reason"] = f"unsupported_mode:{config['mode']}"
+        return row
+    if method not in set(config["compare_methods"]):
+        if method == "random" and bool(config["include_random_as_baseline_only"]):
+            row["target_conflict_candidate_reason"] = "method_baseline_only:random"
+        else:
+            row["target_conflict_candidate_reason"] = f"method_not_in_compare_methods:{method}"
+        return row
+
+    candidate_assignment, candidate_reason = _target_conflict_candidate_assignment(problem, config=config)
+    if candidate_assignment is None:
+        row["target_conflict_candidate_reason"] = candidate_reason
+        return row
+    _validate_assignment(problem, candidate_assignment)
+    candidate_available = True
+    candidate_metrics = _target_conflict_assignment_metrics(
+        assignment=candidate_assignment,
+        viewpoint_pos=tensors["viewpoint_pos"],
+        viewpoint_ids=viewpoint_ids,
+        agents=agents,
+        config=config,
+    )
+    changed_count = int((baseline_assignment != candidate_assignment).sum().item())
+    changed_rate = changed_count / float(max(1, decision_count))
+    row.update(
+        {
+            "target_conflict_candidate_available": candidate_available,
+            "target_conflict_candidate_reason": candidate_reason,
+            "candidate_changed_assignment_count": changed_count,
+            "candidate_changed_assignment_rate": changed_rate,
+            "candidate_selected_target_pair_count": _target_conflict_metric_total(
+                candidate_metrics, "pair_count", as_int=True
+            ),
+            "candidate_selected_target_conflict_pair_count": _target_conflict_metric_total(
+                candidate_metrics, "conflict_pair_count", as_int=True
+            ),
+            "candidate_selected_target_conflict_rate": float(candidate_metrics["conflict_rate"].mean().item()),
+            "candidate_selected_target_min_distance": _target_conflict_metric_min(candidate_metrics, "min_distance"),
+            "candidate_selected_target_min_clearance": _target_conflict_metric_min(candidate_metrics, "min_clearance"),
+            "candidate_selected_target_conflict_penalty_sum": _target_conflict_metric_total(
+                candidate_metrics, "penalty_sum"
+            ),
+            "candidate_changed_pairs_sample": _target_conflict_changed_pairs_sample(
+                baseline_assignment=baseline_assignment,
+                candidate_assignment=candidate_assignment,
+                cost_matrix=tensors["cost_matrix"],
+                agents=agents,
+                viewpoint_ids=viewpoint_ids,
+                step=step,
+                episode_index=episode_index,
+                limit=int(config["max_pairs_sample"]),
+            ),
+            "candidate_target_conflict_pairs_sample": list(candidate_metrics["conflict_pairs_sample"]),
+            "_candidate_pair_count_tensor": candidate_metrics["pair_count"],
+            "_candidate_conflict_pair_count_tensor": candidate_metrics["conflict_pair_count"],
+            "_candidate_conflict_rate_tensor": candidate_metrics["conflict_rate"],
+            "_candidate_min_distance_tensor": candidate_metrics["min_distance"],
+            "_candidate_min_clearance_tensor": candidate_metrics["min_clearance"],
+            "_candidate_penalty_sum_tensor": candidate_metrics["penalty_sum"],
+            "_candidate_changed_count_tensor": (baseline_assignment != candidate_assignment).sum(dim=1).to(dtype=torch.long),
+            "_candidate_changed_rate_tensor": (
+                (baseline_assignment != candidate_assignment).sum(dim=1).to(dtype=torch.float32)
+                / float(max(1, baseline_assignment.shape[1]))
+            ),
+        }
+    )
+    return row
 
 
 def _valid_assignment_decisions(problem: dict, assignment: torch.Tensor) -> torch.Tensor:
@@ -1443,10 +2271,11 @@ def _apply_viewpoint_candidate_filter(problem: dict) -> dict:
     return filtered_problem
 
 
-def _prepare_baseline_assignment_problem(problem: dict, retry_state: dict | None = None) -> dict:
+def _prepare_baseline_assignment_problem(problem: dict, retry_state: dict | None = None, *, method: str | None = None) -> dict:
     problem = _apply_level2_pair_filter(problem)
     problem = _apply_retry_fallback_filter(problem, retry_state)
-    return _apply_viewpoint_candidate_filter(problem)
+    problem = _apply_viewpoint_candidate_filter(problem)
+    return _attach_conflict_aware_baseline_config(problem, method=method)
 
 
 def _json_float(value: Any) -> float | None:
@@ -1927,6 +2756,542 @@ def _finalize_obstacle_aware_candidate_comparison(rows: list[dict], methods: lis
     return diagnostics
 
 
+def _finite_row_values(rows: list[dict], field: str) -> list[float]:
+    values = []
+    for row in rows:
+        try:
+            value = float(row.get(field, float("nan")))
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            values.append(value)
+    return values
+
+
+def _mean_row_field(rows: list[dict], field: str, default: float = 0.0) -> float:
+    if not rows:
+        return default
+    values = []
+    for row in rows:
+        try:
+            values.append(float(row.get(field, default)))
+        except (TypeError, ValueError):
+            values.append(default)
+    return sum(values) / float(len(values)) if values else default
+
+
+def _min_row_field(rows: list[dict], field: str) -> float:
+    values = _finite_row_values(rows, field)
+    return min(values) if values else float("nan")
+
+
+def _first_reason(rows: list[dict]) -> str | None:
+    return next(
+        (str(row.get("target_conflict_candidate_reason")) for row in rows if row.get("target_conflict_candidate_reason")),
+        None,
+    )
+
+
+def _summarize_target_conflict_candidate_rows(rows: list[dict]) -> dict:
+    step_count = sum(int(row.get("steps", 1)) for row in rows)
+    baseline_pair_count = sum(int(row.get("baseline_selected_target_pair_count", 0)) for row in rows)
+    baseline_conflict_count = sum(int(row.get("baseline_selected_target_conflict_pair_count", 0)) for row in rows)
+    baseline_penalty_sum = sum(float(row.get("baseline_selected_target_conflict_penalty_sum", 0.0)) for row in rows)
+    candidate_pair_count = sum(int(row.get("candidate_selected_target_pair_count", 0)) for row in rows)
+    candidate_conflict_count = sum(int(row.get("candidate_selected_target_conflict_pair_count", 0)) for row in rows)
+    candidate_penalty_sum = sum(float(row.get("candidate_selected_target_conflict_penalty_sum", 0.0)) for row in rows)
+    decision_count = sum(int(row.get("candidate_assignment_decision_count", 0)) for row in rows)
+    changed_count = sum(int(row.get("candidate_changed_assignment_count", 0)) for row in rows)
+    candidate_available = any(bool(row.get("target_conflict_candidate_available", False)) for row in rows)
+    baseline_conflict_rate = (
+        baseline_conflict_count / float(baseline_pair_count) if baseline_pair_count > 0 else 0.0
+    )
+    candidate_conflict_rate = (
+        candidate_conflict_count / float(candidate_pair_count) if candidate_pair_count > 0 else 0.0
+    )
+    changed_rate = changed_count / float(decision_count) if decision_count > 0 else 0.0
+
+    return {
+        "steps": step_count,
+        "target_conflict_candidate_comparison_enabled": any(
+            bool(row.get("target_conflict_candidate_comparison_enabled", False)) for row in rows
+        ),
+        "target_conflict_candidate_available": candidate_available,
+        "target_conflict_candidate_reason": _first_reason(rows),
+        "baseline_selected_target_pair_count": baseline_pair_count,
+        "baseline_selected_target_conflict_pair_count": baseline_conflict_count,
+        "baseline_selected_target_conflict_rate": baseline_conflict_rate,
+        "baseline_selected_target_conflict_rate_mean": _mean_row_field(
+            rows,
+            "baseline_selected_target_conflict_rate",
+        ),
+        "baseline_selected_target_min_distance": _min_row_field(rows, "baseline_selected_target_min_distance"),
+        "baseline_selected_target_min_clearance": _min_row_field(rows, "baseline_selected_target_min_clearance"),
+        "baseline_selected_target_conflict_penalty_sum": baseline_penalty_sum,
+        "candidate_selected_target_pair_count": candidate_pair_count,
+        "candidate_selected_target_conflict_pair_count": candidate_conflict_count,
+        "candidate_selected_target_conflict_rate": candidate_conflict_rate,
+        "candidate_selected_target_conflict_rate_mean": _mean_row_field(
+            rows,
+            "candidate_selected_target_conflict_rate",
+        ),
+        "candidate_selected_target_min_distance": _min_row_field(rows, "candidate_selected_target_min_distance"),
+        "candidate_selected_target_min_clearance": _min_row_field(rows, "candidate_selected_target_min_clearance"),
+        "candidate_selected_target_conflict_penalty_sum": candidate_penalty_sum,
+        "candidate_assignment_decision_count": decision_count,
+        "candidate_changed_assignment_count": changed_count,
+        "candidate_changed_assignment_rate": changed_rate,
+        "candidate_changed_assignment_rate_mean": _mean_row_field(rows, "candidate_changed_assignment_rate"),
+    }
+
+
+def _finalize_target_conflict_candidate_comparison(rows: list[dict], methods: list[str]) -> dict:
+    config = _target_conflict_candidate_config()
+    diagnostics = {
+        "enabled": bool(config["enabled"]),
+        "mode": str(config["mode"]),
+        "candidate_generator": str(config["candidate_generator"]),
+        "robot_order": str(config["robot_order"]),
+        "target_conflict_radius": float(config["target_conflict_radius"]),
+        "target_conflict_safety_margin": float(config["target_conflict_safety_margin"]),
+        "selected_target_conflict_threshold": _target_conflict_threshold(config),
+        "selected_target_conflict_penalty": float(config["selected_target_conflict_penalty"]),
+        "compare_methods": list(config["compare_methods"]),
+        "include_random_as_baseline_only": bool(config["include_random_as_baseline_only"]),
+        "solver_behavior_changed": False,
+        "actual_assignment_changed": False,
+        "candidate_assignment_executed": False,
+        "live_solver_inputs_changed": False,
+        "methods_requested": list(methods),
+        "methods_compared": [],
+        "methods_baseline_only": [],
+        "available": any(bool(row.get("target_conflict_candidate_available", False)) for row in rows),
+        "unavailable_reasons": sorted(
+            {
+                str(row.get("target_conflict_candidate_reason"))
+                for row in rows
+                if not bool(row.get("target_conflict_candidate_available", False))
+                and row.get("target_conflict_candidate_reason")
+            }
+        ),
+        "per_step_summary": [],
+        "per_episode_summary": [],
+        "per_method_summary": {},
+        "samples": {
+            "baseline_target_conflict_pairs_sample": [],
+            "candidate_target_conflict_pairs_sample": [],
+            "candidate_changed_pairs_sample": [],
+        },
+    }
+    if not rows:
+        diagnostics["unavailable_reasons"] = ["no_evaluation_steps_recorded"]
+        return diagnostics
+
+    for method in methods:
+        method_rows = [row for row in rows if row.get("method") == method]
+        if not method_rows:
+            continue
+        if any(bool(row.get("target_conflict_candidate_available", False)) for row in method_rows):
+            diagnostics["methods_compared"].append(method)
+        else:
+            diagnostics["methods_baseline_only"].append(method)
+        diagnostics["per_method_summary"][method] = _summarize_target_conflict_candidate_rows(method_rows)
+        for row in method_rows:
+            _limited_extend(
+                diagnostics["samples"]["baseline_target_conflict_pairs_sample"],
+                list(row.get("baseline_target_conflict_pairs_sample", [])),
+                limit=int(config["max_pairs_sample"]),
+            )
+            _limited_extend(
+                diagnostics["samples"]["candidate_target_conflict_pairs_sample"],
+                list(row.get("candidate_target_conflict_pairs_sample", [])),
+                limit=int(config["max_pairs_sample"]),
+            )
+            _limited_extend(
+                diagnostics["samples"]["candidate_changed_pairs_sample"],
+                list(row.get("candidate_changed_pairs_sample", [])),
+                limit=int(config["max_pairs_sample"]),
+            )
+
+    step_groups: dict[tuple[str, int, int], list[dict]] = {}
+    episode_groups: dict[tuple[str, int, int], list[dict]] = {}
+    for row in rows:
+        method = str(row.get("method", "unknown"))
+        step_key = (method, int(row.get("step_min", 0)), int(row.get("step_max", 0)))
+        episode_key = (method, int(row.get("episode_index_min", 0)), int(row.get("episode_index_max", 0)))
+        step_groups.setdefault(step_key, []).append(row)
+        episode_groups.setdefault(episode_key, []).append(row)
+    for (method, step_min, step_max), group_rows in sorted(step_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_target_conflict_candidate_rows(group_rows)
+        summary.update({"method": method, "step_min": step_min, "step_max": step_max})
+        diagnostics["per_step_summary"].append(summary)
+    for (method, episode_min, episode_max), group_rows in sorted(episode_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_target_conflict_candidate_rows(group_rows)
+        summary.update({"method": method, "episode_index_min": episode_min, "episode_index_max": episode_max})
+        diagnostics["per_episode_summary"].append(summary)
+    return diagnostics
+
+
+def _mean_finite_tensor(tensor: torch.Tensor) -> float:
+    values = tensor.to(dtype=torch.float32).flatten()
+    finite = torch.isfinite(values)
+    if not bool(finite.any()):
+        return float("nan")
+    return float(values[finite].mean().item())
+
+
+def _conflict_aware_solver_step_row(
+    *,
+    method: str,
+    step: torch.Tensor,
+    episode_index: torch.Tensor,
+    solver_diagnostics: dict | None,
+    num_envs: int,
+    num_agents: int,
+    device: torch.device,
+) -> dict | None:
+    if not solver_diagnostics:
+        return None
+    if "conflict_aware_candidate_combination_count" not in solver_diagnostics:
+        return None
+
+    combination_count = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_candidate_combination_count"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    selected_score = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_selected_score"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    selected_unary = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_selected_unary_cost_sum"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    selected_conflicts = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_selected_target_conflict_pair_count"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    selected_penalty = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_selected_target_conflict_penalty_sum"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    selected_duplicates = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_selected_duplicate_pair_count"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    fallback_used = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_fallback_used"],
+        num_envs,
+        device,
+        dtype=torch.bool,
+    )
+    changed_count = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_changed_vs_base_count"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    changed_rate = _as_tensor_metric(
+        solver_diagnostics["conflict_aware_changed_vs_base_rate"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    step_values = [int(value) for value in step.detach().cpu().flatten().tolist()]
+    episode_values = [int(value) for value in episode_index.detach().cpu().flatten().tolist()]
+    env_step_count = max(1, int(num_envs))
+    decision_count = env_step_count * max(1, int(num_agents))
+
+    return {
+        "method": method,
+        "step_min": min(step_values) if step_values else 0,
+        "step_max": max(step_values) if step_values else 0,
+        "episode_index_min": min(episode_values) if episode_values else 0,
+        "episode_index_max": max(episode_values) if episode_values else 0,
+        "env_step_count": env_step_count,
+        "decision_count": decision_count,
+        "conflict_aware_solver_enabled": bool(solver_diagnostics.get("conflict_aware_solver_enabled", False)),
+        "conflict_aware_solver_method": solver_diagnostics.get("conflict_aware_solver_method"),
+        "conflict_aware_solver_base_method": solver_diagnostics.get("conflict_aware_solver_base_method"),
+        "conflict_aware_top_k": int(solver_diagnostics.get("conflict_aware_top_k", 0)),
+        "conflict_aware_target_conflict_threshold": float(
+            solver_diagnostics.get("conflict_aware_target_conflict_threshold", float("nan"))
+        ),
+        "conflict_aware_target_conflict_penalty": float(
+            solver_diagnostics.get("conflict_aware_target_conflict_penalty", 0.0)
+        ),
+        "conflict_aware_duplicate_penalty": float(solver_diagnostics.get("conflict_aware_duplicate_penalty", 0.0)),
+        "conflict_aware_candidate_combination_count": int(combination_count.sum().item()),
+        "conflict_aware_candidate_combination_count_mean": float(combination_count.mean().item()),
+        "conflict_aware_selected_score_mean": _mean_finite_tensor(selected_score),
+        "conflict_aware_selected_unary_cost_sum_mean": _mean_finite_tensor(selected_unary),
+        "conflict_aware_selected_target_conflict_pair_count": int(selected_conflicts.sum().item()),
+        "conflict_aware_selected_target_conflict_penalty_sum": float(selected_penalty.sum().item()),
+        "conflict_aware_selected_duplicate_pair_count": int(selected_duplicates.sum().item()),
+        "conflict_aware_fallback_used": bool(fallback_used.any().item()),
+        "conflict_aware_fallback_count": int(fallback_used.to(dtype=torch.long).sum().item()),
+        "conflict_aware_fallback_reasons": list(solver_diagnostics.get("conflict_aware_fallback_reasons", [])),
+        "conflict_aware_changed_vs_base_count": int(changed_count.sum().item()),
+        "conflict_aware_changed_vs_base_rate": float(changed_rate.mean().item()),
+        "conflict_aware_changed_pairs_sample": list(
+            solver_diagnostics.get("conflict_aware_changed_pairs_sample", [])
+        ),
+        "conflict_aware_target_conflict_pairs_sample": list(
+            solver_diagnostics.get("conflict_aware_target_conflict_pairs_sample", [])
+        ),
+        "conflict_aware_duplicate_pairs_sample": list(
+            solver_diagnostics.get("conflict_aware_duplicate_pairs_sample", [])
+        ),
+    }
+
+
+def _first_conflict_aware_reason(rows: list[dict]) -> str | None:
+    for row in rows:
+        reasons = row.get("conflict_aware_fallback_reasons")
+        if isinstance(reasons, list) and reasons:
+            return str(reasons[0])
+    return None
+
+
+def _summarize_conflict_aware_solver_rows(rows: list[dict]) -> dict:
+    env_step_count = sum(int(row.get("env_step_count", 1)) for row in rows)
+    decision_count = sum(int(row.get("decision_count", 0)) for row in rows)
+    conflict_count = sum(int(row.get("conflict_aware_selected_target_conflict_pair_count", 0)) for row in rows)
+    duplicate_count = sum(int(row.get("conflict_aware_selected_duplicate_pair_count", 0)) for row in rows)
+    penalty_sum = sum(float(row.get("conflict_aware_selected_target_conflict_penalty_sum", 0.0)) for row in rows)
+    fallback_count = sum(int(row.get("conflict_aware_fallback_count", 0)) for row in rows)
+    changed_count = sum(int(row.get("conflict_aware_changed_vs_base_count", 0)) for row in rows)
+    return {
+        "steps": len(rows),
+        "env_step_count": env_step_count,
+        "decision_count": decision_count,
+        "conflict_aware_solver_enabled": any(
+            bool(row.get("conflict_aware_solver_enabled", False)) for row in rows
+        ),
+        "conflict_aware_solver_method": next(
+            (row.get("conflict_aware_solver_method") for row in rows if row.get("conflict_aware_solver_method")),
+            None,
+        ),
+        "conflict_aware_solver_base_method": next(
+            (
+                row.get("conflict_aware_solver_base_method")
+                for row in rows
+                if row.get("conflict_aware_solver_base_method")
+            ),
+            None,
+        ),
+        "conflict_aware_candidate_combination_count_mean": _mean_row_field(
+            rows,
+            "conflict_aware_candidate_combination_count_mean",
+        ),
+        "conflict_aware_selected_score_mean": _mean_row_field(rows, "conflict_aware_selected_score_mean"),
+        "conflict_aware_selected_unary_cost_sum_mean": _mean_row_field(
+            rows,
+            "conflict_aware_selected_unary_cost_sum_mean",
+        ),
+        "conflict_aware_selected_target_conflict_pair_count": conflict_count,
+        "conflict_aware_selected_target_conflict_penalty_sum": penalty_sum,
+        "conflict_aware_selected_duplicate_pair_count": duplicate_count,
+        "conflict_aware_fallback_step_count": fallback_count,
+        "conflict_aware_fallback_rate": fallback_count / float(env_step_count) if env_step_count > 0 else 0.0,
+        "conflict_aware_fallback_reason": _first_conflict_aware_reason(rows),
+        "conflict_aware_changed_vs_base_count": changed_count,
+        "conflict_aware_changed_vs_base_rate": changed_count / float(decision_count) if decision_count > 0 else 0.0,
+        "conflict_aware_changed_vs_base_rate_mean": _mean_row_field(rows, "conflict_aware_changed_vs_base_rate"),
+    }
+
+
+def _finalize_conflict_aware_solver_diagnostics(rows: list[dict], methods: list[str]) -> dict:
+    config = _conflict_aware_baseline_config()
+    threshold = (2.0 * float(config["target_conflict_radius"])) + float(config["target_conflict_safety_margin"])
+    diagnostics = {
+        "enabled": bool(config["enabled"]),
+        "mode": str(config["mode"]),
+        "methods": list(config["methods"]),
+        "top_k": int(config["top_k"]),
+        "target_conflict_radius": float(config["target_conflict_radius"]),
+        "target_conflict_safety_margin": float(config["target_conflict_safety_margin"]),
+        "target_conflict_threshold": threshold,
+        "target_conflict_penalty": float(config["target_conflict_penalty"]),
+        "duplicate_penalty": float(config["duplicate_penalty"]),
+        "fallback_to_base_method": bool(config["fallback_to_base_method"]),
+        "available": bool(rows),
+        "original_baseline_methods_changed": False,
+        "live_solver_inputs_changed": False,
+        "per_step_summary": [],
+        "per_episode_summary": [],
+        "per_method_summary": {},
+        "samples": {
+            "changed_pairs_sample": [],
+            "target_conflict_pairs_sample": [],
+            "duplicate_pairs_sample": [],
+        },
+    }
+    if not rows:
+        diagnostics["unavailable_reasons"] = ["no_conflict_aware_solver_steps_recorded"]
+        return diagnostics
+
+    for method in methods:
+        method_rows = [row for row in rows if row.get("method") == method]
+        if not method_rows:
+            continue
+        diagnostics["per_method_summary"][method] = _summarize_conflict_aware_solver_rows(method_rows)
+        for row in method_rows:
+            _limited_extend(
+                diagnostics["samples"]["changed_pairs_sample"],
+                list(row.get("conflict_aware_changed_pairs_sample", [])),
+                limit=int(config["max_pairs_sample"]),
+            )
+            _limited_extend(
+                diagnostics["samples"]["target_conflict_pairs_sample"],
+                list(row.get("conflict_aware_target_conflict_pairs_sample", [])),
+                limit=int(config["max_pairs_sample"]),
+            )
+            _limited_extend(
+                diagnostics["samples"]["duplicate_pairs_sample"],
+                list(row.get("conflict_aware_duplicate_pairs_sample", [])),
+                limit=int(config["max_pairs_sample"]),
+            )
+
+    step_groups: dict[tuple[str, int, int], list[dict]] = {}
+    episode_groups: dict[tuple[str, int, int], list[dict]] = {}
+    for row in rows:
+        method = str(row.get("method", "unknown"))
+        step_key = (method, int(row.get("step_min", 0)), int(row.get("step_max", 0)))
+        episode_key = (method, int(row.get("episode_index_min", 0)), int(row.get("episode_index_max", 0)))
+        step_groups.setdefault(step_key, []).append(row)
+        episode_groups.setdefault(episode_key, []).append(row)
+    for (method, step_min, step_max), group_rows in sorted(step_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_conflict_aware_solver_rows(group_rows)
+        summary.update({"method": method, "step_min": step_min, "step_max": step_max})
+        diagnostics["per_step_summary"].append(summary)
+    for (method, episode_min, episode_max), group_rows in sorted(episode_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_conflict_aware_solver_rows(group_rows)
+        summary.update({"method": method, "episode_index_min": episode_min, "episode_index_max": episode_max})
+        diagnostics["per_episode_summary"].append(summary)
+    return diagnostics
+
+
+def _summarize_actual_base_motion_rows(rows: list[dict], agents: list[str]) -> dict:
+    env_step_count = sum(int(row.get("env_step_count", 1)) for row in rows)
+    intersection_step_count = sum(int(row.get("actual_base_motion_intersection_step_count", 0)) for row in rows)
+    pair_count_total = sum(int(row.get("actual_base_motion_intersection_pair_count", 0)) for row in rows)
+    valid_robot_count_sum = sum(int(row.get("actual_base_motion_valid_robot_count", 0)) for row in rows)
+    skipped_robot_count_total = sum(int(row.get("actual_base_motion_skipped_robot_count", 0)) for row in rows)
+    min_distance_sum = sum(float(row.get("actual_base_motion_min_distance_to_footprint_sum", 0.0)) for row in rows)
+    min_distance_count = sum(float(row.get("actual_base_motion_min_distance_to_footprint_count", 0.0)) for row in rows)
+    min_distance_min = _min_row_field(rows, "actual_base_motion_min_distance_to_footprint_min")
+    by_robot_intersections = {agent: 0 for agent in agents}
+    by_robot_valid = {agent: 0 for agent in agents}
+    for row in rows:
+        for robot_name, count in dict(row.get("actual_base_motion_intersection_count_by_robot", {})).items():
+            by_robot_intersections[str(robot_name)] = by_robot_intersections.get(str(robot_name), 0) + int(count)
+        for robot_name, count in dict(row.get("actual_base_motion_valid_count_by_robot", {})).items():
+            by_robot_valid[str(robot_name)] = by_robot_valid.get(str(robot_name), 0) + int(count)
+    by_robot_rate = {
+        robot_name: (
+            by_robot_intersections.get(robot_name, 0) / float(valid_count) if int(valid_count) > 0 else 0.0
+        )
+        for robot_name, valid_count in by_robot_valid.items()
+    }
+    return {
+        "steps": len(rows),
+        "env_step_count": env_step_count,
+        "actual_base_motion_intersection_step_count": intersection_step_count,
+        "actual_base_motion_intersection_rate": (
+            intersection_step_count / float(env_step_count) if env_step_count > 0 else 0.0
+        ),
+        "actual_base_motion_intersection_pair_count_total": pair_count_total,
+        "actual_base_motion_intersection_pair_count_mean": (
+            pair_count_total / float(env_step_count) if env_step_count > 0 else 0.0
+        ),
+        "actual_base_motion_min_distance_to_footprint_min": min_distance_min,
+        "actual_base_motion_min_distance_to_footprint_mean": (
+            min_distance_sum / float(min_distance_count) if min_distance_count > 0.0 else float("nan")
+        ),
+        "actual_base_motion_valid_robot_count_mean": (
+            valid_robot_count_sum / float(env_step_count) if env_step_count > 0 else 0.0
+        ),
+        "actual_base_motion_skipped_robot_count_total": skipped_robot_count_total,
+        "actual_base_motion_intersection_count_by_robot": by_robot_intersections,
+        "actual_base_motion_intersection_rate_by_robot": by_robot_rate,
+    }
+
+
+def _finalize_actual_base_motion_diagnostics(rows: list[dict], methods: list[str], agents: list[str]) -> dict:
+    config = _actual_base_motion_config()
+    diagnostics = {
+        "enabled": bool(config["enabled"]),
+        "mode": str(config["mode"]),
+        "obstacle_source": config["obstacle_source"],
+        "line_sample_step": float(config["line_sample_step"]),
+        "min_motion_distance": float(config["min_motion_distance"]),
+        "path_segment_definition": "previous_proxy_base_xy_to_current_proxy_base_xy",
+        "diagnostic_only": True,
+        "solver_behavior_changed": False,
+        "environment_behavior_changed": False,
+        "available": bool(rows),
+        "per_step_summary": [],
+        "per_episode_summary": [],
+        "per_method_summary": {},
+        "samples": {
+            "actual_base_motion_intersection_pairs_sample": [],
+        },
+    }
+    if not rows:
+        diagnostics["unavailable_reasons"] = ["no_evaluation_steps_recorded"]
+        return diagnostics
+
+    diagnostics["unavailable_reasons"] = sorted(
+        {
+            str(row.get("actual_base_motion_skipped_reason"))
+            for row in rows
+            if row.get("actual_base_motion_skipped_reason")
+        }
+    )
+    for method in methods:
+        method_rows = [row for row in rows if row.get("method") == method]
+        if not method_rows:
+            continue
+        diagnostics["per_method_summary"][method] = _summarize_actual_base_motion_rows(method_rows, agents)
+        for row in method_rows:
+            _limited_extend(
+                diagnostics["samples"]["actual_base_motion_intersection_pairs_sample"],
+                list(row.get("actual_base_motion_intersection_pairs_sample", [])),
+                limit=int(config["max_pairs_sample"]),
+            )
+
+    step_groups: dict[tuple[str, int, int], list[dict]] = {}
+    episode_groups: dict[tuple[str, int, int], list[dict]] = {}
+    for row in rows:
+        method = str(row.get("method", "unknown"))
+        step_key = (method, int(row.get("step_min", 0)), int(row.get("step_max", 0)))
+        episode_key = (method, int(row.get("episode_index_min", 0)), int(row.get("episode_index_max", 0)))
+        step_groups.setdefault(step_key, []).append(row)
+        episode_groups.setdefault(episode_key, []).append(row)
+    for (method, step_min, step_max), group_rows in sorted(step_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_actual_base_motion_rows(group_rows, agents)
+        summary.update({"method": method, "step_min": step_min, "step_max": step_max})
+        diagnostics["per_step_summary"].append(summary)
+    for (method, episode_min, episode_max), group_rows in sorted(episode_groups.items(), key=lambda item: item[0]):
+        summary = _summarize_actual_base_motion_rows(group_rows, agents)
+        summary.update({"method": method, "episode_index_min": episode_min, "episode_index_max": episode_max})
+        diagnostics["per_episode_summary"].append(summary)
+    return diagnostics
+
+
 def _decode_raw_ids(raw_ids: torch.Tensor, noop_id: int) -> torch.Tensor:
     return torch.where(raw_ids == noop_id, torch.full_like(raw_ids, -1), raw_ids)
 
@@ -2108,10 +3473,129 @@ def _obstacle_diagnostics_summary(problem: dict, *, agents: list[str], viewpoint
         "obstacle_debug_visualization_skipped_reason",
         "obstacle_debug_visualization_pairs_sample",
         "obstacle_debug_visualization_line_prim_paths_sample",
+        "selected_assignment_debug_visualization_enabled",
+        "selected_assignment_debug_visualization_line_count",
+        "selected_assignment_debug_visualization_pairs_sample",
+        "selected_assignment_debug_visualization_intersection_count",
+        "selected_assignment_debug_visualization_skipped_reason",
     ):
         if key in problem:
             summary[key] = problem[key]
     return summary
+
+
+def _tensor_values_sample(value: Any, *, limit: int = 10) -> list:
+    if not isinstance(value, torch.Tensor):
+        return []
+    return value.detach().cpu().flatten()[:limit].tolist()
+
+
+def _inter_robot_conflict_diagnostics_summary(problem: dict) -> dict:
+    summary = {}
+    for key in (
+        "inter_robot_conflict_diagnostics_enabled",
+        "inter_robot_conflict_diagnostics_mode",
+        "inter_robot_conflict_robot_footprint_radius",
+        "inter_robot_conflict_safety_margin",
+        "inter_robot_target_conflict_enabled",
+        "inter_robot_target_conflict_radius",
+        "inter_robot_target_conflict_safety_margin",
+        "inter_robot_conflict_debug_visualization_enabled",
+        "inter_robot_conflict_debug_visualization_draw_in_headless",
+        "inter_robot_conflict_debug_visualization_max_lines",
+        "inter_robot_conflict_debug_visualization_line_width",
+        "inter_robot_conflict_skipped_reason",
+        "inter_robot_overlap_pairs_sample",
+    ):
+        if key in problem:
+            summary[key] = problem[key]
+    for key in (
+        "inter_robot_overlap_pair_count",
+        "inter_robot_min_distance",
+        "inter_robot_min_clearance",
+        "inter_robot_overlap_any",
+    ):
+        value = problem.get(key)
+        if isinstance(value, torch.Tensor):
+            summary[f"{key}_shape"] = list(value.shape)
+            summary[f"{key}_sample"] = _tensor_values_sample(value)
+    return summary
+
+
+def _actual_base_motion_config() -> dict:
+    enabled = bool(getattr(args_cli, "actual_base_motion_obstacle_diagnostics_enabled", False))
+    mode = str(
+        getattr(
+            args_cli,
+            "actual_base_motion_obstacle_diagnostics_mode",
+            "diagnostics_only" if enabled else "disabled",
+        )
+    ).strip().lower()
+    source = getattr(args_cli, "actual_base_motion_obstacle_source", None)
+    if enabled and source is None:
+        source = "component_mesh_footprint"
+    return {
+        "enabled": enabled,
+        "mode": mode,
+        "obstacle_source": str(source).strip().lower() if source is not None else None,
+        "line_sample_step": float(getattr(args_cli, "actual_base_motion_line_sample_step", 0.10)),
+        "min_motion_distance": float(getattr(args_cli, "actual_base_motion_min_motion_distance", 1.0e-6)),
+        "max_pairs_sample": int(getattr(args_cli, "actual_base_motion_max_pairs_sample", 20)),
+        "debug_visualization_enabled": bool(
+            getattr(args_cli, "actual_base_motion_debug_visualization_enabled", False)
+        ),
+        "debug_visualization_draw_in_headless": bool(
+            getattr(args_cli, "actual_base_motion_debug_visualization_draw_in_headless", False)
+        ),
+        "debug_visualization_max_lines": int(
+            getattr(args_cli, "actual_base_motion_debug_visualization_max_lines", 20)
+        ),
+        "debug_visualization_line_width": float(
+            getattr(args_cli, "actual_base_motion_debug_visualization_line_width", 0.03)
+        ),
+    }
+
+
+def _actual_base_motion_static_diagnostics() -> dict:
+    config = _actual_base_motion_config()
+    return {
+        "actual_base_motion_obstacle_diagnostics_enabled": bool(config["enabled"]),
+        "actual_base_motion_obstacle_diagnostics_mode": str(config["mode"]),
+        "actual_base_motion_obstacle_source": config["obstacle_source"],
+        "actual_base_motion_line_sample_step": float(config["line_sample_step"]),
+        "actual_base_motion_min_motion_distance": float(config["min_motion_distance"]),
+        "actual_base_motion_max_pairs_sample": int(config["max_pairs_sample"]),
+        "actual_base_motion_debug_visualization_enabled": bool(config["debug_visualization_enabled"]),
+        "actual_base_motion_debug_visualization_draw_in_headless": bool(
+            config["debug_visualization_draw_in_headless"]
+        ),
+        "actual_base_motion_debug_visualization_max_lines": int(config["debug_visualization_max_lines"]),
+        "actual_base_motion_debug_visualization_line_width": float(config["debug_visualization_line_width"]),
+        "actual_base_motion_path_segment_definition": "previous_proxy_base_xy_to_current_proxy_base_xy",
+        "actual_base_motion_diagnostic_only": True,
+        "actual_base_motion_solver_behavior_changed": False,
+        "actual_base_motion_environment_behavior_changed": False,
+    }
+
+
+def _conflict_aware_baseline_static_diagnostics() -> dict:
+    config = _conflict_aware_baseline_config()
+    return {
+        "conflict_aware_baseline_enabled": bool(config["enabled"]),
+        "conflict_aware_baseline_mode": str(config["mode"]),
+        "conflict_aware_baseline_methods": list(config["methods"]),
+        "conflict_aware_baseline_top_k": int(config["top_k"]),
+        "conflict_aware_baseline_target_conflict_radius": float(config["target_conflict_radius"]),
+        "conflict_aware_baseline_target_conflict_safety_margin": float(config["target_conflict_safety_margin"]),
+        "conflict_aware_baseline_target_conflict_threshold": (
+            2.0 * float(config["target_conflict_radius"]) + float(config["target_conflict_safety_margin"])
+        ),
+        "conflict_aware_baseline_target_conflict_penalty": float(config["target_conflict_penalty"]),
+        "conflict_aware_baseline_duplicate_penalty": float(config["duplicate_penalty"]),
+        "conflict_aware_baseline_fallback_to_base_method": bool(config["fallback_to_base_method"]),
+        "conflict_aware_baseline_max_pairs_sample": int(config["max_pairs_sample"]),
+        "conflict_aware_baseline_original_methods_unchanged": True,
+    }
 
 
 def _collect_evaluation_diagnostics(unwrapped, problem: dict, methods: list[str]) -> dict:
@@ -2192,6 +3676,9 @@ def _collect_evaluation_diagnostics(unwrapped, problem: dict, methods: list[str]
     if capability_diagnostics:
         diagnostics["capability_diagnostics"] = capability_diagnostics
     diagnostics.update(_obstacle_diagnostics_summary(problem, agents=agents, viewpoint_ids=viewpoint_ids))
+    diagnostics.update(_inter_robot_conflict_diagnostics_summary(problem))
+    diagnostics.update(_actual_base_motion_static_diagnostics())
+    diagnostics.update(_conflict_aware_baseline_static_diagnostics())
     return diagnostics
 
 
@@ -2208,6 +3695,87 @@ def _init_buffers(num_envs: int, device: torch.device) -> dict[str, torch.Tensor
         "valid_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "decision_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "new_viewpoints_total": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "inter_robot_overlap_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "inter_robot_overlap_pair_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "inter_robot_min_distance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "inter_robot_min_distance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "inter_robot_min_distance_min": torch.full((num_envs,), float("inf"), dtype=torch.float32, device=device),
+        "inter_robot_min_clearance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "inter_robot_min_clearance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "inter_robot_min_clearance_min": torch.full((num_envs,), float("inf"), dtype=torch.float32, device=device),
+        "selected_target_conflict_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "selected_target_conflict_pair_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "selected_target_min_distance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "selected_target_min_distance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "selected_target_min_distance_min": torch.full((num_envs,), float("inf"), dtype=torch.float32, device=device),
+        "selected_target_min_clearance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "selected_target_min_clearance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "selected_target_min_clearance_min": torch.full((num_envs,), float("inf"), dtype=torch.float32, device=device),
+        "selected_target_skipped_robot_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "selected_target_valid_robot_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "actual_base_motion_intersection_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "actual_base_motion_intersection_pair_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "actual_base_motion_intersection_pair_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "actual_base_motion_min_distance_to_footprint_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "actual_base_motion_min_distance_to_footprint_count": torch.zeros(
+            num_envs, dtype=torch.float32, device=device
+        ),
+        "actual_base_motion_min_distance_to_footprint_min": torch.full(
+            (num_envs,), float("inf"), dtype=torch.float32, device=device
+        ),
+        "actual_base_motion_valid_robot_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "actual_base_motion_skipped_robot_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "baseline_selected_target_conflict_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "baseline_selected_target_conflict_pair_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "baseline_selected_target_conflict_rate_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "baseline_selected_target_min_distance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "baseline_selected_target_min_distance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "baseline_selected_target_min_distance_min": torch.full(
+            (num_envs,), float("inf"), dtype=torch.float32, device=device
+        ),
+        "baseline_selected_target_min_clearance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "baseline_selected_target_min_clearance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "baseline_selected_target_min_clearance_min": torch.full(
+            (num_envs,), float("inf"), dtype=torch.float32, device=device
+        ),
+        "baseline_selected_target_conflict_penalty_sum_total": torch.zeros(
+            num_envs, dtype=torch.float32, device=device
+        ),
+        "candidate_selected_target_conflict_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "candidate_selected_target_conflict_pair_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "candidate_selected_target_conflict_rate_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "candidate_selected_target_min_distance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "candidate_selected_target_min_distance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "candidate_selected_target_min_distance_min": torch.full(
+            (num_envs,), float("inf"), dtype=torch.float32, device=device
+        ),
+        "candidate_selected_target_min_clearance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "candidate_selected_target_min_clearance_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "candidate_selected_target_min_clearance_min": torch.full(
+            (num_envs,), float("inf"), dtype=torch.float32, device=device
+        ),
+        "candidate_selected_target_conflict_penalty_sum_total": torch.zeros(
+            num_envs, dtype=torch.float32, device=device
+        ),
+        "candidate_changed_assignment_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "candidate_changed_assignment_rate_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "conflict_aware_solver_enabled_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "conflict_aware_solver_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "conflict_aware_candidate_combination_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "conflict_aware_selected_score_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "conflict_aware_selected_score_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "conflict_aware_selected_unary_cost_sum_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "conflict_aware_selected_unary_cost_sum_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "conflict_aware_selected_target_conflict_pair_count_total": torch.zeros(
+            num_envs, dtype=torch.long, device=device
+        ),
+        "conflict_aware_selected_target_conflict_penalty_sum_total": torch.zeros(
+            num_envs, dtype=torch.float32, device=device
+        ),
+        "conflict_aware_selected_duplicate_pair_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "conflict_aware_fallback_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "conflict_aware_changed_vs_base_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "conflict_aware_changed_vs_base_rate_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
     }
 
 
@@ -2240,6 +3808,554 @@ def _update_buffers(
     buffers["steps_to_full"][hit_full] = buffers["length"][hit_full]
 
 
+def _as_tensor_metric(value: Any, num_envs: int, device: torch.device, *, dtype: torch.dtype) -> torch.Tensor:
+    if isinstance(value, torch.Tensor):
+        tensor = value.to(device=device, dtype=dtype).flatten()
+    else:
+        tensor = torch.as_tensor(value, dtype=dtype, device=device).flatten()
+    if tensor.numel() == 1:
+        return tensor.expand(num_envs)
+    if tensor.numel() != num_envs:
+        raise RuntimeError(f"diagnostic tensor size mismatch: expected {num_envs}, got {tensor.numel()}")
+    return tensor
+
+
+def _accumulate_min_metric(buffers: dict[str, torch.Tensor], prefix: str, name: str, values: torch.Tensor) -> None:
+    finite = torch.isfinite(values)
+    if not bool(finite.any()):
+        return
+    sum_key = f"{prefix}_{name}_sum"
+    count_key = f"{prefix}_{name}_count"
+    min_key = f"{prefix}_{name}_min"
+    buffers[sum_key] += torch.where(finite, values, torch.zeros_like(values))
+    buffers[count_key] += finite.to(dtype=torch.float32)
+    buffers[min_key] = torch.where(finite, torch.minimum(buffers[min_key], values), buffers[min_key])
+
+
+def _update_inter_robot_conflict_buffers(
+    buffers: dict[str, torch.Tensor],
+    *,
+    current_overlap: dict,
+    selected_target: dict,
+    num_envs: int,
+    device: torch.device,
+) -> None:
+    overlap_pair_count = _as_tensor_metric(
+        current_overlap.get("inter_robot_overlap_pair_count", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["inter_robot_overlap_step_count"] += (overlap_pair_count > 0).to(dtype=torch.long)
+    buffers["inter_robot_overlap_pair_count_total"] += overlap_pair_count
+    _accumulate_min_metric(
+        buffers,
+        "inter_robot",
+        "min_distance",
+        _as_tensor_metric(
+            current_overlap.get("inter_robot_min_distance", torch.full((num_envs,), float("nan"), device=device)),
+            num_envs,
+            device,
+            dtype=torch.float32,
+        ),
+    )
+    _accumulate_min_metric(
+        buffers,
+        "inter_robot",
+        "min_clearance",
+        _as_tensor_metric(
+            current_overlap.get("inter_robot_min_clearance", torch.full((num_envs,), float("nan"), device=device)),
+            num_envs,
+            device,
+            dtype=torch.float32,
+        ),
+    )
+
+    target_pair_count = _as_tensor_metric(
+        selected_target.get("selected_target_conflict_pair_count", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["selected_target_conflict_step_count"] += (target_pair_count > 0).to(dtype=torch.long)
+    buffers["selected_target_conflict_pair_count_total"] += target_pair_count
+    _accumulate_min_metric(
+        buffers,
+        "selected_target",
+        "min_distance",
+        _as_tensor_metric(
+            selected_target.get("selected_target_min_distance", torch.full((num_envs,), float("nan"), device=device)),
+            num_envs,
+            device,
+            dtype=torch.float32,
+        ),
+    )
+    _accumulate_min_metric(
+        buffers,
+        "selected_target",
+        "min_clearance",
+        _as_tensor_metric(
+            selected_target.get("selected_target_min_clearance", torch.full((num_envs,), float("nan"), device=device)),
+            num_envs,
+            device,
+            dtype=torch.float32,
+        ),
+    )
+    buffers["selected_target_skipped_robot_count_total"] += _as_tensor_metric(
+        selected_target.get("selected_target_skipped_robot_count", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["selected_target_valid_robot_count_sum"] += _as_tensor_metric(
+        selected_target.get("selected_target_valid_robot_count", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+
+
+def _footprint_cell_centers(footprint: Any) -> tuple[tuple[float, float], ...]:
+    cache_key = id(footprint)
+    centers = _FOOTPRINT_CELL_CENTER_CACHE.get(cache_key)
+    if centers is not None:
+        return centers
+    cells = getattr(footprint, "inflated_occupied_cells", ()) or ()
+    center_values = []
+    for row, col in cells:
+        x, y = footprint.cell_center(row, col)
+        center_values.append((float(x), float(y)))
+    centers = tuple(center_values)
+    _FOOTPRINT_CELL_CENTER_CACHE[cache_key] = centers
+    return centers
+
+
+def _segment_min_distance_to_footprint(
+    footprint: Any,
+    start_xy: tuple[float, float],
+    end_xy: tuple[float, float],
+    *,
+    line_sample_step: float,
+) -> float:
+    centers = _footprint_cell_centers(footprint)
+    if not centers:
+        return float("nan")
+    dx = end_xy[0] - start_xy[0]
+    dy = end_xy[1] - start_xy[1]
+    length = math.hypot(dx, dy)
+    sample_step = max(float(line_sample_step), 1.0e-9)
+    sample_count = max(1, int(math.ceil(length / sample_step)))
+    min_distance = float("inf")
+    for sample_index in range(sample_count + 1):
+        alpha = sample_index / sample_count
+        point = (start_xy[0] + alpha * dx, start_xy[1] + alpha * dy)
+        if footprint.contains_xy(point):
+            return 0.0
+        for center in centers:
+            distance = math.hypot(point[0] - center[0], point[1] - center[1])
+            if distance < min_distance:
+                min_distance = distance
+    return min_distance if math.isfinite(min_distance) else float("nan")
+
+
+def _actual_base_motion_step_diagnostics(
+    *,
+    unwrapped: Any,
+    method: str,
+    step: torch.Tensor,
+    episode_index: torch.Tensor,
+    assignment: torch.Tensor,
+    previous_base_pos: torch.Tensor,
+    current_base_pos: torch.Tensor,
+    env_done: torch.Tensor,
+    agents: list[str],
+    viewpoint_ids: list[int],
+) -> dict:
+    config = _actual_base_motion_config()
+    num_envs, num_agents = assignment.shape
+    device = assignment.device
+    pair_count = torch.zeros(num_envs, dtype=torch.long, device=device)
+    valid_count = torch.zeros(num_envs, dtype=torch.long, device=device)
+    skipped_count = torch.zeros(num_envs, dtype=torch.long, device=device)
+    min_distance = torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device)
+    robot_intersects = torch.zeros((num_envs, num_agents), dtype=torch.bool, device=device)
+    robot_motion_distance = torch.full((num_envs, num_agents), float("nan"), dtype=torch.float32, device=device)
+    robot_valid = torch.zeros((num_envs, num_agents), dtype=torch.bool, device=device)
+    robot_skipped = torch.zeros((num_envs, num_agents), dtype=torch.bool, device=device)
+
+    step_values = [int(value) for value in step.detach().cpu().flatten().tolist()]
+    episode_values = [int(value) for value in episode_index.detach().cpu().flatten().tolist()]
+    row = {
+        "method": method,
+        "step_min": min(step_values) if step_values else 0,
+        "step_max": max(step_values) if step_values else 0,
+        "episode_index_min": min(episode_values) if episode_values else 0,
+        "episode_index_max": max(episode_values) if episode_values else 0,
+        "env_step_count": num_envs,
+        "decision_count": num_envs * num_agents,
+        "actual_base_motion_obstacle_diagnostics_enabled": bool(config["enabled"]),
+        "actual_base_motion_obstacle_diagnostics_mode": str(config["mode"]),
+        "actual_base_motion_obstacle_source": config["obstacle_source"],
+        "actual_base_motion_path_segment_definition": "previous_proxy_base_xy_to_current_proxy_base_xy",
+        "actual_base_motion_line_sample_step": float(config["line_sample_step"]),
+        "actual_base_motion_min_motion_distance": float(config["min_motion_distance"]),
+        "actual_base_motion_intersection_pairs_sample": [],
+        "actual_base_motion_skipped_reason": None,
+        "_actual_base_motion_intersection_pair_count_tensor": pair_count,
+        "_actual_base_motion_valid_robot_count_tensor": valid_count,
+        "_actual_base_motion_skipped_robot_count_tensor": skipped_count,
+        "_actual_base_motion_min_distance_tensor": min_distance,
+        "_actual_base_motion_intersection_by_robot": robot_intersects,
+        "_actual_base_motion_distance_by_robot": robot_motion_distance,
+        "_actual_base_motion_valid_by_robot": robot_valid,
+        "_actual_base_motion_skipped_by_robot": robot_skipped,
+    }
+
+    if not bool(config["enabled"]):
+        row["actual_base_motion_skipped_reason"] = "disabled"
+        return row
+    if str(config["mode"]) != "diagnostics_only":
+        row["actual_base_motion_skipped_reason"] = "unsupported_mode"
+        return row
+    if config["obstacle_source"] != "component_mesh_footprint":
+        row["actual_base_motion_skipped_reason"] = "unsupported_obstacle_source"
+        return row
+    footprint = getattr(unwrapped.cfg, "component_obstacle_footprint", None)
+    if footprint is None:
+        row["actual_base_motion_skipped_reason"] = "component_mesh_footprint_unavailable"
+        return row
+
+    max_pairs_sample = int(config["max_pairs_sample"])
+    sample: list[dict] = []
+    min_motion_distance = float(config["min_motion_distance"])
+    line_sample_step = float(config["line_sample_step"])
+    env_done_cpu = env_done.detach().cpu().to(dtype=torch.bool)
+    previous_cpu = previous_base_pos.detach().cpu()
+    current_cpu = current_base_pos.detach().cpu()
+    assignment_cpu = assignment.detach().cpu()
+    step_cpu = step.detach().cpu()
+
+    by_robot_intersection_count = {agent: 0 for agent in agents[:num_agents]}
+    by_robot_valid_count = {agent: 0 for agent in agents[:num_agents]}
+    min_distance_sum = torch.zeros(num_envs, dtype=torch.float32, device=device)
+    min_distance_count = torch.zeros(num_envs, dtype=torch.float32, device=device)
+
+    for env_id in range(num_envs):
+        if bool(env_done_cpu[env_id].item()):
+            skipped_count[env_id] += num_agents
+            robot_skipped[env_id, :] = True
+            continue
+        env_min_distance = float("inf")
+        for agent_id in range(num_agents):
+            start_xy = (
+                float(previous_cpu[env_id, agent_id, 0].item()),
+                float(previous_cpu[env_id, agent_id, 1].item()),
+            )
+            end_xy = (
+                float(current_cpu[env_id, agent_id, 0].item()),
+                float(current_cpu[env_id, agent_id, 1].item()),
+            )
+            motion_distance = math.hypot(end_xy[0] - start_xy[0], end_xy[1] - start_xy[1])
+            robot_motion_distance[env_id, agent_id] = float(motion_distance)
+            if motion_distance < min_motion_distance:
+                skipped_count[env_id] += 1
+                robot_skipped[env_id, agent_id] = True
+                continue
+
+            valid_count[env_id] += 1
+            robot_valid[env_id, agent_id] = True
+            robot_name = agents[agent_id] if agent_id < len(agents) else f"agent_{agent_id}"
+            by_robot_valid_count[robot_name] = by_robot_valid_count.get(robot_name, 0) + 1
+            intersects = bool(footprint.intersects_segment(start_xy, end_xy))
+            if intersects:
+                pair_count[env_id] += 1
+                robot_intersects[env_id, agent_id] = True
+                by_robot_intersection_count[robot_name] = by_robot_intersection_count.get(robot_name, 0) + 1
+                segment_min_distance = 0.0
+            else:
+                segment_min_distance = _segment_min_distance_to_footprint(
+                    footprint,
+                    start_xy,
+                    end_xy,
+                    line_sample_step=line_sample_step,
+                )
+            if math.isfinite(segment_min_distance):
+                env_min_distance = min(env_min_distance, segment_min_distance)
+                min_distance_sum[env_id] += float(segment_min_distance)
+                min_distance_count[env_id] += 1.0
+
+            if intersects and len(sample) < max_pairs_sample:
+                assigned_index = int(assignment_cpu[env_id, agent_id].item())
+                selected_viewpoint_id = -1
+                if assigned_index >= 0 and assigned_index < len(viewpoint_ids):
+                    selected_viewpoint_id = int(viewpoint_ids[assigned_index])
+                sample.append(
+                    {
+                        "env_id": env_id,
+                        "method": method,
+                        "step": int(step_cpu[env_id].item()) if step_cpu.numel() > env_id else row["step_min"],
+                        "robot_id": agent_id,
+                        "robot_name": robot_name,
+                        "prev_base_xy": [start_xy[0], start_xy[1]],
+                        "current_base_xy": [end_xy[0], end_xy[1]],
+                        "motion_distance": float(motion_distance),
+                        "selected_viewpoint_id": selected_viewpoint_id,
+                        "intersects_component_mesh_footprint": True,
+                    }
+                )
+        if math.isfinite(env_min_distance):
+            min_distance[env_id] = float(env_min_distance)
+
+    row.update(
+        {
+            "actual_base_motion_intersection_pair_count": int(pair_count.sum().item()),
+            "actual_base_motion_intersection_step_count": int((pair_count > 0).to(dtype=torch.long).sum().item()),
+            "actual_base_motion_intersection_any": bool((pair_count > 0).any().item()),
+            "actual_base_motion_valid_robot_count": int(valid_count.sum().item()),
+            "actual_base_motion_skipped_robot_count": int(skipped_count.sum().item()),
+            "actual_base_motion_min_distance_to_footprint": _mean_finite_tensor(min_distance),
+            "actual_base_motion_min_distance_to_footprint_min": (
+                float(min_distance[torch.isfinite(min_distance)].min().item())
+                if bool(torch.isfinite(min_distance).any())
+                else float("nan")
+            ),
+            "actual_base_motion_min_distance_to_footprint_sum": float(min_distance_sum.sum().item()),
+            "actual_base_motion_min_distance_to_footprint_count": float(min_distance_count.sum().item()),
+            "actual_base_motion_intersection_count_by_robot": by_robot_intersection_count,
+            "actual_base_motion_valid_count_by_robot": by_robot_valid_count,
+            "actual_base_motion_intersection_pairs_sample": sample,
+        }
+    )
+    return row
+
+
+def _update_actual_base_motion_buffers(
+    buffers: dict[str, torch.Tensor],
+    *,
+    diagnostics: dict,
+    num_envs: int,
+    device: torch.device,
+) -> None:
+    if "_actual_base_motion_intersection_pair_count_tensor" not in diagnostics:
+        return
+    pair_count = _as_tensor_metric(
+        diagnostics["_actual_base_motion_intersection_pair_count_tensor"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["actual_base_motion_intersection_step_count"] += (pair_count > 0).to(dtype=torch.long)
+    buffers["actual_base_motion_intersection_pair_count_total"] += pair_count
+    buffers["actual_base_motion_intersection_pair_count_sum"] += pair_count.to(dtype=torch.float32)
+    buffers["actual_base_motion_valid_robot_count_sum"] += _as_tensor_metric(
+        diagnostics["_actual_base_motion_valid_robot_count_tensor"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    buffers["actual_base_motion_skipped_robot_count_total"] += _as_tensor_metric(
+        diagnostics["_actual_base_motion_skipped_robot_count_tensor"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    _accumulate_min_metric(
+        buffers,
+        "actual_base_motion",
+        "min_distance_to_footprint",
+        _as_tensor_metric(
+            diagnostics["_actual_base_motion_min_distance_tensor"],
+            num_envs,
+            device,
+            dtype=torch.float32,
+        ),
+    )
+
+
+def _update_target_conflict_candidate_buffers(
+    buffers: dict[str, torch.Tensor],
+    *,
+    comparison: dict,
+    num_envs: int,
+    device: torch.device,
+) -> None:
+    if "_baseline_conflict_pair_count_tensor" not in comparison:
+        return
+    baseline_conflict_count = _as_tensor_metric(
+        comparison["_baseline_conflict_pair_count_tensor"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["baseline_selected_target_conflict_step_count"] += (baseline_conflict_count > 0).to(dtype=torch.long)
+    buffers["baseline_selected_target_conflict_pair_count_total"] += baseline_conflict_count
+    buffers["baseline_selected_target_conflict_rate_sum"] += _as_tensor_metric(
+        comparison["_baseline_conflict_rate_tensor"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    buffers["baseline_selected_target_conflict_penalty_sum_total"] += _as_tensor_metric(
+        comparison["_baseline_penalty_sum_tensor"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    _accumulate_min_metric(
+        buffers,
+        "baseline_selected_target",
+        "min_distance",
+        _as_tensor_metric(comparison["_baseline_min_distance_tensor"], num_envs, device, dtype=torch.float32),
+    )
+    _accumulate_min_metric(
+        buffers,
+        "baseline_selected_target",
+        "min_clearance",
+        _as_tensor_metric(comparison["_baseline_min_clearance_tensor"], num_envs, device, dtype=torch.float32),
+    )
+
+    if "_candidate_conflict_pair_count_tensor" not in comparison:
+        return
+    candidate_conflict_count = _as_tensor_metric(
+        comparison["_candidate_conflict_pair_count_tensor"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["candidate_selected_target_conflict_step_count"] += (candidate_conflict_count > 0).to(dtype=torch.long)
+    buffers["candidate_selected_target_conflict_pair_count_total"] += candidate_conflict_count
+    buffers["candidate_selected_target_conflict_rate_sum"] += _as_tensor_metric(
+        comparison["_candidate_conflict_rate_tensor"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    buffers["candidate_selected_target_conflict_penalty_sum_total"] += _as_tensor_metric(
+        comparison["_candidate_penalty_sum_tensor"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    _accumulate_min_metric(
+        buffers,
+        "candidate_selected_target",
+        "min_distance",
+        _as_tensor_metric(comparison["_candidate_min_distance_tensor"], num_envs, device, dtype=torch.float32),
+    )
+    _accumulate_min_metric(
+        buffers,
+        "candidate_selected_target",
+        "min_clearance",
+        _as_tensor_metric(comparison["_candidate_min_clearance_tensor"], num_envs, device, dtype=torch.float32),
+    )
+    buffers["candidate_changed_assignment_count_total"] += _as_tensor_metric(
+        comparison["_candidate_changed_count_tensor"],
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["candidate_changed_assignment_rate_sum"] += _as_tensor_metric(
+        comparison["_candidate_changed_rate_tensor"],
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+
+
+def _update_conflict_aware_solver_buffers(
+    buffers: dict[str, torch.Tensor],
+    *,
+    solver_diagnostics: dict | None,
+    num_envs: int,
+    device: torch.device,
+) -> None:
+    if not solver_diagnostics:
+        return
+    if "conflict_aware_candidate_combination_count" not in solver_diagnostics:
+        return
+
+    enabled = bool(solver_diagnostics.get("conflict_aware_solver_enabled", False))
+    buffers["conflict_aware_solver_step_count"] += 1
+    if enabled:
+        buffers["conflict_aware_solver_enabled_count"] += 1
+
+    combination_count = _as_tensor_metric(
+        solver_diagnostics.get("conflict_aware_candidate_combination_count", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    buffers["conflict_aware_candidate_combination_count_sum"] += combination_count
+
+    selected_score = _as_tensor_metric(
+        solver_diagnostics.get("conflict_aware_selected_score", torch.full((num_envs,), float("nan"), device=device)),
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    finite_score = torch.isfinite(selected_score)
+    buffers["conflict_aware_selected_score_sum"] += torch.where(
+        finite_score, selected_score, torch.zeros_like(selected_score)
+    )
+    buffers["conflict_aware_selected_score_count"] += finite_score.to(dtype=torch.float32)
+
+    selected_unary = _as_tensor_metric(
+        solver_diagnostics.get(
+            "conflict_aware_selected_unary_cost_sum", torch.full((num_envs,), float("nan"), device=device)
+        ),
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    finite_unary = torch.isfinite(selected_unary)
+    buffers["conflict_aware_selected_unary_cost_sum_sum"] += torch.where(
+        finite_unary, selected_unary, torch.zeros_like(selected_unary)
+    )
+    buffers["conflict_aware_selected_unary_cost_sum_count"] += finite_unary.to(dtype=torch.float32)
+
+    buffers["conflict_aware_selected_target_conflict_pair_count_total"] += _as_tensor_metric(
+        solver_diagnostics.get(
+            "conflict_aware_selected_target_conflict_pair_count", torch.zeros(num_envs, device=device)
+        ),
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["conflict_aware_selected_target_conflict_penalty_sum_total"] += _as_tensor_metric(
+        solver_diagnostics.get(
+            "conflict_aware_selected_target_conflict_penalty_sum", torch.zeros(num_envs, device=device)
+        ),
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+    buffers["conflict_aware_selected_duplicate_pair_count_total"] += _as_tensor_metric(
+        solver_diagnostics.get("conflict_aware_selected_duplicate_pair_count", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    fallback_used = _as_tensor_metric(
+        solver_diagnostics.get("conflict_aware_fallback_used", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.bool,
+    )
+    buffers["conflict_aware_fallback_step_count"] += fallback_used.to(dtype=torch.long)
+    buffers["conflict_aware_changed_vs_base_count_total"] += _as_tensor_metric(
+        solver_diagnostics.get("conflict_aware_changed_vs_base_count", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.long,
+    )
+    buffers["conflict_aware_changed_vs_base_rate_sum"] += _as_tensor_metric(
+        solver_diagnostics.get("conflict_aware_changed_vs_base_rate", torch.zeros(num_envs, device=device)),
+        num_envs,
+        device,
+        dtype=torch.float32,
+    )
+
+
 def _covered_id_lists(covered_mask: torch.Tensor, viewpoint_ids: list[int]) -> tuple[list[int], list[int]]:
     covered = []
     uncovered = []
@@ -2270,6 +4386,7 @@ def _append_assignment_history_step(
     covered_after: torch.Tensor,
     viewpoint_ids: list[int],
     retry_fallback_info: dict[tuple[int, int], dict] | None = None,
+    actual_base_motion: dict | None = None,
 ) -> None:
     num_envs, num_agents = assignment.shape
     num_viewpoints = len(viewpoint_ids)
@@ -2307,7 +4424,19 @@ def _append_assignment_history_step(
                 "coverage_ratio": coverage_ratio,
                 "assigned_viewpoint_was_covered_before": was_covered_before,
                 "assigned_viewpoint_covered_after": covered_after_step,
+                "actual_base_motion_intersects_component": False,
+                "actual_base_motion_distance": "",
             }
+            if actual_base_motion is not None:
+                intersection_by_robot = actual_base_motion.get("_actual_base_motion_intersection_by_robot")
+                distance_by_robot = actual_base_motion.get("_actual_base_motion_distance_by_robot")
+                if isinstance(intersection_by_robot, torch.Tensor) and intersection_by_robot.ndim == 2:
+                    row["actual_base_motion_intersects_component"] = bool(
+                        intersection_by_robot[env_id, agent_id].item()
+                    )
+                if isinstance(distance_by_robot, torch.Tensor) and distance_by_robot.ndim == 2:
+                    distance = float(distance_by_robot[env_id, agent_id].item())
+                    row["actual_base_motion_distance"] = distance if math.isfinite(distance) else ""
             row.update(_retry_fallback_default_history_fields())
             if retry_fallback_info is not None:
                 row.update(retry_fallback_info.get((env_id, agent_id), {}))
@@ -2351,6 +4480,20 @@ def _check_record_consistency(record: dict[str, float | int | str], num_viewpoin
         )
 
 
+def _buffer_mean_or_nan(buffers: dict[str, torch.Tensor], env_id: int, *, sum_key: str, count_key: str) -> float:
+    count = float(buffers[count_key][env_id].item())
+    if count <= 0.0:
+        return float("nan")
+    return float((buffers[sum_key][env_id] / buffers[count_key][env_id]).item())
+
+
+def _buffer_min_or_nan(buffers: dict[str, torch.Tensor], env_id: int, *, min_key: str, count_key: str) -> float:
+    count = float(buffers[count_key][env_id].item())
+    if count <= 0.0:
+        return float("nan")
+    return float(buffers[min_key][env_id].item())
+
+
 def _make_records(
     method: str,
     episode_start: int,
@@ -2384,6 +4527,203 @@ def _make_records(
             "valid_action_rate": float((buffers["valid_count"][env_id] / buffers["decision_count"][env_id].clamp(min=1.0)).item()),
             "new_viewpoints_total": float(buffers["new_viewpoints_total"][env_id].item()),
             "episode_length": length,
+            "inter_robot_overlap_step_count": int(buffers["inter_robot_overlap_step_count"][env_id].item()),
+            "inter_robot_overlap_rate": float(buffers["inter_robot_overlap_step_count"][env_id].item()) / float(length),
+            "inter_robot_overlap_pair_count_total": int(
+                buffers["inter_robot_overlap_pair_count_total"][env_id].item()
+            ),
+            "inter_robot_min_distance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="inter_robot_min_distance_min",
+                count_key="inter_robot_min_distance_count",
+            ),
+            "inter_robot_min_distance_mean": _buffer_mean_or_nan(
+                buffers,
+                env_id,
+                sum_key="inter_robot_min_distance_sum",
+                count_key="inter_robot_min_distance_count",
+            ),
+            "inter_robot_min_clearance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="inter_robot_min_clearance_min",
+                count_key="inter_robot_min_clearance_count",
+            ),
+            "inter_robot_min_clearance_mean": _buffer_mean_or_nan(
+                buffers,
+                env_id,
+                sum_key="inter_robot_min_clearance_sum",
+                count_key="inter_robot_min_clearance_count",
+            ),
+            "selected_target_conflict_step_count": int(
+                buffers["selected_target_conflict_step_count"][env_id].item()
+            ),
+            "selected_target_conflict_rate": float(
+                buffers["selected_target_conflict_step_count"][env_id].item()
+            )
+            / float(length),
+            "selected_target_conflict_pair_count_total": int(
+                buffers["selected_target_conflict_pair_count_total"][env_id].item()
+            ),
+            "selected_target_min_distance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="selected_target_min_distance_min",
+                count_key="selected_target_min_distance_count",
+            ),
+            "selected_target_min_distance_mean": _buffer_mean_or_nan(
+                buffers,
+                env_id,
+                sum_key="selected_target_min_distance_sum",
+                count_key="selected_target_min_distance_count",
+            ),
+            "selected_target_min_clearance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="selected_target_min_clearance_min",
+                count_key="selected_target_min_clearance_count",
+            ),
+            "selected_target_min_clearance_mean": _buffer_mean_or_nan(
+                buffers,
+                env_id,
+                sum_key="selected_target_min_clearance_sum",
+                count_key="selected_target_min_clearance_count",
+            ),
+            "selected_target_skipped_robot_count_total": int(
+                buffers["selected_target_skipped_robot_count_total"][env_id].item()
+            ),
+            "selected_target_valid_robot_count_mean": float(
+                (buffers["selected_target_valid_robot_count_sum"][env_id] / float(length)).item()
+            ),
+            "actual_base_motion_intersection_step_count": int(
+                buffers["actual_base_motion_intersection_step_count"][env_id].item()
+            ),
+            "actual_base_motion_intersection_rate": float(
+                buffers["actual_base_motion_intersection_step_count"][env_id].item()
+            )
+            / float(length),
+            "actual_base_motion_intersection_pair_count_total": int(
+                buffers["actual_base_motion_intersection_pair_count_total"][env_id].item()
+            ),
+            "actual_base_motion_intersection_pair_count_mean": float(
+                (buffers["actual_base_motion_intersection_pair_count_sum"][env_id] / float(length)).item()
+            ),
+            "actual_base_motion_min_distance_to_footprint_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="actual_base_motion_min_distance_to_footprint_min",
+                count_key="actual_base_motion_min_distance_to_footprint_count",
+            ),
+            "actual_base_motion_min_distance_to_footprint_mean": _buffer_mean_or_nan(
+                buffers,
+                env_id,
+                sum_key="actual_base_motion_min_distance_to_footprint_sum",
+                count_key="actual_base_motion_min_distance_to_footprint_count",
+            ),
+            "actual_base_motion_valid_robot_count_mean": float(
+                (buffers["actual_base_motion_valid_robot_count_sum"][env_id] / float(length)).item()
+            ),
+            "actual_base_motion_skipped_robot_count_total": int(
+                buffers["actual_base_motion_skipped_robot_count_total"][env_id].item()
+            ),
+            "baseline_selected_target_conflict_step_count": int(
+                buffers["baseline_selected_target_conflict_step_count"][env_id].item()
+            ),
+            "baseline_selected_target_conflict_rate_mean": float(
+                (buffers["baseline_selected_target_conflict_rate_sum"][env_id] / float(length)).item()
+            ),
+            "baseline_selected_target_conflict_pair_count_total": int(
+                buffers["baseline_selected_target_conflict_pair_count_total"][env_id].item()
+            ),
+            "baseline_selected_target_min_distance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="baseline_selected_target_min_distance_min",
+                count_key="baseline_selected_target_min_distance_count",
+            ),
+            "baseline_selected_target_min_clearance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="baseline_selected_target_min_clearance_min",
+                count_key="baseline_selected_target_min_clearance_count",
+            ),
+            "baseline_selected_target_conflict_penalty_sum_total": float(
+                buffers["baseline_selected_target_conflict_penalty_sum_total"][env_id].item()
+            ),
+            "candidate_selected_target_conflict_step_count": int(
+                buffers["candidate_selected_target_conflict_step_count"][env_id].item()
+            ),
+            "candidate_selected_target_conflict_rate_mean": float(
+                (buffers["candidate_selected_target_conflict_rate_sum"][env_id] / float(length)).item()
+            ),
+            "candidate_selected_target_conflict_pair_count_total": int(
+                buffers["candidate_selected_target_conflict_pair_count_total"][env_id].item()
+            ),
+            "candidate_selected_target_min_distance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="candidate_selected_target_min_distance_min",
+                count_key="candidate_selected_target_min_distance_count",
+            ),
+            "candidate_selected_target_min_clearance_min": _buffer_min_or_nan(
+                buffers,
+                env_id,
+                min_key="candidate_selected_target_min_clearance_min",
+                count_key="candidate_selected_target_min_clearance_count",
+            ),
+            "candidate_selected_target_conflict_penalty_sum_total": float(
+                buffers["candidate_selected_target_conflict_penalty_sum_total"][env_id].item()
+            ),
+            "candidate_changed_assignment_rate_mean": float(
+                (buffers["candidate_changed_assignment_rate_sum"][env_id] / float(length)).item()
+            ),
+            "candidate_changed_assignment_count_total": int(
+                buffers["candidate_changed_assignment_count_total"][env_id].item()
+            ),
+            "conflict_aware_solver_enabled": int(
+                buffers["conflict_aware_solver_enabled_count"][env_id].item() > 0
+            ),
+            "conflict_aware_fallback_step_count": int(
+                buffers["conflict_aware_fallback_step_count"][env_id].item()
+            ),
+            "conflict_aware_fallback_rate": float(
+                buffers["conflict_aware_fallback_step_count"][env_id].item()
+            )
+            / float(length),
+            "conflict_aware_candidate_combination_count_mean": float(
+                (
+                    buffers["conflict_aware_candidate_combination_count_sum"][env_id]
+                    / buffers["conflict_aware_solver_step_count"][env_id].clamp(min=1).to(dtype=torch.float32)
+                ).item()
+            ),
+            "conflict_aware_selected_score_mean": _buffer_mean_or_nan(
+                buffers,
+                env_id,
+                sum_key="conflict_aware_selected_score_sum",
+                count_key="conflict_aware_selected_score_count",
+            ),
+            "conflict_aware_selected_unary_cost_sum_mean": _buffer_mean_or_nan(
+                buffers,
+                env_id,
+                sum_key="conflict_aware_selected_unary_cost_sum_sum",
+                count_key="conflict_aware_selected_unary_cost_sum_count",
+            ),
+            "conflict_aware_selected_target_conflict_pair_count_total": int(
+                buffers["conflict_aware_selected_target_conflict_pair_count_total"][env_id].item()
+            ),
+            "conflict_aware_selected_target_conflict_penalty_sum_total": float(
+                buffers["conflict_aware_selected_target_conflict_penalty_sum_total"][env_id].item()
+            ),
+            "conflict_aware_selected_duplicate_pair_count_total": int(
+                buffers["conflict_aware_selected_duplicate_pair_count_total"][env_id].item()
+            ),
+            "conflict_aware_changed_vs_base_count_total": int(
+                buffers["conflict_aware_changed_vs_base_count_total"][env_id].item()
+            ),
+            "conflict_aware_changed_vs_base_rate_mean": float(
+                (buffers["conflict_aware_changed_vs_base_rate_sum"][env_id] / float(length)).item()
+            ),
         }
         _check_record_consistency(record, num_viewpoints)
         records.append(record)
@@ -2394,6 +4734,18 @@ def _reset_buffers(buffers: dict[str, torch.Tensor], env_ids: torch.Tensor) -> N
     for value in buffers.values():
         value[env_ids] = 0
     buffers["steps_to_full"][env_ids] = -1
+    for key in (
+        "inter_robot_min_distance_min",
+        "inter_robot_min_clearance_min",
+        "selected_target_min_distance_min",
+        "selected_target_min_clearance_min",
+        "actual_base_motion_min_distance_to_footprint_min",
+        "baseline_selected_target_min_distance_min",
+        "baseline_selected_target_min_clearance_min",
+        "candidate_selected_target_min_distance_min",
+        "candidate_selected_target_min_clearance_min",
+    ):
+        buffers[key][env_ids] = float("inf")
 
 
 def _env_id_tensor(unwrapped, env_ids: Any) -> torch.Tensor:
@@ -2532,10 +4884,26 @@ def _evaluate_baseline(method: str, env_cfg) -> tuple[list[dict], dict]:
     try:
         with torch.no_grad():
             while simulation_app.is_running() and len(records) < args_cli.num_episodes:
-                problem = _prepare_baseline_assignment_problem(unwrapped.get_assignment_problem())
+                problem = _prepare_baseline_assignment_problem(unwrapped.get_assignment_problem(), method=method)
                 assignment = solver.solve(problem)
+                solver_diagnostics = getattr(solver, "latest_diagnostics", None)
                 _validate_assignment(problem, assignment)
                 valid_decisions = _valid_assignment_decisions(problem, assignment)
+                step_before = buffers["length"].clone()
+                _update_conflict_aware_solver_buffers(
+                    buffers,
+                    solver_diagnostics=solver_diagnostics,
+                    num_envs=num_envs,
+                    device=device,
+                )
+                selected_target_conflict = _selected_target_conflict_diagnostics(problem, assignment, viewpoint_ids)
+                _set_selected_assignment_debug_visualization(unwrapped, assignment, problem)
+                _update_selected_assignment_debug_runtime_diagnostics(
+                    diagnostics,
+                    unwrapped,
+                    method=method,
+                    step=step_before,
+                )
 
                 actions = viewpoint_assignment_to_actions(unwrapped, assignment)
                 _, rewards, terminated, truncated, _ = env.step(actions)
@@ -2546,6 +4914,21 @@ def _evaluate_baseline(method: str, env_cfg) -> tuple[list[dict], dict]:
                 covered_mask = _coverage_from_env(unwrapped, env_done, prereset_coverage_snapshots)
                 new_viewpoints = _new_viewpoints_from_env(unwrapped)
                 reward_sum = _sum_reward_dict(rewards, agents, num_envs, device)
+                current_overlap = unwrapped.get_inter_robot_conflict_diagnostics()
+                _update_inter_robot_runtime_diagnostics(
+                    diagnostics,
+                    method=method,
+                    step=step_before,
+                    current_overlap=current_overlap,
+                    selected_target=selected_target_conflict,
+                )
+                _update_inter_robot_conflict_buffers(
+                    buffers,
+                    current_overlap=current_overlap,
+                    selected_target=selected_target_conflict,
+                    num_envs=num_envs,
+                    device=device,
+                )
 
                 _update_buffers(
                     buffers,
@@ -2592,6 +4975,9 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
     retry_fallback_events: list[dict] = []
     controller_state_trace: list[dict] = []
     obstacle_candidate_comparison_rows: list[dict] = []
+    target_conflict_candidate_comparison_rows: list[dict] = []
+    conflict_aware_solver_rows: list[dict] = []
+    actual_base_motion_rows: list[dict] = []
     retry_fallback_stats = _init_retry_fallback_stats()
     diagnostics: dict | None = None
     agent_names = _agent_names_from_unwrapped(unwrapped)
@@ -2655,12 +5041,38 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
             )
             with torch.no_grad():
                 while simulation_app.is_running() and len(records) < args_cli.num_episodes:
-                    problem = _prepare_baseline_assignment_problem(unwrapped.get_assignment_problem(), retry_state)
+                    problem = _prepare_baseline_assignment_problem(unwrapped.get_assignment_problem(), retry_state, method=method)
                     assignment = solver.solve(problem)
+                    solver_diagnostics = getattr(solver, "latest_diagnostics", None)
                     _validate_assignment(problem, assignment)
                     valid_decisions = _valid_assignment_decisions(problem, assignment)
-                    covered_before = unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
                     step_before = buffers["length"].clone()
+                    conflict_aware_solver_row = _conflict_aware_solver_step_row(
+                        method=method,
+                        step=step_before,
+                        episode_index=episode_index_by_env.clone(),
+                        solver_diagnostics=solver_diagnostics,
+                        num_envs=num_envs,
+                        num_agents=int(problem["num_agents"]),
+                        device=device,
+                    )
+                    if conflict_aware_solver_row is not None:
+                        conflict_aware_solver_rows.append(conflict_aware_solver_row)
+                    _update_conflict_aware_solver_buffers(
+                        buffers,
+                        solver_diagnostics=solver_diagnostics,
+                        num_envs=num_envs,
+                        device=device,
+                    )
+                    selected_target_conflict = _selected_target_conflict_diagnostics(problem, assignment, viewpoint_ids)
+                    _set_selected_assignment_debug_visualization(unwrapped, assignment, problem)
+                    _update_selected_assignment_debug_runtime_diagnostics(
+                        diagnostics,
+                        unwrapped,
+                        method=method,
+                        step=step_before,
+                    )
+                    covered_before = unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
                     if args_cli.compare_obstacle_aware_candidates:
                         obstacle_candidate_comparison_rows.append(
                             _compare_obstacle_aware_candidate_step(
@@ -2673,19 +5085,71 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                                 viewpoint_ids=viewpoint_ids,
                             )
                         )
+                    target_conflict_candidate_comparison = _compare_target_conflict_candidate_step(
+                        method=method,
+                        step=step_before,
+                        episode_index=episode_index_by_env.clone(),
+                        problem=problem,
+                        baseline_assignment=assignment,
+                        agents=agent_names,
+                        viewpoint_ids=viewpoint_ids,
+                    )
+                    target_conflict_candidate_comparison_rows.append(target_conflict_candidate_comparison)
+                    _update_target_conflict_candidate_buffers(
+                        buffers,
+                        comparison=target_conflict_candidate_comparison,
+                        num_envs=num_envs,
+                        device=device,
+                    )
                     assignment_transition_info = _update_controller_trace_assignment_state(
                         trace_state, assignment, viewpoint_ids
                     )
 
                     actions = viewpoint_assignment_to_actions(unwrapped, assignment)
+                    previous_base_pos = unwrapped.base_pos.detach().clone()
                     _, rewards, terminated, truncated, _ = env.step(actions)
+                    current_base_pos = unwrapped.base_pos.detach().clone()
 
                     terminated_tensor = _aggregate_done(terminated, agents, num_envs, device)
                     truncated_tensor = _aggregate_done(truncated, agents, num_envs, device)
                     env_done = terminated_tensor | truncated_tensor
+                    actual_base_motion = _actual_base_motion_step_diagnostics(
+                        unwrapped=unwrapped,
+                        method=method,
+                        step=step_before,
+                        episode_index=episode_index_by_env.clone(),
+                        assignment=assignment,
+                        previous_base_pos=previous_base_pos,
+                        current_base_pos=current_base_pos,
+                        env_done=env_done,
+                        agents=agent_names,
+                        viewpoint_ids=viewpoint_ids,
+                    )
+                    actual_base_motion_rows.append(actual_base_motion)
+                    _update_actual_base_motion_buffers(
+                        buffers,
+                        diagnostics=actual_base_motion,
+                        num_envs=num_envs,
+                        device=device,
+                    )
                     covered_mask = _coverage_from_env(unwrapped, env_done, prereset_coverage_snapshots)
                     new_viewpoints = _new_viewpoints_from_env(unwrapped)
                     reward_sum = _sum_reward_dict(rewards, agents, num_envs, device)
+                    current_overlap = unwrapped.get_inter_robot_conflict_diagnostics()
+                    _update_inter_robot_runtime_diagnostics(
+                        diagnostics,
+                        method=method,
+                        step=step_before,
+                        current_overlap=current_overlap,
+                        selected_target=selected_target_conflict,
+                    )
+                    _update_inter_robot_conflict_buffers(
+                        buffers,
+                        current_overlap=current_overlap,
+                        selected_target=selected_target_conflict,
+                        num_envs=num_envs,
+                        device=device,
+                    )
                     retry_fallback_info = _update_retry_fallback_after_step(
                         retry_state,
                         method=method,
@@ -2721,6 +5185,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                             covered_after=covered_mask,
                             viewpoint_ids=viewpoint_ids,
                             retry_fallback_info=retry_fallback_info,
+                            actual_base_motion=actual_base_motion,
                         )
 
                     _update_buffers(
@@ -2801,6 +5266,22 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
         diagnostics["obstacle_aware_candidate_comparison"] = _finalize_obstacle_aware_candidate_comparison(
             obstacle_candidate_comparison_rows,
             methods,
+        )
+    if bool(_target_conflict_candidate_config()["enabled"]) or target_conflict_candidate_comparison_rows:
+        diagnostics["selected_target_conflict_candidate_comparison"] = _finalize_target_conflict_candidate_comparison(
+            target_conflict_candidate_comparison_rows,
+            methods,
+        )
+    if bool(_conflict_aware_baseline_config()["enabled"]) or conflict_aware_solver_rows:
+        diagnostics["conflict_aware_baseline"] = _finalize_conflict_aware_solver_diagnostics(
+            conflict_aware_solver_rows,
+            methods,
+        )
+    if bool(_actual_base_motion_config()["enabled"]) or actual_base_motion_rows:
+        diagnostics["actual_base_motion_obstacle_diagnostics"] = _finalize_actual_base_motion_diagnostics(
+            actual_base_motion_rows,
+            methods,
+            agent_names,
         )
     return all_records, diagnostics, assignment_history, retry_fallback_events, controller_state_trace
 
@@ -2916,6 +5397,47 @@ def _evaluate_assignment_rl(env_cfg, agent_cfg: dict) -> list[dict]:
     return records
 
 
+def _record_float(record: dict, field: str, default: float = 0.0) -> float:
+    value = record.get(field, default)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _record_int(record: dict, field: str, default: int = 0) -> int:
+    value = record.get(field, default)
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _finite_record_values(records: list[dict], field: str) -> list[float]:
+    values = []
+    for record in records:
+        value = _record_float(record, field, float("nan"))
+        if math.isfinite(value):
+            values.append(value)
+    return values
+
+
+def _mean_record_field(records: list[dict], field: str, default: float = 0.0) -> float:
+    if not records:
+        return default
+    return sum(_record_float(record, field, default) for record in records) / float(len(records))
+
+
+def _mean_finite_record_field(records: list[dict], field: str) -> float:
+    values = _finite_record_values(records, field)
+    return sum(values) / float(len(values)) if values else float("nan")
+
+
+def _min_finite_record_field(records: list[dict], field: str) -> float:
+    values = _finite_record_values(records, field)
+    return min(values) if values else float("nan")
+
+
 def _summarize(records: list[dict]) -> list[dict]:
     rows = []
     for method in METHODS:
@@ -2943,6 +5465,189 @@ def _summarize(records: list[dict]) -> list[dict]:
                 "mean_duplicate_count": sum(record["duplicate_count_mean"] for record in method_records) / count,
                 "mean_noop_rate": sum(record["noop_rate"] for record in method_records) / count,
                 "mean_valid_action_rate": sum(record["valid_action_rate"] for record in method_records) / count,
+                "inter_robot_overlap_step_count_total": sum(
+                    _record_int(record, "inter_robot_overlap_step_count") for record in method_records
+                ),
+                "inter_robot_overlap_rate_mean": _mean_record_field(
+                    method_records,
+                    "inter_robot_overlap_rate",
+                ),
+                "inter_robot_overlap_pair_count_total": sum(
+                    _record_int(record, "inter_robot_overlap_pair_count_total") for record in method_records
+                ),
+                "inter_robot_min_distance_min": _min_finite_record_field(
+                    method_records,
+                    "inter_robot_min_distance_min",
+                ),
+                "inter_robot_min_distance_mean": _mean_finite_record_field(
+                    method_records,
+                    "inter_robot_min_distance_mean",
+                ),
+                "inter_robot_min_clearance_min": _min_finite_record_field(
+                    method_records,
+                    "inter_robot_min_clearance_min",
+                ),
+                "inter_robot_min_clearance_mean": _mean_finite_record_field(
+                    method_records,
+                    "inter_robot_min_clearance_mean",
+                ),
+                "selected_target_conflict_step_count_total": sum(
+                    _record_int(record, "selected_target_conflict_step_count") for record in method_records
+                ),
+                "selected_target_conflict_rate_mean": _mean_record_field(
+                    method_records,
+                    "selected_target_conflict_rate",
+                ),
+                "selected_target_conflict_pair_count_total": sum(
+                    _record_int(record, "selected_target_conflict_pair_count_total") for record in method_records
+                ),
+                "selected_target_min_distance_min": _min_finite_record_field(
+                    method_records,
+                    "selected_target_min_distance_min",
+                ),
+                "selected_target_min_distance_mean": _mean_finite_record_field(
+                    method_records,
+                    "selected_target_min_distance_mean",
+                ),
+                "selected_target_min_clearance_min": _min_finite_record_field(
+                    method_records,
+                    "selected_target_min_clearance_min",
+                ),
+                "selected_target_min_clearance_mean": _mean_finite_record_field(
+                    method_records,
+                    "selected_target_min_clearance_mean",
+                ),
+                "selected_target_skipped_robot_count_total": sum(
+                    _record_int(record, "selected_target_skipped_robot_count_total") for record in method_records
+                ),
+                "selected_target_valid_robot_count_mean": _mean_record_field(
+                    method_records,
+                    "selected_target_valid_robot_count_mean",
+                ),
+                "actual_base_motion_intersection_step_count_total": sum(
+                    _record_int(record, "actual_base_motion_intersection_step_count") for record in method_records
+                ),
+                "actual_base_motion_intersection_rate_mean": _mean_record_field(
+                    method_records,
+                    "actual_base_motion_intersection_rate",
+                ),
+                "actual_base_motion_intersection_pair_count_total": sum(
+                    _record_int(record, "actual_base_motion_intersection_pair_count_total")
+                    for record in method_records
+                ),
+                "actual_base_motion_intersection_pair_count_mean": _mean_record_field(
+                    method_records,
+                    "actual_base_motion_intersection_pair_count_mean",
+                ),
+                "actual_base_motion_min_distance_to_footprint_min": _min_finite_record_field(
+                    method_records,
+                    "actual_base_motion_min_distance_to_footprint_min",
+                ),
+                "actual_base_motion_min_distance_to_footprint_mean": _mean_finite_record_field(
+                    method_records,
+                    "actual_base_motion_min_distance_to_footprint_mean",
+                ),
+                "actual_base_motion_valid_robot_count_mean": _mean_record_field(
+                    method_records,
+                    "actual_base_motion_valid_robot_count_mean",
+                ),
+                "actual_base_motion_skipped_robot_count_total": sum(
+                    _record_int(record, "actual_base_motion_skipped_robot_count_total") for record in method_records
+                ),
+                "baseline_selected_target_conflict_step_count": sum(
+                    _record_int(record, "baseline_selected_target_conflict_step_count") for record in method_records
+                ),
+                "baseline_selected_target_conflict_rate_mean": _mean_record_field(
+                    method_records,
+                    "baseline_selected_target_conflict_rate_mean",
+                ),
+                "baseline_selected_target_conflict_pair_count_total": sum(
+                    _record_int(record, "baseline_selected_target_conflict_pair_count_total")
+                    for record in method_records
+                ),
+                "baseline_selected_target_min_distance_min": _min_finite_record_field(
+                    method_records,
+                    "baseline_selected_target_min_distance_min",
+                ),
+                "baseline_selected_target_min_clearance_min": _min_finite_record_field(
+                    method_records,
+                    "baseline_selected_target_min_clearance_min",
+                ),
+                "baseline_selected_target_conflict_penalty_sum_total": sum(
+                    _record_float(record, "baseline_selected_target_conflict_penalty_sum_total")
+                    for record in method_records
+                ),
+                "candidate_selected_target_conflict_step_count": sum(
+                    _record_int(record, "candidate_selected_target_conflict_step_count") for record in method_records
+                ),
+                "candidate_selected_target_conflict_rate_mean": _mean_record_field(
+                    method_records,
+                    "candidate_selected_target_conflict_rate_mean",
+                ),
+                "candidate_selected_target_conflict_pair_count_total": sum(
+                    _record_int(record, "candidate_selected_target_conflict_pair_count_total")
+                    for record in method_records
+                ),
+                "candidate_selected_target_min_distance_min": _min_finite_record_field(
+                    method_records,
+                    "candidate_selected_target_min_distance_min",
+                ),
+                "candidate_selected_target_min_clearance_min": _min_finite_record_field(
+                    method_records,
+                    "candidate_selected_target_min_clearance_min",
+                ),
+                "candidate_selected_target_conflict_penalty_sum_total": sum(
+                    _record_float(record, "candidate_selected_target_conflict_penalty_sum_total")
+                    for record in method_records
+                ),
+                "candidate_changed_assignment_rate_mean": _mean_record_field(
+                    method_records,
+                    "candidate_changed_assignment_rate_mean",
+                ),
+                "candidate_changed_assignment_count_total": sum(
+                    _record_int(record, "candidate_changed_assignment_count_total") for record in method_records
+                ),
+                "conflict_aware_solver_enabled": int(
+                    any(bool(_record_int(record, "conflict_aware_solver_enabled")) for record in method_records)
+                ),
+                "conflict_aware_fallback_step_count_total": sum(
+                    _record_int(record, "conflict_aware_fallback_step_count") for record in method_records
+                ),
+                "conflict_aware_fallback_rate_mean": _mean_record_field(
+                    method_records,
+                    "conflict_aware_fallback_rate",
+                ),
+                "conflict_aware_candidate_combination_count_mean": _mean_record_field(
+                    method_records,
+                    "conflict_aware_candidate_combination_count_mean",
+                ),
+                "conflict_aware_selected_score_mean": _mean_finite_record_field(
+                    method_records,
+                    "conflict_aware_selected_score_mean",
+                ),
+                "conflict_aware_selected_unary_cost_sum_mean": _mean_finite_record_field(
+                    method_records,
+                    "conflict_aware_selected_unary_cost_sum_mean",
+                ),
+                "conflict_aware_selected_target_conflict_pair_count_total": sum(
+                    _record_int(record, "conflict_aware_selected_target_conflict_pair_count_total")
+                    for record in method_records
+                ),
+                "conflict_aware_selected_target_conflict_penalty_sum_total": sum(
+                    _record_float(record, "conflict_aware_selected_target_conflict_penalty_sum_total")
+                    for record in method_records
+                ),
+                "conflict_aware_selected_duplicate_pair_count_total": sum(
+                    _record_int(record, "conflict_aware_selected_duplicate_pair_count_total")
+                    for record in method_records
+                ),
+                "conflict_aware_changed_vs_base_count_total": sum(
+                    _record_int(record, "conflict_aware_changed_vs_base_count_total") for record in method_records
+                ),
+                "conflict_aware_changed_vs_base_rate_mean": _mean_record_field(
+                    method_records,
+                    "conflict_aware_changed_vs_base_rate_mean",
+                ),
             }
         )
     return rows
@@ -2958,6 +5663,24 @@ def _read_per_episode_csv(path: Path) -> list[dict]:
         "steps_to_full_coverage",
         "first_full_coverage_step",
         "episode_length",
+        "inter_robot_overlap_step_count",
+        "inter_robot_overlap_pair_count_total",
+        "selected_target_conflict_step_count",
+        "selected_target_conflict_pair_count_total",
+        "selected_target_skipped_robot_count_total",
+        "actual_base_motion_intersection_step_count",
+        "actual_base_motion_intersection_pair_count_total",
+        "actual_base_motion_skipped_robot_count_total",
+        "baseline_selected_target_conflict_step_count",
+        "baseline_selected_target_conflict_pair_count_total",
+        "candidate_selected_target_conflict_step_count",
+        "candidate_selected_target_conflict_pair_count_total",
+        "candidate_changed_assignment_count_total",
+        "conflict_aware_solver_enabled",
+        "conflict_aware_fallback_step_count",
+        "conflict_aware_selected_target_conflict_pair_count_total",
+        "conflict_aware_selected_duplicate_pair_count_total",
+        "conflict_aware_changed_vs_base_count_total",
     }
     float_fields = {
         "episode_return",
@@ -2967,6 +5690,37 @@ def _read_per_episode_csv(path: Path) -> list[dict]:
         "noop_rate",
         "valid_action_rate",
         "new_viewpoints_total",
+        "inter_robot_overlap_rate",
+        "inter_robot_min_distance_min",
+        "inter_robot_min_distance_mean",
+        "inter_robot_min_clearance_min",
+        "inter_robot_min_clearance_mean",
+        "selected_target_conflict_rate",
+        "selected_target_min_distance_min",
+        "selected_target_min_distance_mean",
+        "selected_target_min_clearance_min",
+        "selected_target_min_clearance_mean",
+        "selected_target_valid_robot_count_mean",
+        "actual_base_motion_intersection_rate",
+        "actual_base_motion_intersection_pair_count_mean",
+        "actual_base_motion_min_distance_to_footprint_min",
+        "actual_base_motion_min_distance_to_footprint_mean",
+        "actual_base_motion_valid_robot_count_mean",
+        "baseline_selected_target_conflict_rate_mean",
+        "baseline_selected_target_min_distance_min",
+        "baseline_selected_target_min_clearance_min",
+        "baseline_selected_target_conflict_penalty_sum_total",
+        "candidate_selected_target_conflict_rate_mean",
+        "candidate_selected_target_min_distance_min",
+        "candidate_selected_target_min_clearance_min",
+        "candidate_selected_target_conflict_penalty_sum_total",
+        "candidate_changed_assignment_rate_mean",
+        "conflict_aware_fallback_rate",
+        "conflict_aware_candidate_combination_count_mean",
+        "conflict_aware_selected_score_mean",
+        "conflict_aware_selected_unary_cost_sum_mean",
+        "conflict_aware_selected_target_conflict_penalty_sum_total",
+        "conflict_aware_changed_vs_base_rate_mean",
     }
     records = []
     with path.open("r", newline="", encoding="utf-8") as csv_file:
@@ -3063,6 +5817,94 @@ def _episode_metric_diagnostics(records: list[dict]) -> list[dict]:
                 "first_full_coverage_step": record.get("first_full_coverage_step"),
                 "final_covered_viewpoint_ids": _decode_json_list(record.get("final_covered_viewpoint_ids")),
                 "final_uncovered_viewpoint_ids": _decode_json_list(record.get("final_uncovered_viewpoint_ids")),
+                "inter_robot_overlap_step_count": record.get("inter_robot_overlap_step_count"),
+                "inter_robot_overlap_rate": record.get("inter_robot_overlap_rate"),
+                "inter_robot_overlap_pair_count_total": record.get("inter_robot_overlap_pair_count_total"),
+                "inter_robot_min_distance_min": record.get("inter_robot_min_distance_min"),
+                "inter_robot_min_clearance_min": record.get("inter_robot_min_clearance_min"),
+                "selected_target_conflict_step_count": record.get("selected_target_conflict_step_count"),
+                "selected_target_conflict_rate": record.get("selected_target_conflict_rate"),
+                "selected_target_conflict_pair_count_total": record.get("selected_target_conflict_pair_count_total"),
+                "selected_target_min_distance_min": record.get("selected_target_min_distance_min"),
+                "selected_target_min_clearance_min": record.get("selected_target_min_clearance_min"),
+                "baseline_selected_target_conflict_step_count": record.get(
+                    "baseline_selected_target_conflict_step_count"
+                ),
+                "baseline_selected_target_conflict_rate_mean": record.get(
+                    "baseline_selected_target_conflict_rate_mean"
+                ),
+                "baseline_selected_target_conflict_pair_count_total": record.get(
+                    "baseline_selected_target_conflict_pair_count_total"
+                ),
+                "baseline_selected_target_min_distance_min": record.get(
+                    "baseline_selected_target_min_distance_min"
+                ),
+                "baseline_selected_target_min_clearance_min": record.get(
+                    "baseline_selected_target_min_clearance_min"
+                ),
+                "baseline_selected_target_conflict_penalty_sum_total": record.get(
+                    "baseline_selected_target_conflict_penalty_sum_total"
+                ),
+                "candidate_selected_target_conflict_step_count": record.get(
+                    "candidate_selected_target_conflict_step_count"
+                ),
+                "candidate_selected_target_conflict_rate_mean": record.get(
+                    "candidate_selected_target_conflict_rate_mean"
+                ),
+                "candidate_selected_target_conflict_pair_count_total": record.get(
+                    "candidate_selected_target_conflict_pair_count_total"
+                ),
+                "candidate_selected_target_min_distance_min": record.get(
+                    "candidate_selected_target_min_distance_min"
+                ),
+                "candidate_selected_target_min_clearance_min": record.get(
+                    "candidate_selected_target_min_clearance_min"
+                ),
+                "candidate_selected_target_conflict_penalty_sum_total": record.get(
+                    "candidate_selected_target_conflict_penalty_sum_total"
+                ),
+                "candidate_changed_assignment_rate_mean": record.get("candidate_changed_assignment_rate_mean"),
+                "candidate_changed_assignment_count_total": record.get("candidate_changed_assignment_count_total"),
+                "conflict_aware_solver_enabled": record.get("conflict_aware_solver_enabled"),
+                "conflict_aware_fallback_step_count": record.get("conflict_aware_fallback_step_count"),
+                "conflict_aware_fallback_rate": record.get("conflict_aware_fallback_rate"),
+                "conflict_aware_candidate_combination_count_mean": record.get(
+                    "conflict_aware_candidate_combination_count_mean"
+                ),
+                "conflict_aware_selected_target_conflict_pair_count_total": record.get(
+                    "conflict_aware_selected_target_conflict_pair_count_total"
+                ),
+                "conflict_aware_selected_duplicate_pair_count_total": record.get(
+                    "conflict_aware_selected_duplicate_pair_count_total"
+                ),
+                "conflict_aware_changed_vs_base_count_total": record.get(
+                    "conflict_aware_changed_vs_base_count_total"
+                ),
+                "conflict_aware_changed_vs_base_rate_mean": record.get(
+                    "conflict_aware_changed_vs_base_rate_mean"
+                ),
+                "actual_base_motion_intersection_step_count": record.get(
+                    "actual_base_motion_intersection_step_count"
+                ),
+                "actual_base_motion_intersection_rate": record.get("actual_base_motion_intersection_rate"),
+                "actual_base_motion_intersection_pair_count_total": record.get(
+                    "actual_base_motion_intersection_pair_count_total"
+                ),
+                "actual_base_motion_intersection_pair_count_mean": record.get(
+                    "actual_base_motion_intersection_pair_count_mean"
+                ),
+                "actual_base_motion_min_distance_to_footprint_min": record.get(
+                    "actual_base_motion_min_distance_to_footprint_min"
+                ),
+                "actual_base_motion_min_distance_to_footprint_mean": record.get(
+                    "actual_base_motion_min_distance_to_footprint_mean"
+                ),
+                "actual_base_motion_valid_robot_count_mean": record.get(
+                    "actual_base_motion_valid_robot_count_mean"
+                ),
+                "actual_base_motion_skipped_robot_count_total": record.get(
+                    "actual_base_motion_skipped_robot_count_total"
+                ),
             }
         )
     return rows
@@ -3133,7 +5975,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if args_cli.diagnostic_interval < 0:
         raise ValueError("--diagnostic_interval must be non-negative")
     if args_cli.assignment_rl or args_cli.assignment_checkpoint_dir is not None:
-        raise ValueError("Stage 4A supports only random/nearest/greedy baselines; assignment-RL evaluation is disabled.")
+        raise ValueError(
+            "Stage 4A supports only baseline assignment methods and gated conflict-aware baseline variants; "
+            "assignment-RL evaluation is disabled."
+        )
 
     _set_global_seeds(args_cli.seed)
     all_records, diagnostics, assignment_history, retry_fallback_events, controller_state_trace = _evaluate_baseline_methods(

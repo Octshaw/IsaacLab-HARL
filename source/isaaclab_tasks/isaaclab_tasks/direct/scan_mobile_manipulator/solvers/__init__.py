@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from .base_solver import BaseAssignmentSolver
+from .conflict_aware_solver import ConflictAwareAssignmentSolver
 from .greedy_solver import GreedyAssignmentSolver
 from .nearest_solver import NearestAssignmentSolver
 from .random_solver import RandomAssignmentSolver
@@ -24,11 +25,16 @@ def make_solver(name: str):
         return NearestAssignmentSolver()
     if name == "greedy":
         return GreedyAssignmentSolver()
+    if name == "nearest_conflict_aware":
+        return ConflictAwareAssignmentSolver(method_name="nearest_conflict_aware", base_method="nearest")
+    if name == "greedy_conflict_aware":
+        return ConflictAwareAssignmentSolver(method_name="greedy_conflict_aware", base_method="greedy")
     raise ValueError(f"Unknown solver: {name}")
 
 
 __all__ = [
     "BaseAssignmentSolver",
+    "ConflictAwareAssignmentSolver",
     "GreedyAssignmentSolver",
     "NearestAssignmentSolver",
     "RandomAssignmentSolver",
