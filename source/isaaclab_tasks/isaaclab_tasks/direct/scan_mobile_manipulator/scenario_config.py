@@ -36,6 +36,72 @@ SUPPORTED_TARGET_CONFLICT_COMPARE_METHODS = {"nearest", "greedy", "random"}
 SUPPORTED_CONFLICT_AWARE_BASELINE_MODES = {"gated_solver_variant"}
 SUPPORTED_CONFLICT_AWARE_BASELINE_METHODS = {"greedy_conflict_aware", "nearest_conflict_aware"}
 
+ENV_CFG_SCENARIO_ATTRS = (
+    "viewpoint_csv_path",
+    "robot_config_path",
+    "capability_config_path",
+    "robot_visual_mode",
+    "component_visual_mode",
+    "gui_camera_enabled",
+    "gui_camera_eye",
+    "gui_camera_target",
+    "ground_grid_enabled",
+    "ground_grid_half_extent",
+    "ground_grid_spacing",
+    "ground_grid_z",
+    "ground_grid_line_width",
+    "component_mesh_path",
+    "component_mesh_format",
+    "component_mesh_unit",
+    "component_mesh_scale",
+    "component_mesh_position",
+    "component_mesh_orientation",
+    "component_mesh_orientation_format",
+    "component_mesh_visible",
+    "component_proxy_type",
+    "component_proxy_auto_from_mesh",
+    "component_proxy_padding",
+    "component_proxy_visual_visible",
+    "obstacle_diagnostics_enabled",
+    "obstacle_diagnostics_mode",
+    "obstacle_source",
+    "obstacle_footprint_resolution",
+    "obstacle_footprint_inflation_radius",
+    "obstacle_line_sample_step",
+    "obstacle_blocked_path_penalty",
+    "actual_base_motion_obstacle_diagnostics_enabled",
+    "actual_base_motion_obstacle_diagnostics_mode",
+    "actual_base_motion_obstacle_source",
+    "actual_base_motion_line_sample_step",
+    "actual_base_motion_min_motion_distance",
+    "actual_base_motion_max_pairs_sample",
+    "actual_base_motion_debug_visualization_enabled",
+    "actual_base_motion_debug_visualization_draw_in_headless",
+    "actual_base_motion_debug_visualization_max_lines",
+    "actual_base_motion_debug_visualization_line_width",
+    "obstacle_debug_visualization_enabled",
+    "obstacle_debug_visualization_draw_in_headless",
+    "obstacle_debug_visualization_line_source",
+    "obstacle_debug_visualization_max_lines_per_robot",
+    "obstacle_debug_visualization_max_total_lines",
+    "obstacle_debug_visualization_prefer_shortest_blocked_pairs",
+    "obstacle_debug_visualization_line_z_mode",
+    "obstacle_debug_visualization_line_z_value",
+    "obstacle_debug_visualization_line_z_offset",
+    "obstacle_debug_visualization_line_width",
+    "inter_robot_conflict_diagnostics_enabled",
+    "inter_robot_conflict_diagnostics_mode",
+    "inter_robot_conflict_robot_footprint_radius",
+    "inter_robot_conflict_safety_margin",
+    "inter_robot_target_conflict_enabled",
+    "inter_robot_target_conflict_radius",
+    "inter_robot_target_conflict_safety_margin",
+    "inter_robot_conflict_debug_visualization_enabled",
+    "inter_robot_conflict_debug_visualization_draw_in_headless",
+    "inter_robot_conflict_debug_visualization_max_lines",
+    "inter_robot_conflict_debug_visualization_line_width",
+)
+
 
 def load_scenario_config(config_path: str | Path | None, *, repo_root: Path) -> dict[str, Any]:
     """Load a YAML scenario config. JSON is accepted as a no-PyYAML fallback."""
@@ -235,6 +301,25 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     output = _mapping(config.get("output"), "output", required=False)
     _put(defaults, "result_file", output.get("result_file"))
     return defaults
+
+
+def apply_scenario_config_to_env_cfg(env_cfg: Any, args: Namespace | Mapping[str, Any]) -> Any:
+    """Apply loaded scenario defaults/CLI overrides to a ScanMobileManipulator env cfg."""
+
+    getter = args.get if isinstance(args, Mapping) else lambda key, default=None: getattr(args, key, default)
+    for attr in ("scenario_config_path", "scenario_name", "scenario_type"):
+        value = getter(attr, None)
+        if value is not None:
+            setattr(env_cfg, attr, value)
+    for attr in ENV_CFG_SCENARIO_ATTRS:
+        value = getter(attr, None)
+        if value is not None:
+            if isinstance(value, list):
+                value = tuple(value)
+            setattr(env_cfg, attr, value)
+    if bool(getter("align_base_center_to_world_origin", False)):
+        env_cfg.component_mesh_align_base_center_to_world_origin = True
+    return env_cfg
 
 
 def mesh_bounds_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:

@@ -330,6 +330,23 @@ PER_EPISODE_FIELDS = [
     "valid_action_rate",
     "new_viewpoints_total",
     "episode_length",
+    "per_robot_selected_count",
+    "per_robot_completed_count",
+    "per_robot_repeated_assignment_count",
+    "per_viewpoint_attempted_count",
+    "last_global_coverage_gain_step",
+    "steps_since_last_global_coverage_gain",
+    "no_progress_steps_after_last_gain",
+    "duplicate_selected_target_count",
+    "duplicate_selected_target_rate",
+    "noop_when_available_count",
+    "noop_when_available_rate",
+    "selected_path_cost_mean",
+    "selected_path_cost_max",
+    "selected_path_cost_sum",
+    "load_balance_selected_std",
+    "load_balance_completed_std",
+    "late_repeated_assignment_pattern",
     "inter_robot_overlap_step_count",
     "inter_robot_overlap_rate",
     "inter_robot_overlap_pair_count_total",
@@ -392,6 +409,22 @@ SUMMARY_FIELDS = [
     "mean_duplicate_count",
     "mean_noop_rate",
     "mean_valid_action_rate",
+    "per_robot_selected_count_mean",
+    "per_robot_completed_count_mean",
+    "per_robot_repeated_assignment_count_mean",
+    "per_viewpoint_attempted_count_sum",
+    "mean_steps_since_last_global_coverage_gain",
+    "mean_no_progress_steps_after_last_gain",
+    "duplicate_selected_target_count_total",
+    "duplicate_selected_target_rate_mean",
+    "noop_when_available_count_total",
+    "noop_when_available_rate_mean",
+    "selected_path_cost_mean",
+    "selected_path_cost_max",
+    "selected_path_cost_sum_total",
+    "load_balance_selected_std_mean",
+    "load_balance_completed_std_mean",
+    "late_repeated_assignment_pattern_summary",
     "inter_robot_overlap_step_count_total",
     "inter_robot_overlap_rate_mean",
     "inter_robot_overlap_pair_count_total",
@@ -452,6 +485,11 @@ ASSIGNMENT_HISTORY_FIELDS = [
     "assigned_viewpoint_id",
     "is_noop",
     "selected_available",
+    "available_viewpoint_count",
+    "noop_when_available",
+    "is_repeated_assignment",
+    "selected_path_cost",
+    "duplicate_selected_target_count_step",
     "covered_before_count",
     "covered_after_count",
     "newly_covered_viewpoint_ids",
@@ -3682,7 +3720,13 @@ def _collect_evaluation_diagnostics(unwrapped, problem: dict, methods: list[str]
     return diagnostics
 
 
-def _init_buffers(num_envs: int, device: torch.device) -> dict[str, torch.Tensor]:
+def _init_buffers(
+    num_envs: int,
+    device: torch.device,
+    *,
+    num_agents: int = 0,
+    num_viewpoints: int = 0,
+) -> dict[str, torch.Tensor]:
     return {
         "length": torch.zeros(num_envs, dtype=torch.long, device=device),
         "return": torch.zeros(num_envs, dtype=torch.float32, device=device),
@@ -3695,6 +3739,26 @@ def _init_buffers(num_envs: int, device: torch.device) -> dict[str, torch.Tensor
         "valid_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "decision_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "new_viewpoints_total": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "per_robot_selected_count": torch.zeros((num_envs, num_agents), dtype=torch.long, device=device),
+        "per_robot_completed_count": torch.zeros((num_envs, num_agents), dtype=torch.float32, device=device),
+        "per_robot_repeated_assignment_count": torch.zeros(
+            (num_envs, num_agents), dtype=torch.long, device=device
+        ),
+        "per_viewpoint_attempted_count": torch.zeros(
+            (num_envs, num_viewpoints), dtype=torch.long, device=device
+        ),
+        "previous_assignment": torch.full((num_envs, num_agents), -2, dtype=torch.long, device=device),
+        "last_global_coverage_gain_step": torch.full((num_envs,), -1, dtype=torch.long, device=device),
+        "steps_since_last_global_coverage_gain": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "duplicate_selected_target_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "noop_when_available_count": torch.zeros(num_envs, dtype=torch.long, device=device),
+        "selected_path_cost_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "selected_path_cost_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "selected_path_cost_max": torch.full((num_envs,), -float("inf"), dtype=torch.float32, device=device),
+        "post_gain_repeated_pair_count": torch.zeros(
+            (num_envs, num_agents, num_viewpoints), dtype=torch.long, device=device
+        ),
+        "unattributed_completed_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "inter_robot_overlap_step_count": torch.zeros(num_envs, dtype=torch.long, device=device),
         "inter_robot_overlap_pair_count_total": torch.zeros(num_envs, dtype=torch.long, device=device),
         "inter_robot_min_distance_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
@@ -3779,14 +3843,140 @@ def _init_buffers(num_envs: int, device: torch.device) -> dict[str, torch.Tensor
     }
 
 
+def _assignment_reporting_step_diagnostics(
+    buffers: dict[str, torch.Tensor],
+    problem: dict,
+    assignment: torch.Tensor,
+) -> dict[str, torch.Tensor]:
+    num_envs, num_agents = assignment.shape
+    device = assignment.device
+    previous_assignment = buffers.get("previous_assignment")
+    if not isinstance(previous_assignment, torch.Tensor) or tuple(previous_assignment.shape) != tuple(assignment.shape):
+        previous_assignment = torch.full_like(assignment, -2)
+
+    is_non_noop = assignment >= 0
+    is_repeated_assignment = is_non_noop & (assignment == previous_assignment)
+    duplicate_selected_target_count = compute_assignment_duplicate_count(assignment).to(dtype=torch.long)
+
+    available_mask = problem.get("available_mask")
+    if isinstance(available_mask, torch.Tensor):
+        available_mask_bool = available_mask.to(device=device, dtype=torch.bool)
+        available_viewpoint_count = available_mask_bool.sum(dim=-1).to(dtype=torch.long)
+        noop_when_available = (assignment < 0) & (available_viewpoint_count > 0)
+    else:
+        available_viewpoint_count = torch.full((num_envs, num_agents), -1, dtype=torch.long, device=device)
+        noop_when_available = torch.zeros((num_envs, num_agents), dtype=torch.bool, device=device)
+
+    selected_path_cost = torch.full((num_envs, num_agents), float("nan"), dtype=torch.float32, device=device)
+    cost_matrix = problem.get("cost_matrix")
+    if isinstance(cost_matrix, torch.Tensor):
+        cost_matrix = cost_matrix.to(device=device, dtype=torch.float32)
+        for env_id_tensor, agent_id_tensor in torch.nonzero(is_non_noop, as_tuple=False):
+            env_id = int(env_id_tensor.item())
+            agent_id = int(agent_id_tensor.item())
+            viewpoint_index = int(assignment[env_id, agent_id].item())
+            if 0 <= viewpoint_index < cost_matrix.shape[2]:
+                selected_path_cost[env_id, agent_id] = cost_matrix[env_id, agent_id, viewpoint_index]
+
+    return {
+        "is_non_noop": is_non_noop,
+        "is_repeated_assignment": is_repeated_assignment,
+        "duplicate_selected_target_count": duplicate_selected_target_count,
+        "available_viewpoint_count": available_viewpoint_count,
+        "noop_when_available": noop_when_available,
+        "selected_path_cost": selected_path_cost,
+    }
+
+
+def _update_assignment_reporting_buffers(
+    buffers: dict[str, torch.Tensor],
+    *,
+    assignment: torch.Tensor,
+    covered_before: torch.Tensor,
+    covered_after: torch.Tensor,
+    new_viewpoints: torch.Tensor,
+    reporting_step: dict[str, torch.Tensor],
+) -> None:
+    num_envs, num_agents = assignment.shape
+    num_viewpoints = covered_after.shape[1]
+    is_non_noop = reporting_step["is_non_noop"].to(dtype=torch.bool)
+    is_repeated_assignment = reporting_step["is_repeated_assignment"].to(dtype=torch.bool)
+    noop_when_available = reporting_step["noop_when_available"].to(dtype=torch.bool)
+    selected_path_cost = reporting_step["selected_path_cost"].to(dtype=torch.float32)
+
+    buffers["per_robot_selected_count"] += is_non_noop.to(dtype=torch.long)
+    buffers["per_robot_repeated_assignment_count"] += is_repeated_assignment.to(dtype=torch.long)
+    buffers["duplicate_selected_target_count"] += reporting_step["duplicate_selected_target_count"].to(dtype=torch.long)
+    buffers["noop_when_available_count"] += noop_when_available.sum(dim=1).to(dtype=torch.long)
+
+    for env_id in range(num_envs):
+        for agent_id in range(num_agents):
+            viewpoint_index = int(assignment[env_id, agent_id].item())
+            if 0 <= viewpoint_index < num_viewpoints:
+                buffers["per_viewpoint_attempted_count"][env_id, viewpoint_index] += 1
+
+        newly_covered_indices = torch.nonzero(covered_after[env_id] & (~covered_before[env_id]), as_tuple=False)
+        for viewpoint_index_tensor in newly_covered_indices.flatten():
+            viewpoint_index = int(viewpoint_index_tensor.item())
+            selected_agents = torch.nonzero(assignment[env_id] == viewpoint_index, as_tuple=False).flatten()
+            if selected_agents.numel() == 0:
+                buffers["unattributed_completed_count"][env_id] += 1.0
+                continue
+            credit = 1.0 / float(selected_agents.numel())
+            for agent_id_tensor in selected_agents:
+                buffers["per_robot_completed_count"][env_id, int(agent_id_tensor.item())] += credit
+
+    finite_cost = torch.isfinite(selected_path_cost)
+    if bool(finite_cost.any()):
+        buffers["selected_path_cost_sum"] += torch.where(
+            finite_cost,
+            selected_path_cost,
+            torch.zeros_like(selected_path_cost),
+        ).sum(dim=1)
+        buffers["selected_path_cost_count"] += finite_cost.sum(dim=1).to(dtype=torch.float32)
+        row_max = torch.where(finite_cost, selected_path_cost, torch.full_like(selected_path_cost, -float("inf"))).max(
+            dim=1
+        ).values
+        buffers["selected_path_cost_max"] = torch.maximum(buffers["selected_path_cost_max"], row_max)
+
+    coverage_gain = new_viewpoints.to(dtype=torch.float32) > 0.0
+    buffers["last_global_coverage_gain_step"] = torch.where(
+        coverage_gain,
+        buffers["length"],
+        buffers["last_global_coverage_gain_step"],
+    )
+    no_previous_gain = buffers["last_global_coverage_gain_step"] < 0
+    buffers["steps_since_last_global_coverage_gain"] = torch.where(
+        no_previous_gain,
+        buffers["length"],
+        buffers["length"] - buffers["last_global_coverage_gain_step"],
+    )
+
+    if "post_gain_repeated_pair_count" in buffers:
+        for env_id in range(num_envs):
+            if bool(coverage_gain[env_id].item()):
+                buffers["post_gain_repeated_pair_count"][env_id].zero_()
+                continue
+            for agent_id in range(num_agents):
+                if not bool(is_repeated_assignment[env_id, agent_id].item()):
+                    continue
+                viewpoint_index = int(assignment[env_id, agent_id].item())
+                if 0 <= viewpoint_index < num_viewpoints:
+                    buffers["post_gain_repeated_pair_count"][env_id, agent_id, viewpoint_index] += 1
+
+    buffers["previous_assignment"] = assignment.to(dtype=torch.long).clone()
+
+
 def _update_buffers(
     buffers: dict[str, torch.Tensor],
     *,
     reward_sum: torch.Tensor,
     assignment: torch.Tensor,
     valid_decisions: torch.Tensor,
+    covered_before: torch.Tensor,
     covered_mask: torch.Tensor,
     new_viewpoints: torch.Tensor,
+    reporting_step: dict[str, torch.Tensor] | None = None,
 ) -> None:
     num_agents = assignment.shape[1]
     num_viewpoints = covered_mask.shape[1]
@@ -3806,6 +3996,15 @@ def _update_buffers(
 
     hit_full = (buffers["steps_to_full"] < 0) & (covered_count == num_viewpoints)
     buffers["steps_to_full"][hit_full] = buffers["length"][hit_full]
+    if reporting_step is not None:
+        _update_assignment_reporting_buffers(
+            buffers,
+            assignment=assignment,
+            covered_before=covered_before.to(dtype=torch.bool),
+            covered_after=covered_mask.to(dtype=torch.bool),
+            new_viewpoints=new_viewpoints,
+            reporting_step=reporting_step,
+        )
 
 
 def _as_tensor_metric(value: Any, num_envs: int, device: torch.device, *, dtype: torch.dtype) -> torch.Tensor:
@@ -4382,6 +4581,7 @@ def _append_assignment_history_step(
     step: torch.Tensor,
     assignment: torch.Tensor,
     valid_decisions: torch.Tensor,
+    reporting_step: dict[str, torch.Tensor],
     covered_before: torch.Tensor,
     covered_after: torch.Tensor,
     viewpoint_ids: list[int],
@@ -4393,6 +4593,11 @@ def _append_assignment_history_step(
     covered_before_count = covered_before.sum(dim=-1).to(dtype=torch.long)
     covered_after_count = covered_after.sum(dim=-1).to(dtype=torch.long)
     newly_covered = covered_after & (~covered_before)
+    available_viewpoint_count = reporting_step["available_viewpoint_count"].to(dtype=torch.long)
+    noop_when_available = reporting_step["noop_when_available"].to(dtype=torch.bool)
+    is_repeated_assignment = reporting_step["is_repeated_assignment"].to(dtype=torch.bool)
+    selected_path_cost = reporting_step["selected_path_cost"].to(dtype=torch.float32)
+    duplicate_selected_target_count = reporting_step["duplicate_selected_target_count"].to(dtype=torch.long)
 
     for env_id in range(num_envs):
         newly_ids = _covered_ids_from_mask(newly_covered[env_id], viewpoint_ids)
@@ -4417,6 +4622,15 @@ def _append_assignment_history_step(
                 "assigned_viewpoint_id": assigned_viewpoint_id,
                 "is_noop": bool(is_noop),
                 "selected_available": bool(valid_decisions[env_id, agent_id].item()),
+                "available_viewpoint_count": int(available_viewpoint_count[env_id, agent_id].item()),
+                "noop_when_available": bool(noop_when_available[env_id, agent_id].item()),
+                "is_repeated_assignment": bool(is_repeated_assignment[env_id, agent_id].item()),
+                "selected_path_cost": (
+                    float(selected_path_cost[env_id, agent_id].item())
+                    if math.isfinite(float(selected_path_cost[env_id, agent_id].item()))
+                    else ""
+                ),
+                "duplicate_selected_target_count_step": int(duplicate_selected_target_count[env_id].item()),
                 "covered_before_count": int(covered_before_count[env_id].item()),
                 "covered_after_count": coverage_count,
                 "newly_covered_viewpoint_ids": newly_ids_text,
@@ -4494,6 +4708,53 @@ def _buffer_min_or_nan(buffers: dict[str, torch.Tensor], env_id: int, *, min_key
     return float(buffers[min_key][env_id].item())
 
 
+def _tensor_row_json(tensor: torch.Tensor, env_id: int, *, digits: int | None = None) -> str:
+    row = tensor[env_id].detach().cpu().flatten().tolist()
+    if digits is None:
+        values = [int(value) for value in row]
+    else:
+        values = [round(float(value), digits) for value in row]
+    return json.dumps(values)
+
+
+def _population_std(tensor: torch.Tensor) -> float:
+    values = tensor.detach().to(dtype=torch.float32).flatten()
+    if values.numel() <= 1:
+        return 0.0
+    return float(torch.std(values, unbiased=False).item())
+
+
+def _selected_path_cost_max_or_nan(buffers: dict[str, torch.Tensor], env_id: int) -> float:
+    if float(buffers["selected_path_cost_count"][env_id].item()) <= 0.0:
+        return float("nan")
+    value = float(buffers["selected_path_cost_max"][env_id].item())
+    return value if math.isfinite(value) else float("nan")
+
+
+def _late_repeated_assignment_pattern_json(
+    buffers: dict[str, torch.Tensor],
+    env_id: int,
+    viewpoint_ids: list[int],
+    *,
+    limit: int = 10,
+) -> str:
+    pair_counts = buffers.get("post_gain_repeated_pair_count")
+    if not isinstance(pair_counts, torch.Tensor) or pair_counts.numel() == 0:
+        return "[]"
+    rows = []
+    for agent_id, viewpoint_index in torch.nonzero(pair_counts[env_id] > 0, as_tuple=False).detach().cpu().tolist():
+        viewpoint_id = viewpoint_ids[viewpoint_index] if viewpoint_index < len(viewpoint_ids) else viewpoint_index
+        rows.append(
+            {
+                "agent_id": int(agent_id),
+                "viewpoint_id": int(viewpoint_id),
+                "count": int(pair_counts[env_id, agent_id, viewpoint_index].item()),
+            }
+        )
+    rows.sort(key=lambda item: (-int(item["count"]), int(item["agent_id"]), int(item["viewpoint_id"])))
+    return json.dumps(rows[:limit])
+
+
 def _make_records(
     method: str,
     episode_start: int,
@@ -4510,6 +4771,18 @@ def _make_records(
         final_coverage = final_covered_count / float(num_viewpoints)
         steps_to_full = int(buffers["steps_to_full"][env_id].item())
         covered_ids, uncovered_ids = _covered_id_lists(buffers["covered_mask"][env_id], viewpoint_ids)
+        per_robot_selected = buffers["per_robot_selected_count"][env_id]
+        per_robot_completed = buffers["per_robot_completed_count"][env_id]
+        selected_count_total = float(per_robot_selected.sum().item())
+        noop_count = float(buffers["noop_count"][env_id].item())
+        selected_path_cost_count = float(buffers["selected_path_cost_count"][env_id].item())
+        selected_path_cost_mean = (
+            float((buffers["selected_path_cost_sum"][env_id] / buffers["selected_path_cost_count"][env_id]).item())
+            if selected_path_cost_count > 0.0
+            else float("nan")
+        )
+        last_gain_step = int(buffers["last_global_coverage_gain_step"][env_id].item())
+        steps_since_last_gain = int(buffers["steps_since_last_global_coverage_gain"][env_id].item())
         record = {
             "method": method,
             "episode": episode_start + offset,
@@ -4527,6 +4800,33 @@ def _make_records(
             "valid_action_rate": float((buffers["valid_count"][env_id] / buffers["decision_count"][env_id].clamp(min=1.0)).item()),
             "new_viewpoints_total": float(buffers["new_viewpoints_total"][env_id].item()),
             "episode_length": length,
+            "per_robot_selected_count": _tensor_row_json(buffers["per_robot_selected_count"], env_id),
+            "per_robot_completed_count": _tensor_row_json(buffers["per_robot_completed_count"], env_id, digits=6),
+            "per_robot_repeated_assignment_count": _tensor_row_json(
+                buffers["per_robot_repeated_assignment_count"], env_id
+            ),
+            "per_viewpoint_attempted_count": _tensor_row_json(buffers["per_viewpoint_attempted_count"], env_id),
+            "last_global_coverage_gain_step": last_gain_step,
+            "steps_since_last_global_coverage_gain": steps_since_last_gain,
+            "no_progress_steps_after_last_gain": steps_since_last_gain,
+            "duplicate_selected_target_count": int(buffers["duplicate_selected_target_count"][env_id].item()),
+            "duplicate_selected_target_rate": float(
+                buffers["duplicate_selected_target_count"][env_id].item()
+            )
+            / max(1.0, selected_count_total),
+            "noop_when_available_count": int(buffers["noop_when_available_count"][env_id].item()),
+            "noop_when_available_rate": float(buffers["noop_when_available_count"][env_id].item())
+            / max(1.0, noop_count),
+            "selected_path_cost_mean": selected_path_cost_mean,
+            "selected_path_cost_max": _selected_path_cost_max_or_nan(buffers, env_id),
+            "selected_path_cost_sum": float(buffers["selected_path_cost_sum"][env_id].item()),
+            "load_balance_selected_std": _population_std(per_robot_selected),
+            "load_balance_completed_std": _population_std(per_robot_completed),
+            "late_repeated_assignment_pattern": _late_repeated_assignment_pattern_json(
+                buffers,
+                env_id,
+                viewpoint_ids,
+            ),
             "inter_robot_overlap_step_count": int(buffers["inter_robot_overlap_step_count"][env_id].item()),
             "inter_robot_overlap_rate": float(buffers["inter_robot_overlap_step_count"][env_id].item()) / float(length),
             "inter_robot_overlap_pair_count_total": int(
@@ -4734,6 +5034,12 @@ def _reset_buffers(buffers: dict[str, torch.Tensor], env_ids: torch.Tensor) -> N
     for value in buffers.values():
         value[env_ids] = 0
     buffers["steps_to_full"][env_ids] = -1
+    if "previous_assignment" in buffers:
+        buffers["previous_assignment"][env_ids] = -2
+    if "last_global_coverage_gain_step" in buffers:
+        buffers["last_global_coverage_gain_step"][env_ids] = -1
+    if "selected_path_cost_max" in buffers:
+        buffers["selected_path_cost_max"][env_ids] = -float("inf")
     for key in (
         "inter_robot_min_distance_min",
         "inter_robot_min_clearance_min",
@@ -4874,9 +5180,14 @@ def _evaluate_baseline(method: str, env_cfg) -> tuple[list[dict], dict]:
     agents = list(unwrapped.possible_agents)
     num_envs = int(unwrapped.num_envs)
     viewpoint_ids = [int(value) for value in unwrapped.viewpoint_ids]
-    buffers = _init_buffers(num_envs, device)
     records: list[dict] = []
     problem = unwrapped.get_assignment_problem()
+    buffers = _init_buffers(
+        num_envs,
+        device,
+        num_agents=int(problem["num_agents"]),
+        num_viewpoints=int(problem["num_viewpoints"]),
+    )
     _validate_evaluation_scenario(unwrapped, problem, method)
     diagnostics = _collect_evaluation_diagnostics(unwrapped, problem, [method])
 
@@ -4904,6 +5215,8 @@ def _evaluate_baseline(method: str, env_cfg) -> tuple[list[dict], dict]:
                     method=method,
                     step=step_before,
                 )
+                covered_before = unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
+                reporting_step = _assignment_reporting_step_diagnostics(buffers, problem, assignment)
 
                 actions = viewpoint_assignment_to_actions(unwrapped, assignment)
                 _, rewards, terminated, truncated, _ = env.step(actions)
@@ -4935,8 +5248,10 @@ def _evaluate_baseline(method: str, env_cfg) -> tuple[list[dict], dict]:
                     reward_sum=reward_sum,
                     assignment=assignment,
                     valid_decisions=valid_decisions,
+                    covered_before=covered_before,
                     covered_mask=covered_mask,
                     new_viewpoints=new_viewpoints,
+                    reporting_step=reporting_step,
                 )
 
                 script_done = buffers["length"] >= args_cli.max_steps
@@ -4987,13 +5302,18 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
         for method in methods:
             solver = make_solver(method)
             env.reset(seed=args_cli.seed)
-            buffers = _init_buffers(num_envs, device)
             pending_history_by_env: dict[int, list[dict]] = {}
             pending_retry_events_by_env: dict[int, list[dict]] = {}
             pending_controller_trace_by_env: dict[int, list[dict]] = {}
             records: list[dict] = []
             episode_index_by_env = torch.zeros(num_envs, dtype=torch.long, device=device)
             problem = unwrapped.get_assignment_problem()
+            buffers = _init_buffers(
+                num_envs,
+                device,
+                num_agents=int(problem["num_agents"]),
+                num_viewpoints=int(problem["num_viewpoints"]),
+            )
             _validate_evaluation_scenario(unwrapped, problem, method)
             if diagnostics is None:
                 diagnostics = _collect_evaluation_diagnostics(unwrapped, problem, methods)
@@ -5073,6 +5393,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                         step=step_before,
                     )
                     covered_before = unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
+                    reporting_step = _assignment_reporting_step_diagnostics(buffers, problem, assignment)
                     if args_cli.compare_obstacle_aware_candidates:
                         obstacle_candidate_comparison_rows.append(
                             _compare_obstacle_aware_candidate_step(
@@ -5181,6 +5502,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                             step=step_before,
                             assignment=assignment,
                             valid_decisions=valid_decisions,
+                            reporting_step=reporting_step,
                             covered_before=covered_before,
                             covered_after=covered_mask,
                             viewpoint_ids=viewpoint_ids,
@@ -5193,8 +5515,10 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                         reward_sum=reward_sum,
                         assignment=assignment,
                         valid_decisions=valid_decisions,
+                        covered_before=covered_before,
                         covered_mask=covered_mask,
                         new_viewpoints=new_viewpoints,
+                        reporting_step=reporting_step,
                     )
 
                     script_done = buffers["length"] >= args_cli.max_steps
@@ -5305,7 +5629,12 @@ def _evaluate_assignment_rl(env_cfg, agent_cfg: dict) -> list[dict]:
     num_envs = int(wrapper.num_envs)
     num_agents = int(wrapper.num_agents)
     viewpoint_ids = [int(value) for value in wrapper.unwrapped.viewpoint_ids]
-    buffers = _init_buffers(num_envs, wrapper.device)
+    buffers = _init_buffers(
+        num_envs,
+        wrapper.device,
+        num_agents=num_agents,
+        num_viewpoints=int(wrapper.num_viewpoints),
+    )
     actions = make_harl_action_tensor(num_envs, wrapper.action_space, device=wrapper.device)
     rnn_hidden_size = agent_cfg["model"]["hidden_sizes"][-1]
     recurrent_n = agent_cfg["model"]["recurrent_n"]
@@ -5340,6 +5669,8 @@ def _evaluate_assignment_rl(env_cfg, agent_cfg: dict) -> list[dict]:
                 raw_ids = actions[..., 0].to(dtype=torch.long)
                 assignment = _decode_raw_ids(raw_ids, wrapper.noop_action_id)
                 valid_decisions = _valid_discrete_decisions(available_actions, raw_ids, wrapper.noop_action_id)
+                covered_before = wrapper.unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
+                reporting_step = _assignment_reporting_step_diagnostics(buffers, problem, assignment)
 
                 obs, _, rewards, dones, info, available_actions = wrapper.step(actions)
                 _assert_available_actions(wrapper, available_actions)
@@ -5355,8 +5686,10 @@ def _evaluate_assignment_rl(env_cfg, agent_cfg: dict) -> list[dict]:
                     reward_sum=reward_sum,
                     assignment=assignment,
                     valid_decisions=valid_decisions,
+                    covered_before=covered_before,
                     covered_mask=covered_mask,
                     new_viewpoints=new_viewpoints,
+                    reporting_step=reporting_step,
                 )
 
                 step_id = int(buffers["length"].max().item())
@@ -5438,6 +5771,74 @@ def _min_finite_record_field(records: list[dict], field: str) -> float:
     return min(values) if values else float("nan")
 
 
+def _max_finite_record_field(records: list[dict], field: str) -> float:
+    values = _finite_record_values(records, field)
+    return max(values) if values else float("nan")
+
+
+def _json_number_list(value: Any) -> list[float]:
+    decoded = _decode_json_list(value)
+    values = []
+    for item in decoded:
+        try:
+            values.append(float(item))
+        except (TypeError, ValueError):
+            continue
+    return values
+
+
+def _sum_json_number_lists(records: list[dict], field: str, *, digits: int | None = None) -> str:
+    totals: list[float] = []
+    for record in records:
+        values = _json_number_list(record.get(field))
+        if not totals:
+            totals = [0.0 for _ in values]
+        if len(values) != len(totals):
+            continue
+        for index, value in enumerate(values):
+            totals[index] += value
+    if digits is None:
+        return json.dumps([int(round(value)) for value in totals])
+    return json.dumps([round(float(value), digits) for value in totals])
+
+
+def _mean_json_number_lists(records: list[dict], field: str, *, digits: int = 6) -> str:
+    totals: list[float] = []
+    count = 0
+    for record in records:
+        values = _json_number_list(record.get(field))
+        if not totals:
+            totals = [0.0 for _ in values]
+        if len(values) != len(totals):
+            continue
+        for index, value in enumerate(values):
+            totals[index] += value
+        count += 1
+    if count <= 0:
+        return "[]"
+    return json.dumps([round(value / float(count), digits) for value in totals])
+
+
+def _late_repeated_pattern_summary(records: list[dict], *, limit: int = 10) -> str:
+    counts: dict[tuple[int, int], int] = {}
+    for record in records:
+        for item in _decode_json_list(record.get("late_repeated_assignment_pattern")):
+            if not isinstance(item, dict):
+                continue
+            try:
+                key = (int(item["agent_id"]), int(item["viewpoint_id"]))
+                counts[key] = counts.get(key, 0) + int(item.get("count", 0))
+            except (KeyError, TypeError, ValueError):
+                continue
+    rows = [
+        {"agent_id": agent_id, "viewpoint_id": viewpoint_id, "count": count}
+        for (agent_id, viewpoint_id), count in counts.items()
+        if count > 0
+    ]
+    rows.sort(key=lambda item: (-int(item["count"]), int(item["agent_id"]), int(item["viewpoint_id"])))
+    return json.dumps(rows[:limit])
+
+
 def _summarize(records: list[dict]) -> list[dict]:
     rows = []
     for method in METHODS:
@@ -5465,6 +5866,64 @@ def _summarize(records: list[dict]) -> list[dict]:
                 "mean_duplicate_count": sum(record["duplicate_count_mean"] for record in method_records) / count,
                 "mean_noop_rate": sum(record["noop_rate"] for record in method_records) / count,
                 "mean_valid_action_rate": sum(record["valid_action_rate"] for record in method_records) / count,
+                "per_robot_selected_count_mean": _mean_json_number_lists(
+                    method_records,
+                    "per_robot_selected_count",
+                ),
+                "per_robot_completed_count_mean": _mean_json_number_lists(
+                    method_records,
+                    "per_robot_completed_count",
+                ),
+                "per_robot_repeated_assignment_count_mean": _mean_json_number_lists(
+                    method_records,
+                    "per_robot_repeated_assignment_count",
+                ),
+                "per_viewpoint_attempted_count_sum": _sum_json_number_lists(
+                    method_records,
+                    "per_viewpoint_attempted_count",
+                ),
+                "mean_steps_since_last_global_coverage_gain": _mean_record_field(
+                    method_records,
+                    "steps_since_last_global_coverage_gain",
+                ),
+                "mean_no_progress_steps_after_last_gain": _mean_record_field(
+                    method_records,
+                    "no_progress_steps_after_last_gain",
+                ),
+                "duplicate_selected_target_count_total": sum(
+                    _record_int(record, "duplicate_selected_target_count") for record in method_records
+                ),
+                "duplicate_selected_target_rate_mean": _mean_record_field(
+                    method_records,
+                    "duplicate_selected_target_rate",
+                ),
+                "noop_when_available_count_total": sum(
+                    _record_int(record, "noop_when_available_count") for record in method_records
+                ),
+                "noop_when_available_rate_mean": _mean_record_field(
+                    method_records,
+                    "noop_when_available_rate",
+                ),
+                "selected_path_cost_mean": _mean_finite_record_field(
+                    method_records,
+                    "selected_path_cost_mean",
+                ),
+                "selected_path_cost_max": _max_finite_record_field(
+                    method_records,
+                    "selected_path_cost_max",
+                ),
+                "selected_path_cost_sum_total": sum(
+                    _record_float(record, "selected_path_cost_sum") for record in method_records
+                ),
+                "load_balance_selected_std_mean": _mean_record_field(
+                    method_records,
+                    "load_balance_selected_std",
+                ),
+                "load_balance_completed_std_mean": _mean_record_field(
+                    method_records,
+                    "load_balance_completed_std",
+                ),
+                "late_repeated_assignment_pattern_summary": _late_repeated_pattern_summary(method_records),
                 "inter_robot_overlap_step_count_total": sum(
                     _record_int(record, "inter_robot_overlap_step_count") for record in method_records
                 ),
@@ -5663,6 +6122,11 @@ def _read_per_episode_csv(path: Path) -> list[dict]:
         "steps_to_full_coverage",
         "first_full_coverage_step",
         "episode_length",
+        "last_global_coverage_gain_step",
+        "steps_since_last_global_coverage_gain",
+        "no_progress_steps_after_last_gain",
+        "duplicate_selected_target_count",
+        "noop_when_available_count",
         "inter_robot_overlap_step_count",
         "inter_robot_overlap_pair_count_total",
         "selected_target_conflict_step_count",
@@ -5690,6 +6154,13 @@ def _read_per_episode_csv(path: Path) -> list[dict]:
         "noop_rate",
         "valid_action_rate",
         "new_viewpoints_total",
+        "duplicate_selected_target_rate",
+        "noop_when_available_rate",
+        "selected_path_cost_mean",
+        "selected_path_cost_max",
+        "selected_path_cost_sum",
+        "load_balance_selected_std",
+        "load_balance_completed_std",
         "inter_robot_overlap_rate",
         "inter_robot_min_distance_min",
         "inter_robot_min_distance_mean",
@@ -5817,6 +6288,25 @@ def _episode_metric_diagnostics(records: list[dict]) -> list[dict]:
                 "first_full_coverage_step": record.get("first_full_coverage_step"),
                 "final_covered_viewpoint_ids": _decode_json_list(record.get("final_covered_viewpoint_ids")),
                 "final_uncovered_viewpoint_ids": _decode_json_list(record.get("final_uncovered_viewpoint_ids")),
+                "per_robot_selected_count": _decode_json_list(record.get("per_robot_selected_count")),
+                "per_robot_completed_count": _decode_json_list(record.get("per_robot_completed_count")),
+                "per_robot_repeated_assignment_count": _decode_json_list(
+                    record.get("per_robot_repeated_assignment_count")
+                ),
+                "per_viewpoint_attempted_count": _decode_json_list(record.get("per_viewpoint_attempted_count")),
+                "last_global_coverage_gain_step": record.get("last_global_coverage_gain_step"),
+                "steps_since_last_global_coverage_gain": record.get("steps_since_last_global_coverage_gain"),
+                "no_progress_steps_after_last_gain": record.get("no_progress_steps_after_last_gain"),
+                "duplicate_selected_target_count": record.get("duplicate_selected_target_count"),
+                "duplicate_selected_target_rate": record.get("duplicate_selected_target_rate"),
+                "noop_when_available_count": record.get("noop_when_available_count"),
+                "noop_when_available_rate": record.get("noop_when_available_rate"),
+                "selected_path_cost_mean": record.get("selected_path_cost_mean"),
+                "selected_path_cost_max": record.get("selected_path_cost_max"),
+                "selected_path_cost_sum": record.get("selected_path_cost_sum"),
+                "load_balance_selected_std": record.get("load_balance_selected_std"),
+                "load_balance_completed_std": record.get("load_balance_completed_std"),
+                "late_repeated_assignment_pattern": _decode_json_list(record.get("late_repeated_assignment_pattern")),
                 "inter_robot_overlap_step_count": record.get("inter_robot_overlap_step_count"),
                 "inter_robot_overlap_rate": record.get("inter_robot_overlap_rate"),
                 "inter_robot_overlap_pair_count_total": record.get("inter_robot_overlap_pair_count_total"),
@@ -6018,6 +6508,64 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         "path": str(assignment_history_path) if args_cli.write_assignment_history else None,
         "rows": len(assignment_history) if args_cli.write_assignment_history else 0,
         "fields": ASSIGNMENT_HISTORY_FIELDS if args_cli.write_assignment_history else [],
+    }
+    diagnostics["rl_dynamic_assignment_reporting_counters"] = {
+        "enabled": True,
+        "phase": "Phase 9B-1",
+        "behavior_change": False,
+        "source": "evaluation_reporting_only",
+        "per_episode_fields": [
+            "per_robot_selected_count",
+            "per_robot_completed_count",
+            "per_robot_repeated_assignment_count",
+            "per_viewpoint_attempted_count",
+            "last_global_coverage_gain_step",
+            "steps_since_last_global_coverage_gain",
+            "no_progress_steps_after_last_gain",
+            "duplicate_selected_target_count",
+            "duplicate_selected_target_rate",
+            "noop_when_available_count",
+            "noop_when_available_rate",
+            "selected_path_cost_mean",
+            "selected_path_cost_max",
+            "selected_path_cost_sum",
+            "load_balance_selected_std",
+            "load_balance_completed_std",
+            "late_repeated_assignment_pattern",
+        ],
+        "summary_fields": [
+            "per_robot_selected_count_mean",
+            "per_robot_completed_count_mean",
+            "per_robot_repeated_assignment_count_mean",
+            "per_viewpoint_attempted_count_sum",
+            "mean_steps_since_last_global_coverage_gain",
+            "mean_no_progress_steps_after_last_gain",
+            "duplicate_selected_target_count_total",
+            "duplicate_selected_target_rate_mean",
+            "noop_when_available_count_total",
+            "noop_when_available_rate_mean",
+            "selected_path_cost_mean",
+            "selected_path_cost_max",
+            "selected_path_cost_sum_total",
+            "load_balance_selected_std_mean",
+            "load_balance_completed_std_mean",
+            "late_repeated_assignment_pattern_summary",
+        ],
+        "assignment_history_fields": [
+            "available_viewpoint_count",
+            "noop_when_available",
+            "is_repeated_assignment",
+            "selected_path_cost",
+            "duplicate_selected_target_count_step",
+        ],
+        "definitions": {
+            "per_robot_completed_count": "fractional credit for newly covered viewpoints selected by one or more robots; simultaneous duplicate completion splits one viewpoint across selected robots",
+            "duplicate_selected_target_rate": "duplicate_selected_target_count divided by non-noop selected assignments",
+            "noop_when_available_rate": "noop_when_available_count divided by noop selections",
+            "selected_path_cost": "selected entry from the evaluator problem cost_matrix for non-noop selected assignments",
+            "late_repeated_assignment_pattern": "consecutive same robot-viewpoint selections accumulated after the last global coverage gain",
+        },
+        "unavailable_counters": [],
     }
     diagnostics["retry_fallback_events"] = {
         "enabled": bool(args_cli.assignment_retry_fallback),

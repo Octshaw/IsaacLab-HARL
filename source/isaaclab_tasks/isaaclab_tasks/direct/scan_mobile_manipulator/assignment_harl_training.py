@@ -39,6 +39,28 @@ from .assignment_harl_wrapper import AssignmentHarlWrapper
 
 
 SUPPORTED_ASSIGNMENT_ALGORITHMS = ("happo", "hatrpo", "haa2c")
+ASSIGNMENT_REWARD_LOG_FIELDS = (
+    "base_env_reward",
+    "repeated_same_target_no_progress",
+    "global_no_progress",
+    "selected_path_cost",
+    "total_assignment_reward_adjustment",
+    "final_reward",
+    "steps_since_global_coverage_gain",
+    "global_coverage_gain",
+)
+
+
+def apply_assignment_episode_length_override(algo_args: dict[str, Any], episode_length: int | None) -> int | None:
+    """Apply an assignment-only HARL rollout length override without touching global defaults."""
+
+    if episode_length is None:
+        return None
+    value = int(episode_length)
+    if value <= 0:
+        raise ValueError(f"assignment_episode_length must be positive, got {episode_length!r}")
+    algo_args["train"]["episode_length"] = value
+    return value
 
 
 def _to_scalar(value: Any) -> float | None:
@@ -50,6 +72,16 @@ def _to_scalar(value: Any) -> float | None:
         if value.size == 0:
             return None
         return float(np.asarray(value, dtype=np.float32).mean())
+    if isinstance(value, (list, tuple)):
+        if len(value) == 0:
+            return None
+        try:
+            array = np.asarray(value, dtype=np.float32)
+        except (TypeError, ValueError):
+            return None
+        if array.size == 0:
+            return None
+        return float(array.mean())
     if isinstance(value, (np.integer, np.floating)):
         return float(value.item())
     if isinstance(value, (int, float, bool)):
@@ -67,6 +99,17 @@ def _flatten_numeric_log(data: Mapping[str, Any], prefix: str = "") -> dict[str,
         scalar = _to_scalar(value)
         if scalar is not None:
             log[full_key] = scalar
+    return log
+
+
+def _flatten_assignment_reward_log(data: Mapping[str, Any]) -> dict[str, float]:
+    log: dict[str, float] = {}
+    for key in ASSIGNMENT_REWARD_LOG_FIELDS:
+        if key not in data:
+            continue
+        scalar = _to_scalar(data[key])
+        if scalar is not None:
+            log[f"assignment_rl_reward/{key}_mean"] = scalar
     return log
 
 
@@ -164,6 +207,9 @@ class AssignmentIsaacLabEnv:
             assignment_log = info.get("assignment_rl")
             if isinstance(assignment_log, Mapping):
                 log_info.update(_flatten_numeric_log(assignment_log, "assignment_rl"))
+            assignment_reward_log = info.get("assignment_rl_reward")
+            if isinstance(assignment_reward_log, Mapping):
+                log_info.update(_flatten_assignment_reward_log(assignment_reward_log))
         self.log_info = log_info
 
 
@@ -426,5 +472,6 @@ __all__ = [
     "AssignmentIsaacLabEnv",
     "AssignmentOnPolicyHARunner",
     "SUPPORTED_ASSIGNMENT_ALGORITHMS",
+    "apply_assignment_episode_length_override",
     "register_assignment_harl_runner",
 ]

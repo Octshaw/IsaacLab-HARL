@@ -19,10 +19,40 @@ from typing import Any
 
 import torch
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+ISAACLAB_TASKS_SOURCE = REPO_ROOT / "source" / "isaaclab_tasks"
+SCAN_TASK_SOURCE = (
+    REPO_ROOT
+    / "source"
+    / "isaaclab_tasks"
+    / "isaaclab_tasks"
+    / "direct"
+    / "scan_mobile_manipulator"
+)
+for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
+    if str(source_path) not in sys.path:
+        sys.path.insert(0, str(source_path))
+
+from scenario_config import (
+    apply_scenario_config_to_env_cfg,
+    load_scenario_config,
+    smoke_defaults_from_config,
+    validate_smoke_args,
+)
+
 from isaaclab.app import AppLauncher
 
 
-parser = argparse.ArgumentParser(description="Play an assignment-based HARL checkpoint with bounded steps.")
+pre_parser = argparse.ArgumentParser(add_help=False)
+pre_parser.add_argument("--scenario_config", type=str, default=None, help="Optional assignment scenario YAML/JSON config.")
+pre_args, _ = pre_parser.parse_known_args()
+SCENARIO_CONFIG = load_scenario_config(pre_args.scenario_config, repo_root=REPO_ROOT)
+SCENARIO_DEFAULTS = smoke_defaults_from_config(SCENARIO_CONFIG)
+
+parser = argparse.ArgumentParser(
+    description="Play an assignment-based HARL checkpoint with bounded steps.",
+    parents=[pre_parser],
+)
 parser.add_argument("--algorithm", type=str, default="happo", choices=["happo", "hatrpo", "haa2c"], help="HARL algorithm.")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
@@ -49,7 +79,10 @@ parser.add_argument(
 
 
 AppLauncher.add_app_launcher_args(parser)
+parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli, hydra_args = parser.parse_known_args()
+if args_cli.scenario_config is not None:
+    validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
 sys.argv = [sys.argv[0]] + hydra_args
 
 
@@ -312,6 +345,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     env_cfg.scene.num_envs = args_cli.num_envs
     if args_cli.seed is not None:
         env_cfg.seed = args_cli.seed
+    if args_cli.scenario_config is not None:
+        apply_scenario_config_to_env_cfg(env_cfg, args_cli)
+        print(f"[INFO]: Assignment play scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
 
     wrapper = None
     try:

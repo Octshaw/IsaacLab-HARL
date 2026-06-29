@@ -4,189 +4,224 @@ Compact handoff for the assignment-based scan-mobile-manipulator work.
 
 ## Current Status
 
-Phase 9A RL/dynamic-policy readiness check is complete at audit/smoke level.
+Phase 9C-2 training-entry readiness fixes are complete.
 
-Phase 7B through Phase 8 wrap-up is complete and documented. Phase 9A confirms that the N=50, M=3 RL wrapper is
-shape-compatible, but current observations/rewards are not yet strong enough for meaningful dynamic-policy evaluation
-against the Phase 8 stagnation pattern.
+No commit has been made. Phase 9C-2 did not run RL training, formal RL evaluation, checkpoint play, checkpoint
+evaluation, checkpoint loading, checkpoint saving, or `runner.run()`.
 
-Do not start RL training or formal RL evaluation until a future task explicitly scopes Phase 9B or later. Do not add
-more handcrafted baseline rules unless a future task explicitly scopes them.
-
-## Latest Documentation
-
-Created:
+Latest report:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE7B_TO_PHASE8_BASELINE_DIAGNOSTIC_WRAPUP.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_PLAN.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_CHECK_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9C2_TRAINING_ENTRY_READINESS_FIXES_REPORT.md
 ```
 
-Archived the previous progress file:
+Latest result JSONs:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B8_WRAPUP_20260628.md
+results/assignment_diagnostics/phase9c1_fresh_policy_tensor_flow_smoke_n50_m3_after_9c2.json
+results/assignment_diagnostics/phase9c2_training_entry_readiness_n50_m3.json
 ```
 
-The Phase 9A readiness check changed markdown only. No Python, solver, environment, reward, controller, HARL, or
-training files were changed.
+## Latest Completed Phase
 
-Phase 9A ran one wrapper compatibility smoke and wrote:
+Phase 9C-2 resolved the small fixed-N assignment RL training-entry blockers identified by Phase 9C-0 and Phase 9C-1:
 
 ```text
-results/assignment_diagnostics/phase9a_rl_readiness_n50_m3_smoke.json
+1. Added a shared scenario_config-to-env_cfg bridge for fixed N=50 assignment entry points.
+2. Added --scenario_config support to scripts/reinforcement_learning/harl/train.py for --assignment_rl only.
+3. Added --scenario_config support to scripts/reinforcement_learning/harl/play_assignment.py.
+4. Added --assignment_episode_length for assignment train entry, with recommended future value 300.
+5. Flattened assignment_rl_reward.* terms into AssignmentIsaacLabEnv.log_info for HARL logging.
+6. Added a no-training readiness smoke for scenario_config, episode_length override, shapes, wrapper step, and reward log keys.
 ```
 
-## Phase 8 Baseline Reference
+The phase stayed entry/logging-only. It did not change reward formulas, observation semantics, mask semantics, solver
+behavior, controller logic, HARL internals, installed site-packages, or environment dynamics.
 
-Scenario:
+## Active Architecture
+
+Current fixed-N assignment RL interface:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml
+num_agents = 3
+num_viewpoints = 50
+viewpoint action ids = 0..49
+noop action id = 50
+available_actions shape = [num_envs, 3, 51]
+available_mask shape = [num_envs, 3, 50]
+actor observation shape in N=50 smoke = [1, 909]
+shared observation shape in N=50 smoke = [1, 3, 2727]
+action_space = Discrete(51) per robot
 ```
 
-Run shape:
+Reward smoke defaults remain:
 
 ```text
-N = 50
-M = 3
-num_episodes = 10
-max_steps = 300
-methods = random, nearest, greedy, nearest_conflict_aware, greedy_conflict_aware
+repeated_assignment_penalty_scale = 0.01
+repeated_assignment_grace_steps = 2
+no_progress_penalty_scale = 0.01
+no_progress_grace_steps = 2
+no_progress_penalty_cap = 0.05
+selected_path_cost_penalty_scale = 0.0
 ```
 
-Main table:
+Reward shaping remains wrapper-local in `AssignmentHarlWrapper.step()` and does not change the base environment reward
+path or non-RL baseline evaluator reward behavior.
+
+## Key Files
+
+Phase 9C-2 files changed or created:
 
 ```text
-random:
-  success_rate = 0.0
-  final_coverage = 0.004
-  coverage_auc = 0.0038
-  selected_target_conflict_rate = 0.4157
-  inter_robot_overlap_rate = 0.6759
-  actual_base_motion_intersection_rate = 0.9050
-
-nearest / greedy:
-  success_rate = 0.0
-  final_coverage = 0.900
-  coverage_auc = 0.7468
-  selected_target_conflict_rate = 0.7191
-  inter_robot_overlap_rate = 0.6689
-  actual_base_motion_intersection_rate = 0.0167
-
-nearest_conflict_aware / greedy_conflict_aware:
-  success_rate = 0.0
-  final_coverage = 0.900
-  coverage_auc = 0.7468
-  selected_target_conflict_rate = 0.6622
-  inter_robot_overlap_rate = 0.5753
-  actual_base_motion_intersection_rate = 0.1237
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scenario_config.py
+scripts/reinforcement_learning/harl/train.py
+scripts/reinforcement_learning/harl/play_assignment.py
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_training.py
+scripts/environments/test_assignment_harl_fresh_policy_smoke.py
+scripts/environments/test_assignment_training_entry_readiness.py
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9C2_TRAINING_ENTRY_READINESS_FIXES_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md
 ```
 
-Stagnation:
+Earlier Phase 9B/9C uncommitted files remain in the working tree.
+
+Important path note:
 
 ```text
-final_uncovered_viewpoint_ids = [0, 20, 24, 36, 48]
-mean last coverage gain step = 116
-mean no-progress steps after last gain = 182
-late repeated assignments:
-  robot_0 -> viewpoint 20
-  robot_1 -> viewpoint 48
-  robot_2 -> viewpoint 36
+scripts/reinforcement_learning/harl/assignment_harl_training.py does not exist.
+The actual assignment training shim is:
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_training.py
 ```
 
-Interpretation: conflict-aware ablations reduce selected-target and inter-robot conflict metrics, but they do not
-improve final coverage and they increase actual proxy base-motion component-footprint crossing risk. The evidence now
-points toward RL/dynamic-policy readiness work rather than more handcrafted baseline variants.
+## Latest Verification
 
-## Diagnostic Boundaries
+Compile check:
 
-The following remain diagnostic-only:
-
-```text
-mesh_footprint_aware_cost_matrix
-selected assignment lines
-selected_target_conflict metrics
-inter_robot_overlap metrics
-actual proxy base-motion crossing metrics
+```powershell
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_methods.py scripts/environments/test_assignment_harl_wrapper_smoke.py scripts/environments/test_assignment_harl_fresh_policy_smoke.py scripts/environments/test_assignment_training_entry_readiness.py scripts/reinforcement_learning/harl/train.py scripts/reinforcement_learning/harl/play_assignment.py source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_training.py source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_wrapper.py source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scan_mobile_manipulator_env.py source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scenario_config.py
 ```
 
-The following were not changed by the wrap-up:
+Result: passed.
 
-```text
-cost_matrix
-available_mask
-feasible_mask
-static_geometric_feasible_mask
-solver behavior
-reward
-controller
-assignment_controller.py
-HARL
-training
-environment dynamics
-collision / IK / raycast / path planning
+Phase 9C-1 smoke after 9C-2 changes:
+
+```powershell
+conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/test_assignment_harl_fresh_policy_smoke.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --algorithm happo --num_envs 1 --max_steps 1 --headless --device cpu --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml --result_file results/assignment_diagnostics/phase9c1_fresh_policy_tensor_flow_smoke_n50_m3_after_9c2.json
 ```
 
-## Verification
+Result: passed.
 
-No `py_compile` was required because this task changed markdown only.
-
-Phase 9A smoke:
+Key tensor-flow result:
 
 ```text
-conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/test_assignment_harl_wrapper_smoke.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --num_envs 1 --max_steps 1 --headless --device cpu --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml --result_file results/assignment_diagnostics/phase9a_rl_readiness_n50_m3_smoke.json
+actor_observation_shape = [1, 909]
+shared_observation_shape = [1, 3, 2727]
+available_actions_shape = [1, 3, 51]
+available_mask_shape = [1, 3, 50]
+fresh actor head width = 51 per robot
+sampled actions available = true for all robots
+reward_shape = [1, 3, 1]
+reward_finite = true
+assignment_rl_reward decomposition present = true
+no_checkpoint_loaded = true
+no_training_run = true
 ```
 
-Result:
+Phase 9C-2 readiness smoke:
+
+```powershell
+conda run --no-capture-output -p C:\isaacenvs\isaac45_harl python -u scripts/environments/test_assignment_training_entry_readiness.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --algorithm happo --num_envs 1 --headless --device cpu --scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml --assignment_episode_length 300 --result_file results/assignment_diagnostics/phase9c2_training_entry_readiness_n50_m3.json
+```
+
+Result: passed.
+
+Key readiness result:
 
 ```text
-[OK] assignment HARL wrapper smoke passed
+scenario_config_applied = true
 num_agents = 3
 num_viewpoints = 50
 noop_id = 50
-available_actions_shape = [1, 3, 51]
-available_mask_shape = [1, 3, 50]
-cost_matrix_shape = [1, 3, 50]
+episode_length_default_value = 1000
+episode_length_override_supported = true
+episode_length_override_value = 300
+assignment_rl_reward_log_keys_present = true
+reward_shape = [1, 3, 1]
+reward_finite = true
+wrapper_step_success = true
+no_checkpoint_loaded = true
+no_checkpoint_saved = true
+no_training_run = true
+runner_run_called = false
 ```
 
-Required final checks for this handoff:
+Final checks for this handoff:
 
 ```text
-git diff --check
-git status --short
+git diff --check: passed with Windows LF-to-CRLF warnings only
+git status --short: expected uncommitted Phase 9B/9C files remain; no commit made
 ```
+
+## Known Issues / Blockers
+
+Remaining limitations:
+
+```text
+No RL training has been run yet.
+No learned-policy quality claim has been made.
+Still fixed N=50/M=3 only.
+Only HAPPO has been smoke-tested in the fresh-policy/readiness path.
+Old fixed-12 assignment checkpoints have 13 logits and remain incompatible with N=50.
+Old scan checkpoints are 9D continuous and remain incompatible with assignment RL.
+play_assignment.py now has the scenario_config bridge, but it still requires a future fresh N=50 checkpoint directory.
+```
+
+## Do Not Do
+
+Do not commit until the user asks.
+
+Do not start RL training, formal RL evaluation, checkpoint play, checkpoint evaluation, checkpoint loading, or checkpoint
+saving yet.
+
+Do not use old assignment_happo fixed-12 checkpoints or scan_happo continuous checkpoints for N=50 assignment play or
+training.
+
+Do not change available_mask, feasible_mask, static_geometric_feasible_mask, solver behavior, controller logic, HARL
+internals, installed site-packages, environment dynamics, robot motion, collision, IK, raycast, local avoidance, path
+planning, retry, fallback, or cooldown behavior.
+
+Do not add new handcrafted baseline rules.
 
 ## Next Step
 
-Recommended next task: scoped Phase 9B technical RL smoke planning or an observation/reward design phase.
+Recommended next task: either prepare a single coherent commit for the fixed-N assignment RL readiness checkpoint, or
+explicitly scope a very tiny training smoke.
 
-Start from:
+If tiny training is scoped later, use a fresh N=50 assignment run only, with no checkpoint loading and with:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_CHECK_REPORT.md
+--assignment_rl
+--scenario_config source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/scenarios/algorithm_proxy_component_mesh.yaml
+--assignment_episode_length 300
 ```
 
-Do not evaluate old checkpoints on N=50. Old assignment checkpoints found in `results/isaaclab/.../assignment_happo_*`
-have 13-class categorical heads, which means fixed N=12 plus noop. Old `scan_happo` checkpoints are 9D continuous
-policies.
-
-If proceeding to Phase 9B, first decide whether it is only a no-checkpoint action/mask technical smoke or whether an
-observation/reward design update is needed before any meaningful dynamic-policy evaluation.
+Do not start training unless a later task explicitly asks for it.
 
 ## Detailed Reports / Archives
 
 ```text
 source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE7B_TO_PHASE8_BASELINE_DIAGNOSTIC_WRAPUP.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE8_REAL_COMPONENT_PROXY_BASELINE_VALIDATION_REPORT.md
 source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_PLAN.md
 source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_CHECK_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE8_REAL_COMPONENT_PROXY_BASELINE_VALIDATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B8_WRAPUP_20260628.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE8_BASELINE_VALIDATION_20260628.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260625/PHASE7E_ACTUAL_BASE_MOTION_CROSSING_DIAGNOSTICS_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260625/PHASE7D2_CONFLICT_AWARE_BASELINE_VARIANTS_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260625/PHASE7D1_TARGET_CONFLICT_CANDIDATE_COMPARISON_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260624/PHASE7C_INTER_ROBOT_PROXY_CONFLICT_DIAGNOSTICS_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260624/PHASE7B4A_SELECTED_ASSIGNMENT_VISUALIZATION_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9B_OBSERVATION_REWARD_DESIGN.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260628/PHASE9B1_REPORTING_COUNTERS_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9B1A_PLATEAU_COUNTER_DIAGNOSTIC_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9B2_OBSERVATION_UPDATE_SMOKE_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9B3_REWARD_SMOKE_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9B_FIXEDN_DYNAMIC_POLICY_INTERFACE_WRAPUP.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9C0_TRAINING_CONFIG_READINESS_REVIEW.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9C1_FRESH_POLICY_TENSOR_FLOW_SMOKE_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/PHASE9C2_TRAINING_ENTRY_READINESS_FIXES_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260629/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9B3_REWRITE_20260629.md
 ```

@@ -174,6 +174,243 @@ def _assert_available_actions(wrapper, available_actions: torch.Tensor) -> None:
         raise AssertionError("no-op available_actions column must be all ones")
 
 
+def _assert_assignment_observations(wrapper, obs: dict[str, torch.Tensor], shared_obs: torch.Tensor) -> dict:
+    layout = wrapper.assignment_observation_layout
+    expected_shared_shape = (
+        wrapper.num_envs,
+        wrapper.num_agents,
+        int(layout["shared_observation_dim"]),
+    )
+    if tuple(shared_obs.shape) != expected_shared_shape:
+        raise AssertionError(
+            f"shared_obs shape mismatch: expected {expected_shared_shape}, got {tuple(shared_obs.shape)}"
+        )
+    if not torch.isfinite(shared_obs).all():
+        raise AssertionError("shared_obs contains non-finite values")
+
+    obs_shapes = {}
+    for agent in wrapper.agents:
+        agent_obs = obs[agent]
+        expected_dim = int(layout["actor_observation_dim_by_agent"][agent])
+        expected_shape = (wrapper.num_envs, expected_dim)
+        if tuple(agent_obs.shape) != expected_shape:
+            raise AssertionError(f"{agent} observation shape mismatch: expected {expected_shape}, got {tuple(agent_obs.shape)}")
+        if not torch.isfinite(agent_obs).all():
+            raise AssertionError(f"{agent} observation contains non-finite values")
+        obs_shapes[agent] = list(agent_obs.shape)
+
+    return {
+        "observation_shapes": obs_shapes,
+        "shared_observation_shape": list(shared_obs.shape),
+        "assignment_observation_layout": layout,
+    }
+
+
+def _assert_viewpoint_row_alignment(wrapper, obs: dict[str, torch.Tensor], *, agent_index: int = 0, viewpoint_id: int = 0) -> dict:
+    problem = wrapper.unwrapped.get_assignment_problem()
+    layout = wrapper.assignment_observation_layout
+    if not (0 <= agent_index < wrapper.num_agents):
+        raise AssertionError(f"agent_index out of range: {agent_index}")
+    if not (0 <= viewpoint_id < wrapper.num_viewpoints):
+        raise AssertionError(f"viewpoint_id out of range: {viewpoint_id}")
+
+    agent = wrapper.agents[agent_index]
+    row_dim = int(layout["viewpoint_row_dim"])
+    row_start = int(layout["viewpoint_rows_start"]) + viewpoint_id * row_dim
+    row = obs[agent][0, row_start : row_start + row_dim]
+    offsets = layout["viewpoint_row_field_offsets"]
+    env_spacing = float(getattr(wrapper.unwrapped.cfg.scene, "env_spacing", 1.0))
+    if abs(env_spacing) <= 1.0e-6:
+        env_spacing = 1.0
+
+    expected_relative = (
+        (problem["viewpoint_pos"][0, viewpoint_id] - problem["scanner_pos"][0, agent_index]) / env_spacing
+    ).to(dtype=torch.float32)
+    actual_relative = row[
+        offsets["relative_viewpoint_position_x"] : offsets["relative_viewpoint_position_z"] + 1
+    ]
+    if not torch.allclose(actual_relative, expected_relative, atol=1.0e-5, rtol=1.0e-5):
+        raise AssertionError(
+            f"viewpoint row {viewpoint_id} relative position does not match action id {viewpoint_id}: "
+            f"actual={actual_relative.detach().cpu().tolist()} expected={expected_relative.detach().cpu().tolist()}"
+        )
+
+    expected_quat = problem["viewpoint_quat"][0, viewpoint_id].to(dtype=torch.float32)
+    actual_quat = row[offsets["viewpoint_quaternion_w"] : offsets["viewpoint_quaternion_z"] + 1]
+    if not torch.allclose(actual_quat, expected_quat, atol=1.0e-5, rtol=1.0e-5):
+        raise AssertionError(
+            f"viewpoint row {viewpoint_id} quaternion does not match action id {viewpoint_id}: "
+            f"actual={actual_quat.detach().cpu().tolist()} expected={expected_quat.detach().cpu().tolist()}"
+        )
+
+    expected_covered = float(problem["viewpoints_covered"][0, viewpoint_id].item())
+    expected_available = float(problem["available_mask"][0, agent_index, viewpoint_id].item())
+    expected_feasible = float(problem["feasible_mask"][0, agent_index, viewpoint_id].item())
+    static_mask = problem.get("static_geometric_feasible_mask", problem["feasible_mask"])
+    expected_static = float(static_mask[0, agent_index, viewpoint_id].item())
+    expected_cost = float(problem["cost_matrix"][0, agent_index, viewpoint_id].item()) / env_spacing
+    scalar_checks = {
+        "covered_flag": expected_covered,
+        "available_flag": expected_available,
+        "feasible_flag": expected_feasible,
+        "static_geometric_feasible_flag": expected_static,
+        "normalized_selected_path_cost": expected_cost,
+    }
+    for field_name, expected_value in scalar_checks.items():
+        actual_value = float(row[offsets[field_name]].detach().cpu().item())
+        if abs(actual_value - expected_value) > 1.0e-5:
+            raise AssertionError(
+                f"viewpoint row {viewpoint_id} {field_name} mismatch: "
+                f"actual={actual_value} expected={expected_value}"
+            )
+
+    return {
+        "agent": agent,
+        "agent_index": agent_index,
+        "viewpoint_id": viewpoint_id,
+        "action_id": viewpoint_id,
+        "row_start": row_start,
+        "row_dim": row_dim,
+        "relative_position": actual_relative.detach().cpu().tolist(),
+        "normalized_selected_path_cost": float(row[offsets["normalized_selected_path_cost"]].detach().cpu().item()),
+        "available_flag": float(row[offsets["available_flag"]].detach().cpu().item()),
+        "covered_flag": float(row[offsets["covered_flag"]].detach().cpu().item()),
+    }
+
+
+def _observation_update_summary(
+    reset_obs: dict[str, torch.Tensor],
+    step_obs: dict[str, torch.Tensor],
+    wrapper,
+    *,
+    agent_index: int = 0,
+    viewpoint_id: int = 0,
+) -> dict:
+    agent = wrapper.agents[agent_index]
+    layout = wrapper.assignment_observation_layout
+    row_dim = int(layout["viewpoint_row_dim"])
+    row_start = int(layout["viewpoint_rows_start"]) + viewpoint_id * row_dim
+    offsets = layout["viewpoint_row_field_offsets"]
+    attempt_offset = row_start + int(offsets["per_viewpoint_attempted_count_norm"])
+    age_offset = row_start + int(offsets["per_viewpoint_last_attempt_age_norm"])
+    before = reset_obs[agent]
+    after = step_obs[agent]
+    changed = not torch.allclose(before, after)
+    return {
+        "agent": agent,
+        "viewpoint_id": viewpoint_id,
+        "observation_changed_after_step": bool(changed),
+        "attempted_count_norm_before": float(before[0, attempt_offset].detach().cpu().item()),
+        "attempted_count_norm_after": float(after[0, attempt_offset].detach().cpu().item()),
+        "last_attempt_age_norm_before": float(before[0, age_offset].detach().cpu().item()),
+        "last_attempt_age_norm_after": float(after[0, age_offset].detach().cpu().item()),
+    }
+
+
+def _tensor_term_summary(value: torch.Tensor, *, expected_shape: tuple[int, ...], name: str) -> dict:
+    if tuple(value.shape) != expected_shape:
+        raise AssertionError(f"{name} shape mismatch: expected {expected_shape}, got {tuple(value.shape)}")
+    if not torch.isfinite(value).all():
+        raise AssertionError(f"{name} contains non-finite values")
+    detached = value.detach().cpu()
+    return {
+        "shape": list(value.shape),
+        "min": float(detached.min().item()),
+        "max": float(detached.max().item()),
+        "mean": float(detached.mean().item()),
+        "values": detached.tolist(),
+    }
+
+
+def _reward_smoke_step_summary(step_id: int, info: dict, rewards: torch.Tensor) -> dict:
+    if "assignment_rl_reward" not in info:
+        raise AssertionError("step info must contain assignment_rl_reward diagnostics")
+    decomposition = info["assignment_rl_reward"]
+    expected_shape = tuple(rewards.shape)
+    terms = {}
+    for key in (
+        "base_env_reward",
+        "repeated_same_target_no_progress",
+        "global_no_progress",
+        "selected_path_cost",
+        "selected_path_cost_raw",
+        "selected_path_cost_norm",
+        "total_assignment_reward_adjustment",
+        "final_reward",
+    ):
+        if key not in decomposition:
+            raise AssertionError(f"assignment_rl_reward missing {key}")
+        terms[key] = _tensor_term_summary(decomposition[key], expected_shape=expected_shape, name=key)
+    if not torch.allclose(decomposition["final_reward"], rewards):
+        raise AssertionError("returned rewards do not match assignment_rl_reward.final_reward")
+    return {
+        "step": int(step_id),
+        "config": dict(decomposition.get("config", {})),
+        "same_target_streak": decomposition["same_target_streak"].detach().cpu().tolist(),
+        "steps_since_global_coverage_gain": decomposition["steps_since_global_coverage_gain"].detach().cpu().tolist(),
+        "global_coverage_gain": decomposition["global_coverage_gain"].detach().cpu().tolist(),
+        "terms": terms,
+    }
+
+
+def _assert_reward_smoke(wrapper, reward_steps: list[dict]) -> dict:
+    if not reward_steps:
+        raise AssertionError("reward smoke requires at least one step")
+    config = wrapper.assignment_reward_config
+    repeat_grace = int(config["repeated_assignment_grace_steps"])
+    no_progress_grace = int(config["no_progress_grace_steps"])
+
+    def _max_abs(step: dict, key: str) -> float:
+        term = step["terms"][key]
+        return max(abs(float(term["min"])), abs(float(term["max"])))
+
+    def _min_value(step: dict, key: str) -> float:
+        return float(step["terms"][key]["min"])
+
+    repeat_before = [step for step in reward_steps if int(step["step"]) <= repeat_grace]
+    repeat_after = [step for step in reward_steps if int(step["step"]) > repeat_grace]
+    if any(_max_abs(step, "repeated_same_target_no_progress") > 1.0e-8 for step in repeat_before):
+        raise AssertionError("repeated_same_target_no_progress became nonzero before grace threshold")
+    if repeat_after and not any(_min_value(step, "repeated_same_target_no_progress") < -1.0e-8 for step in repeat_after):
+        raise AssertionError("repeated_same_target_no_progress did not become negative after grace threshold")
+
+    no_progress_before = [step for step in reward_steps if int(step["step"]) <= no_progress_grace]
+    no_progress_after = [step for step in reward_steps if int(step["step"]) > no_progress_grace]
+    if any(_max_abs(step, "global_no_progress") > 1.0e-8 for step in no_progress_before):
+        raise AssertionError("global_no_progress became nonzero before grace threshold")
+    if no_progress_after and not any(_min_value(step, "global_no_progress") < -1.0e-8 for step in no_progress_after):
+        raise AssertionError("global_no_progress did not become negative after grace threshold")
+
+    for step in reward_steps:
+        repeated_values = step["terms"]["repeated_same_target_no_progress"]["values"]
+        path_values = step["terms"]["selected_path_cost"]["values"]
+        if abs(float(repeated_values[0][2][0])) > 1.0e-8:
+            raise AssertionError("repeated_same_target_no_progress penalized the scripted noop agent")
+        if float(config["selected_path_cost_penalty_scale"]) == 0.0 and _max_abs(step, "selected_path_cost") > 1.0e-8:
+            raise AssertionError("selected_path_cost term must be zero when disabled")
+        if float(config["selected_path_cost_penalty_scale"]) == 0.0 and abs(float(path_values[0][2][0])) > 1.0e-8:
+            raise AssertionError("selected_path_cost penalized the scripted noop agent while disabled")
+
+    repeated_first_negative_step = next(
+        (
+            int(step["step"])
+            for step in reward_steps
+            if _min_value(step, "repeated_same_target_no_progress") < -1.0e-8
+        ),
+        None,
+    )
+    no_progress_first_negative_step = next(
+        (int(step["step"]) for step in reward_steps if _min_value(step, "global_no_progress") < -1.0e-8),
+        None,
+    )
+    return {
+        "passed": True,
+        "repeated_same_target_no_progress_first_negative_step": repeated_first_negative_step,
+        "global_no_progress_first_negative_step": no_progress_first_negative_step,
+        "selected_path_cost_disabled_zero": float(config["selected_path_cost_penalty_scale"]) == 0.0,
+    }
+
+
 def _assert_action_spaces(wrapper) -> None:
     expected_n = wrapper.num_viewpoints + 1
     for agent_id, space in wrapper.action_space.items():
@@ -622,15 +859,22 @@ def main() -> None:
     ) = _resolve_pause_after_setup()
     try:
         wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
+        if wrapper.num_agents != 3:
+            raise AssertionError(f"Phase 9B-2 smoke expects M=3 agents, got {wrapper.num_agents}")
         if args_cli.expect_num_viewpoints is not None and wrapper.num_viewpoints != args_cli.expect_num_viewpoints:
             raise AssertionError(
                 f"num_viewpoints mismatch: expected {args_cli.expect_num_viewpoints}, got {wrapper.num_viewpoints}"
             )
+        if wrapper.num_viewpoints == 50 and wrapper.noop_action_id != 50:
+            raise AssertionError(f"noop id mismatch for N=50: expected 50, got {wrapper.noop_action_id}")
         obs, shared_obs, available_actions = wrapper.reset(seed=args_cli.seed)
         if not isinstance(obs, dict) or set(obs.keys()) != set(wrapper.agents):
             raise AssertionError(f"reset obs must be an agent dict with keys {wrapper.agents}, got {list(obs.keys())}")
         if shared_obs.shape[0] != wrapper.num_envs or shared_obs.shape[1] != wrapper.num_agents:
             raise AssertionError(f"shared_obs leading shape mismatch: got {tuple(shared_obs.shape)}")
+        reset_observation_diagnostics = _assert_assignment_observations(wrapper, obs, shared_obs)
+        row_alignment_check = _assert_viewpoint_row_alignment(wrapper, obs, agent_index=0, viewpoint_id=0)
+        reset_obs_snapshot = {agent: tensor.clone() for agent, tensor in obs.items()}
         _assert_action_spaces(wrapper)
         _assert_available_actions(wrapper, available_actions)
 
@@ -648,6 +892,8 @@ def main() -> None:
             f"num_envs={wrapper.num_envs} num_agents={wrapper.num_agents} "
             f"num_viewpoints={wrapper.num_viewpoints} noop_id={wrapper.noop_action_id} "
             f"available_shape={tuple(available_actions.shape)} "
+            f"obs_shape={tuple(obs[wrapper.agents[0]].shape)} "
+            f"shared_shape={tuple(shared_obs.shape)} "
             f"available_viewpoints_per_agent={available_viewpoint_count.detach().cpu().tolist()}"
         )
         print(
@@ -673,9 +919,27 @@ def main() -> None:
                 _run_gui_safe_setup_pause(pause_after_setup_seconds)
 
         completed_steps = 0
+        observation_update_check = None
+        final_observation_diagnostics = reset_observation_diagnostics
+        reward_smoke_steps = []
         for step_id in range(args_cli.max_steps):
             obs, shared_obs, rewards, dones, info, available_actions = wrapper.step(discrete_actions)
             completed_steps = step_id + 1
+            final_observation_diagnostics = _assert_assignment_observations(wrapper, obs, shared_obs)
+            if observation_update_check is None:
+                observation_update_check = _observation_update_summary(
+                    reset_obs_snapshot,
+                    obs,
+                    wrapper,
+                    agent_index=0,
+                    viewpoint_id=0,
+                )
+                if not observation_update_check["observation_changed_after_step"]:
+                    raise AssertionError("assignment observation did not change after the first step")
+                if observation_update_check["attempted_count_norm_after"] <= observation_update_check[
+                    "attempted_count_norm_before"
+                ]:
+                    raise AssertionError("per-viewpoint attempted count did not increase for action id 0")
             _assert_available_actions(wrapper, available_actions)
             if tuple(rewards.shape) != (wrapper.num_envs, wrapper.num_agents, 1):
                 raise AssertionError(f"reward shape mismatch: got {tuple(rewards.shape)}")
@@ -683,6 +947,8 @@ def main() -> None:
                 raise AssertionError(f"done shape mismatch: got {tuple(dones.shape)}")
             if "assignment_rl" not in info:
                 raise AssertionError("step info must contain assignment_rl diagnostics")
+            reward_step_summary = _reward_smoke_step_summary(step_id + 1, info, rewards)
+            reward_smoke_steps.append(reward_step_summary)
 
             duplicate_count = wrapper.last_duplicate_count
             noop_count = wrapper.last_noop_count
@@ -698,8 +964,19 @@ def main() -> None:
                 f"noop_count={noop_count.detach().cpu().tolist()} "
                 f"valid_action_count={valid_action_count.detach().cpu().tolist()} "
                 f"selected_valid_count={_selected_valid_count(wrapper):.1f} "
+                f"repeat_penalty_mean={reward_step_summary['terms']['repeated_same_target_no_progress']['mean']:.6f} "
+                f"no_progress_penalty_mean={reward_step_summary['terms']['global_no_progress']['mean']:.6f} "
+                f"path_cost_penalty_mean={reward_step_summary['terms']['selected_path_cost']['mean']:.6f} "
                 f"available_shape={tuple(available_actions.shape)}"
             )
+
+        reward_smoke_check = _assert_reward_smoke(wrapper, reward_smoke_steps)
+        print(
+            "[INFO]: reward smoke ok "
+            f"repeat_first_negative_step={reward_smoke_check['repeated_same_target_no_progress_first_negative_step']} "
+            f"no_progress_first_negative_step={reward_smoke_check['global_no_progress_first_negative_step']} "
+            f"path_cost_disabled_zero={reward_smoke_check['selected_path_cost_disabled_zero']}"
+        )
 
         if args_cli.result_file is not None:
             result = _reset_diagnostics(
@@ -711,6 +988,22 @@ def main() -> None:
                 pause_after_setup_seconds=pause_after_setup_seconds,
                 pause_after_setup_mode=pause_after_setup_mode,
             )
+            result["reset_observation_diagnostics"] = reset_observation_diagnostics
+            result["final_observation_diagnostics"] = final_observation_diagnostics
+            result["row_action_alignment_check"] = row_alignment_check
+            result["observation_update_check"] = observation_update_check
+            result["reward_smoke"] = {
+                "config": wrapper.assignment_reward_config,
+                "steps": reward_smoke_steps,
+                "checks": reward_smoke_check,
+            }
+            result["reward_behavior_changed_intentionally"] = True
+            result["assignment_wrapper_reward_behavior_changed_intentionally"] = True
+            result["environment_reward_behavior_changed_intentionally"] = False
+            result["mask_behavior_changed_intentionally"] = False
+            result["solver_behavior_changed_intentionally"] = False
+            result["controller_behavior_changed_intentionally"] = False
+            result["environment_dynamics_changed_intentionally"] = False
             result_path = Path(args_cli.result_file)
             result_path.parent.mkdir(parents=True, exist_ok=True)
             result_path.write_text(json.dumps(result, indent=2), encoding="utf-8")

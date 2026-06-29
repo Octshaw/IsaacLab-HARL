@@ -8,10 +8,38 @@
 import argparse
 import sys
 import time
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+ISAACLAB_TASKS_SOURCE = REPO_ROOT / "source" / "isaaclab_tasks"
+SCAN_TASK_SOURCE = (
+    REPO_ROOT
+    / "source"
+    / "isaaclab_tasks"
+    / "isaaclab_tasks"
+    / "direct"
+    / "scan_mobile_manipulator"
+)
+for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
+    if str(source_path) not in sys.path:
+        sys.path.insert(0, str(source_path))
+
+from scenario_config import (
+    apply_scenario_config_to_env_cfg,
+    load_scenario_config,
+    smoke_defaults_from_config,
+    validate_smoke_args,
+)
 
 from isaaclab.app import AppLauncher
 
-parser = argparse.ArgumentParser(description="Train an RL agent with HARL.")
+pre_parser = argparse.ArgumentParser(add_help=False)
+pre_parser.add_argument("--scenario_config", type=str, default=None, help="Optional assignment scenario YAML/JSON config.")
+pre_args, _ = pre_parser.parse_known_args()
+SCENARIO_CONFIG = load_scenario_config(pre_args.scenario_config, repo_root=REPO_ROOT)
+SCENARIO_DEFAULTS = smoke_defaults_from_config(SCENARIO_CONFIG) if "--assignment_rl" in sys.argv else {}
+
+parser = argparse.ArgumentParser(description="Train an RL agent with HARL.", parents=[pre_parser])
 parser.add_argument("--video", action="store_true", help="Record videos during training.")
 parser.add_argument("--video_length", type=int, default=500, help="Length of the recorded video (in steps).")
 parser.add_argument("--video_interval", type=int, default=20000, help="Interval between video recordings (in steps).")
@@ -27,6 +55,12 @@ parser.add_argument(
     "--assignment_rl",
     action="store_true",
     help="Use assignment-based Discrete viewpoint actions instead of the scan env's raw 9D action space.",
+)
+parser.add_argument(
+    "--assignment_episode_length",
+    type=int,
+    default=None,
+    help="Override HARL train.episode_length for assignment RL only, e.g. 300 for the N=50 smoke scenario.",
 )
 
 parser.add_argument(
@@ -45,8 +79,15 @@ parser.add_argument(
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
+parser.set_defaults(**SCENARIO_DEFAULTS)
 # parse the arguments
 args_cli, hydra_args = parser.parse_known_args()
+if args_cli.scenario_config is not None and not args_cli.assignment_rl:
+    raise ValueError("--scenario_config is currently supported only with --assignment_rl in train.py")
+if args_cli.assignment_episode_length is not None and not args_cli.assignment_rl:
+    raise ValueError("--assignment_episode_length is supported only with --assignment_rl")
+if args_cli.assignment_rl and args_cli.scenario_config is not None:
+    validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
 # always enable cameras to record video
 if args_cli.video:
     args_cli.enable_cameras = True
@@ -109,7 +150,10 @@ from harl.runners import RUNNER_REGISTRY
 from isaaclab.envs import DirectMARLEnvCfg, DirectRLEnvCfg, ManagerBasedRLEnvCfg
 
 import isaaclab_tasks  # noqa: F401
-from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_training import register_assignment_harl_runner
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_training import (
+    apply_assignment_episode_length_override,
+    register_assignment_harl_runner,
+)
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 algorithm = args_cli.algorithm.lower()
@@ -148,10 +192,20 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     algo_args["train"]["eval_interval"] = args["save_interval"]
     algo_args["train"]["log_interval"] = args["log_interval"]
     algo_args["train"]["model_dir"] = args["dir"]
+    if args["assignment_rl"]:
+        applied_episode_length = apply_assignment_episode_length_override(
+            algo_args,
+            args.get("assignment_episode_length"),
+        )
+        if applied_episode_length is not None:
+            print(f"[INFO]: Assignment RL train.episode_length override applied: {applied_episode_length}")
     algo_args["seed"]["specify_seed"] = True
     algo_args["seed"]["seed"] = args["seed"]
 
     env_args = {}
+    if args["assignment_rl"] and args.get("scenario_config") is not None:
+        apply_scenario_config_to_env_cfg(env_cfg, args)
+        print(f"[INFO]: Assignment RL scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
     env_cfg.scene.num_envs = args["num_envs"]
     env_args["task"] = args["task"]
     env_args["config"] = env_cfg

@@ -277,6 +277,15 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     action_rate_penalty_scale = 0.01
     time_penalty = 0.002
 
+    # Assignment-wrapper reward shaping smoke terms. These are consumed by AssignmentHarlWrapper only; the base
+    # environment reward above and non-RL baseline evaluator reward remain unchanged.
+    repeated_assignment_penalty_scale = 0.01
+    repeated_assignment_grace_steps = 2
+    no_progress_penalty_scale = 0.01
+    no_progress_grace_steps = 2
+    no_progress_penalty_cap = 0.05
+    selected_path_cost_penalty_scale = 0.0
+
 
 def _as_float_tuple(value, *, name: str, length: int) -> tuple[float, ...]:
     try:
