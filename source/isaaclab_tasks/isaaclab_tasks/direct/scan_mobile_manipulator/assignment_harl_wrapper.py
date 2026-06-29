@@ -263,15 +263,14 @@ class AssignmentHarlWrapper:
 
         obs, rewards, terminated, truncated, info = self._env.step(env_actions)
         post_step_problem = self._unwrapped.get_assignment_problem()
+        dones = self._stack_dones(terminated, truncated)
+        done_env_ids = torch.nonzero(torch.all(dones, dim=1), as_tuple=False).flatten()
         self._update_assignment_diagnostics(
             assignment=assignment,
             pre_step_problem=pre_step_problem,
             post_step_problem=post_step_problem,
         )
-        obs = self._augment_assignment_observations(obs, problem=post_step_problem)
-        self._sync_agents(obs)
 
-        shared_obs = self._build_shared_obs(obs)
         reward_tensor = self._stack_rewards(rewards)
         reward_decomposition = self._compute_assignment_reward_decomposition(
             base_reward_tensor=reward_tensor,
@@ -280,7 +279,6 @@ class AssignmentHarlWrapper:
             post_step_problem=post_step_problem,
         )
         reward_tensor = reward_decomposition["final_reward"]
-        dones = self._stack_dones(terminated, truncated)
         available_actions = self._build_available_actions(problem=post_step_problem)
 
         duplicate_count = compute_assignment_duplicate_count(assignment)
@@ -305,6 +303,13 @@ class AssignmentHarlWrapper:
             selected_available_mask=selected_available_mask,
             reward_decomposition=reward_decomposition,
         )
+
+        if done_env_ids.numel() > 0:
+            self._reset_assignment_diagnostics(env_ids=done_env_ids, problem=post_step_problem)
+
+        obs = self._augment_assignment_observations(obs, problem=post_step_problem)
+        self._sync_agents(obs)
+        shared_obs = self._build_shared_obs(obs)
         return obs, shared_obs, reward_tensor, dones, info, available_actions
 
     def close(self) -> None:
