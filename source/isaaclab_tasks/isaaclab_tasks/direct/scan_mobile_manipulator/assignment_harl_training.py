@@ -15,6 +15,8 @@ env, wraps it with ``AssignmentHarlWrapper``, and uses a runner subclass whose
 initialization computes scalar action storage dims through the Phase 2 adapter.
 """
 
+import time
+from collections.abc import Collection
 from typing import Any, Mapping
 
 import gymnasium as gym
@@ -29,13 +31,18 @@ from harl.common.buffers.on_policy_critic_buffer_ep import OnPolicyCriticBufferE
 from harl.common.buffers.on_policy_critic_buffer_fp import OnPolicyCriticBufferFP
 from harl.common.valuenorm import ValueNorm
 from harl.envs import LOGGER_REGISTRY
+from harl.envs.isaaclab.Isaac_lab_logger import IsaacLabLogger
 from harl.runners.on_policy_ha_runner import OnPolicyHARunner
 from harl.utils.configs_tools import init_dir, save_config
 from harl.utils.envs_tools import make_eval_env, make_render_env, make_train_env, set_seed
 from harl.utils.models_tools import init_device
 
-from .assignment_harl_adapter import get_harl_scalar_action_dim
-from .assignment_harl_wrapper import AssignmentHarlWrapper
+try:
+    from .assignment_harl_adapter import get_harl_scalar_action_dim
+    from .assignment_harl_wrapper import AssignmentHarlWrapper
+except ImportError:  # Allows direct file-based smoke tests after adding this directory to sys.path.
+    from assignment_harl_adapter import get_harl_scalar_action_dim  # type: ignore
+    from assignment_harl_wrapper import AssignmentHarlWrapper  # type: ignore
 
 
 SUPPORTED_ASSIGNMENT_ALGORITHMS = ("happo", "hatrpo", "haa2c")
@@ -49,6 +56,7 @@ ASSIGNMENT_REWARD_LOG_FIELDS = (
     "steps_since_global_coverage_gain",
     "global_coverage_gain",
 )
+ASSIGNMENT_REWARD_ACCUMULATOR_KEYS = frozenset({"assignment_rl_reward/final_reward_mean"})
 
 
 def apply_assignment_episode_length_override(algo_args: dict[str, Any], episode_length: int | None) -> int | None:
@@ -111,6 +119,111 @@ def _flatten_assignment_reward_log(data: Mapping[str, Any]) -> dict[str, float]:
         if scalar is not None:
             log[f"assignment_rl_reward/{key}_mean"] = scalar
     return log
+
+
+def _should_accumulate_reward_key(key: str, reward_accumulator_keys: Collection[str] | None) -> bool:
+    """Return whether a scalar key contributes to the logger's Total_Reward accumulator."""
+
+    if reward_accumulator_keys is None:
+        return "reward" in key.lower()
+    return key in reward_accumulator_keys
+
+
+def _compute_reward_accumulator_total(
+    other_data_log: Mapping[str, Collection[float]],
+    reward_accumulator_keys: Collection[str] | None,
+) -> float:
+    """Compute Total_Reward from logged scalars using an optional exact-key whitelist."""
+
+    total_reward = 0.0
+    for key, values in other_data_log.items():
+        if _should_accumulate_reward_key(key, reward_accumulator_keys):
+            total_reward += float(np.sum(values))
+    return total_reward
+
+
+class AssignmentIsaacLabLogger(IsaacLabLogger):
+    """IsaacLab logger with exact reward-accounting keys for assignment RL."""
+
+    def __init__(self, *args, reward_accumulator_keys: Collection[str] | None = None, **kwargs) -> None:
+        self.reward_accumulator_keys = (
+            frozenset(reward_accumulator_keys) if reward_accumulator_keys is not None else None
+        )
+        super().__init__(*args, **kwargs)
+        if self.reward_accumulator_keys is not None:
+            print(
+                "[INFO]: Assignment RL Total_Reward accumulator whitelist: "
+                f"{sorted(self.reward_accumulator_keys)}"
+            )
+
+    def episode_log(
+        self,
+        actor_train_infos,
+        critic_train_info,
+        actor_buffer,
+        critic_buffer,
+    ):
+        """Log one episode, using the assignment reward whitelist for Total_Reward."""
+
+        self.total_num_steps = (
+            self.episode
+            * self.algo_args["train"]["episode_length"]
+            * self.algo_args["train"]["n_rollout_threads"]
+        )
+        self.end = time.time()
+
+        self.total_reward = 0.0
+        if self.other_data_log:
+            print("\n===== Averages for the episode =====")
+            self.total_reward = _compute_reward_accumulator_total(
+                self.other_data_log,
+                self.reward_accumulator_keys,
+            )
+            for key, values in self.other_data_log.items():
+                mean_val = np.mean(values)
+                print(f"{key}: {mean_val}")
+                self.writter.add_scalar(key, mean_val, self.total_num_steps)
+
+            self.other_data_log.clear()
+
+            self.writter.add_scalar("Total_Reward", self.total_reward, self.total_num_steps)
+            print("Total Reward is {}.".format(self.total_reward))
+
+        print("==============================================")
+        print(
+            "Env {} Task {} Algo {} Exp {} episodes {}/{} total num timesteps {}/{}, FPS {}.".format(
+                self.args["env"],
+                self.task_name,
+                self.args["algo"],
+                self.args["exp_name"],
+                self.episode,
+                self.episodes,
+                self.total_num_steps,
+                self.algo_args["train"]["num_env_steps"],
+                int(self.total_num_steps / (self.end - self.start)),
+            )
+        )
+
+        self.log_actor(actor_train_infos)
+        if isinstance(critic_buffer, dict):
+            for team, buffer in critic_buffer.items():
+                critic_train_info[team][f"average_step_rewards_{team}"] = buffer.get_mean_rewards()
+                print(
+                    "Average step reward for {} is {}.\n".format(
+                        team, critic_train_info[team][f"average_step_rewards_{team}"]
+                    )
+                )
+                for k, v in critic_train_info[team].items():
+                    critic_k = f"critic/{team}/" + k
+                    self.writter.add_scalar(critic_k, v, self.total_num_steps)
+        else:
+            critic_train_info["average_step_rewards"] = critic_buffer.get_mean_rewards()
+            print(
+                "Average step reward is {}.\n".format(
+                    critic_train_info["average_step_rewards"]
+                )
+            )
+            self.log_critic(critic_train_info)
 
 
 class AssignmentIsaacLabEnv:
@@ -393,9 +506,22 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
             else:
                 self.value_normalizer = None
 
-            self.logger = LOGGER_REGISTRY[args["env"]](
-                args, algo_args, env_args, self.num_agents, self.writter, self.run_dir
-            )
+            if self.assignment_rl and args["env"] == "isaaclab":
+                env_args["reward_accumulator_mode"] = "exact_whitelist"
+                env_args["reward_accumulator_keys"] = sorted(ASSIGNMENT_REWARD_ACCUMULATOR_KEYS)
+                self.logger = AssignmentIsaacLabLogger(
+                    args,
+                    algo_args,
+                    env_args,
+                    self.num_agents,
+                    self.writter,
+                    self.run_dir,
+                    reward_accumulator_keys=ASSIGNMENT_REWARD_ACCUMULATOR_KEYS,
+                )
+            else:
+                self.logger = LOGGER_REGISTRY[args["env"]](
+                    args, algo_args, env_args, self.num_agents, self.writter, self.run_dir
+                )
         self.algo_args["model"]["hidden_sizes"] = self.hidden_sizes
         if self.algo_args["train"]["model_dir"] is not None:
             self.restore()
@@ -469,9 +595,13 @@ def register_assignment_harl_runner(runner_registry: dict[str, Any], algorithm: 
 
 
 __all__ = [
+    "ASSIGNMENT_REWARD_ACCUMULATOR_KEYS",
     "AssignmentIsaacLabEnv",
+    "AssignmentIsaacLabLogger",
     "AssignmentOnPolicyHARunner",
     "SUPPORTED_ASSIGNMENT_ALGORITHMS",
     "apply_assignment_episode_length_override",
+    "_compute_reward_accumulator_total",
+    "_should_accumulate_reward_key",
     "register_assignment_harl_runner",
 ]
