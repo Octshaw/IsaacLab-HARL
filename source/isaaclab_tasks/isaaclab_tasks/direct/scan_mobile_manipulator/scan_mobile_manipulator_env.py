@@ -290,6 +290,7 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     # existing assignment RL action mask unchanged unless an explicit scenario/config enables cooldown.
     assignment_cooldown_enabled = False
     assignment_cooldown_scope = "per_robot_target"
+    assignment_cooldown_trigger_mode = "streak"
     assignment_cooldown_trigger_attempts = 3
     assignment_cooldown_trigger_same_target_streak = 10
     assignment_cooldown_trigger_steps_since_global_gain = 10
@@ -301,6 +302,13 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     assignment_cooldown_clear_on_covered = True
     assignment_cooldown_apply_to_action_mask = True
     assignment_cooldown_log_diagnostics = True
+    assignment_cooldown_budget_multiplier = 1.5
+    assignment_cooldown_budget_slack_steps = 5
+    assignment_cooldown_budget_min_streak = 10
+    assignment_cooldown_budget_require_no_global_gain = True
+    assignment_cooldown_budget_require_uncovered = True
+    assignment_cooldown_budget_require_available = True
+    assignment_cooldown_budget_require_feasible = True
 
 
 def _as_float_tuple(value, *, name: str, length: int) -> tuple[float, ...]:

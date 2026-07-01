@@ -159,10 +159,20 @@ PER_EPISODE_FIELDS = [
     "selected_path_cost_mean",
     "selected_path_cost_max",
     "cooldown_enabled",
+    "cooldown_trigger_mode",
     "cooldown_trigger_count",
+    "budget_trigger_count",
     "cooldown_active_count",
     "cooldown_suppressed_count",
     "max_cooldown_remaining",
+    "budget_attempt_steps_mean",
+    "budget_attempt_steps_max",
+    "budget_steps_mean",
+    "budget_steps_max",
+    "budget_ratio_mean",
+    "budget_ratio_max",
+    "budget_triggered_pair_count",
+    "budget_over_budget_selected_count",
 ]
 
 SUMMARY_FIELDS = [
@@ -190,10 +200,20 @@ SUMMARY_FIELDS = [
     "selected_path_cost_max",
     "late_repeated_assignment_count_mean",
     "cooldown_enabled",
+    "cooldown_trigger_mode",
     "cooldown_trigger_count_mean",
+    "budget_trigger_count_mean",
     "cooldown_active_count_mean",
     "cooldown_suppressed_count_mean",
     "max_cooldown_remaining",
+    "budget_attempt_steps_mean",
+    "budget_attempt_steps_max",
+    "budget_steps_mean",
+    "budget_steps_max",
+    "budget_ratio_mean",
+    "budget_ratio_max",
+    "budget_triggered_pair_count_mean",
+    "budget_over_budget_selected_count_mean",
     "episode_steps_mean",
 ]
 
@@ -233,6 +253,13 @@ ASSIGNMENT_HISTORY_FIELDS = [
     "cooldown_triggered_after_step",
     "cooldown_suppressed_available_count_for_robot",
     "failed_attempt_count_for_selected_pair",
+    "cooldown_trigger_mode",
+    "budget_attempt_steps_for_selected_pair",
+    "budget_steps_for_selected_pair",
+    "budget_expected_steps_for_selected_pair",
+    "budget_ratio_for_selected_pair",
+    "budget_triggered_after_step",
+    "budget_triggered_by_budget",
 ]
 
 
@@ -729,10 +756,22 @@ def _init_buffers(num_envs: int, num_agents: int, num_viewpoints: int, device: t
         "actual_base_motion_decisions": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "actual_base_motion_min_distance": torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device),
         "cooldown_trigger_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_trigger_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "cooldown_active_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "cooldown_suppressed_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "cooldown_max_remaining": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "cooldown_step_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_attempt_steps_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_attempt_steps_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_attempt_steps_max": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_steps_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_steps_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_steps_max": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_ratio_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_ratio_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_ratio_max": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_triggered_pair_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_budget_over_budget_selected_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
     }
 
 
@@ -865,6 +904,10 @@ def _update_cooldown_buffers(buffers: dict[str, torch.Tensor], info: Any, *, num
         num_envs=num_envs,
         device=device,
     )
+    buffers["cooldown_budget_trigger_count"] = torch.maximum(
+        buffers["cooldown_budget_trigger_count"],
+        _info_tensor(cooldown_info, "budget_trigger_count", num_envs=num_envs, device=device),
+    )
     buffers["cooldown_active_count_sum"] += _info_tensor(
         cooldown_info,
         "active_count",
@@ -879,6 +922,37 @@ def _update_cooldown_buffers(buffers: dict[str, torch.Tensor], info: Any, *, num
     )
     max_remaining = _info_tensor(cooldown_info, "max_cooldown_remaining", num_envs=num_envs, device=device)
     buffers["cooldown_max_remaining"] = torch.maximum(buffers["cooldown_max_remaining"], max_remaining)
+    budget_attempt_steps = _info_tensor(cooldown_info, "budget_attempt_steps_mean", num_envs=num_envs, device=device)
+    budget_steps = _info_tensor(cooldown_info, "budget_steps_mean", num_envs=num_envs, device=device)
+    budget_ratio = _info_tensor(cooldown_info, "budget_ratio_mean", num_envs=num_envs, device=device)
+    buffers["cooldown_budget_attempt_steps_sum"] += budget_attempt_steps
+    buffers["cooldown_budget_attempt_steps_count"] += 1.0
+    buffers["cooldown_budget_attempt_steps_max"] = torch.maximum(
+        buffers["cooldown_budget_attempt_steps_max"],
+        _info_tensor(cooldown_info, "budget_attempt_steps_max", num_envs=num_envs, device=device),
+    )
+    buffers["cooldown_budget_steps_sum"] += budget_steps
+    buffers["cooldown_budget_steps_count"] += 1.0
+    buffers["cooldown_budget_steps_max"] = torch.maximum(
+        buffers["cooldown_budget_steps_max"],
+        _info_tensor(cooldown_info, "budget_steps_max", num_envs=num_envs, device=device),
+    )
+    buffers["cooldown_budget_ratio_sum"] += budget_ratio
+    buffers["cooldown_budget_ratio_count"] += 1.0
+    buffers["cooldown_budget_ratio_max"] = torch.maximum(
+        buffers["cooldown_budget_ratio_max"],
+        _info_tensor(cooldown_info, "budget_ratio_max", num_envs=num_envs, device=device),
+    )
+    buffers["cooldown_budget_triggered_pair_count"] += _info_tensor(
+        cooldown_info,
+        "budget_triggered_pair_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    buffers["cooldown_budget_over_budget_selected_count"] = torch.maximum(
+        buffers["cooldown_budget_over_budget_selected_count"],
+        _info_tensor(cooldown_info, "budget_over_budget_selected_count", num_envs=num_envs, device=device),
+    )
     buffers["cooldown_step_count"] += 1.0
 
 
@@ -918,6 +992,15 @@ def _append_assignment_history(
     cooldown_triggered = getattr(wrapper, "_last_cooldown_triggered_after_step", None)
     cooldown_suppressed = getattr(wrapper, "_last_cooldown_suppressed_available_count_for_robot", None)
     failed_attempt_count = getattr(wrapper, "_last_failed_attempt_count_for_selected_pair", None)
+    cooldown_config = getattr(wrapper, "assignment_cooldown_config", {})
+    cooldown_trigger_mode = (
+        str(cooldown_config.get("trigger_mode", "unknown")) if isinstance(cooldown_config, dict) else "unknown"
+    )
+    budget_attempt_steps = getattr(wrapper, "_last_budget_attempt_steps_for_selected_pair", None)
+    budget_steps = getattr(wrapper, "_last_budget_steps_for_selected_pair", None)
+    budget_expected_steps = getattr(wrapper, "_last_budget_expected_steps_for_selected_pair", None)
+    budget_ratio = getattr(wrapper, "_last_budget_ratio_for_selected_pair", None)
+    budget_triggered = getattr(wrapper, "_last_budget_triggered_by_budget", None)
     for env_id in range(wrapper.num_envs):
         for robot_id, robot_name in enumerate(wrapper.agents):
             raw_action = int(raw_ids[env_id, robot_id].item())
@@ -981,6 +1064,25 @@ def _append_assignment_history(
                     "failed_attempt_count_for_selected_pair": int(
                         failed_attempt_count[env_id, robot_id].item() if failed_attempt_count is not None else 0
                     ),
+                    "cooldown_trigger_mode": cooldown_trigger_mode,
+                    "budget_attempt_steps_for_selected_pair": int(
+                        budget_attempt_steps[env_id, robot_id].item() if budget_attempt_steps is not None else 0
+                    ),
+                    "budget_steps_for_selected_pair": int(
+                        budget_steps[env_id, robot_id].item() if budget_steps is not None else 0
+                    ),
+                    "budget_expected_steps_for_selected_pair": int(
+                        budget_expected_steps[env_id, robot_id].item() if budget_expected_steps is not None else 0
+                    ),
+                    "budget_ratio_for_selected_pair": float(
+                        budget_ratio[env_id, robot_id].item() if budget_ratio is not None else 0.0
+                    ),
+                    "budget_triggered_after_step": bool(
+                        budget_triggered is not None and budget_triggered[env_id, robot_id].item()
+                    ),
+                    "budget_triggered_by_budget": bool(
+                        budget_triggered is not None and budget_triggered[env_id, robot_id].item()
+                    ),
                 }
             )
 
@@ -1013,6 +1115,10 @@ def _make_episode_record(
     cooldown_steps = max(1.0, float(buffers["cooldown_step_count"][env_id].item()))
     cooldown_config = getattr(wrapper, "assignment_cooldown_config", {})
     cooldown_enabled = bool(cooldown_config.get("enabled", False)) if isinstance(cooldown_config, dict) else False
+    cooldown_trigger_mode = str(cooldown_config.get("trigger_mode", "unknown")) if isinstance(cooldown_config, dict) else "unknown"
+    budget_attempt_steps_count = max(1.0, float(buffers["cooldown_budget_attempt_steps_count"][env_id].item()))
+    budget_steps_count = max(1.0, float(buffers["cooldown_budget_steps_count"][env_id].item()))
+    budget_ratio_count = max(1.0, float(buffers["cooldown_budget_ratio_count"][env_id].item()))
     return {
         "method": method,
         "episode": int(episode),
@@ -1059,10 +1165,24 @@ def _make_episode_record(
         "selected_path_cost_mean": selected_path_cost_mean,
         "selected_path_cost_max": float(buffers["selected_path_cost_max"][env_id].item()),
         "cooldown_enabled": bool(cooldown_enabled),
+        "cooldown_trigger_mode": cooldown_trigger_mode,
         "cooldown_trigger_count": float(buffers["cooldown_trigger_count"][env_id].item()),
+        "budget_trigger_count": float(buffers["cooldown_budget_trigger_count"][env_id].item()),
         "cooldown_active_count": float(buffers["cooldown_active_count_sum"][env_id].item() / cooldown_steps),
         "cooldown_suppressed_count": float(buffers["cooldown_suppressed_count_sum"][env_id].item() / cooldown_steps),
         "max_cooldown_remaining": float(buffers["cooldown_max_remaining"][env_id].item()),
+        "budget_attempt_steps_mean": float(
+            buffers["cooldown_budget_attempt_steps_sum"][env_id].item() / budget_attempt_steps_count
+        ),
+        "budget_attempt_steps_max": float(buffers["cooldown_budget_attempt_steps_max"][env_id].item()),
+        "budget_steps_mean": float(buffers["cooldown_budget_steps_sum"][env_id].item() / budget_steps_count),
+        "budget_steps_max": float(buffers["cooldown_budget_steps_max"][env_id].item()),
+        "budget_ratio_mean": float(buffers["cooldown_budget_ratio_sum"][env_id].item() / budget_ratio_count),
+        "budget_ratio_max": float(buffers["cooldown_budget_ratio_max"][env_id].item()),
+        "budget_triggered_pair_count": float(buffers["cooldown_budget_triggered_pair_count"][env_id].item()),
+        "budget_over_budget_selected_count": float(
+            buffers["cooldown_budget_over_budget_selected_count"][env_id].item()
+        ),
     }
 
 
@@ -1072,6 +1192,8 @@ def _summarize(records: list[dict[str, Any]], *, checkpoint_dir: str, checkpoint
     def col(name: str) -> list[float]:
         return [float(record[name]) for record in records if name in record]
 
+    trigger_modes = [str(record.get("cooldown_trigger_mode", "unknown")) for record in records]
+    trigger_mode = next((mode for mode in trigger_modes if mode != "unknown"), "unknown")
     return [
         {
             "method": "rl_checkpoint",
@@ -1098,10 +1220,20 @@ def _summarize(records: list[dict[str, Any]], *, checkpoint_dir: str, checkpoint
             "selected_path_cost_max": max(col("selected_path_cost_max")) if col("selected_path_cost_max") else float("nan"),
             "late_repeated_assignment_count_mean": _mean(col("late_repeated_assignment_count")),
             "cooldown_enabled": bool(any(record.get("cooldown_enabled", False) for record in records)),
+            "cooldown_trigger_mode": trigger_mode,
             "cooldown_trigger_count_mean": _mean(col("cooldown_trigger_count")),
+            "budget_trigger_count_mean": _mean(col("budget_trigger_count")),
             "cooldown_active_count_mean": _mean(col("cooldown_active_count")),
             "cooldown_suppressed_count_mean": _mean(col("cooldown_suppressed_count")),
             "max_cooldown_remaining": max(col("max_cooldown_remaining")) if col("max_cooldown_remaining") else 0.0,
+            "budget_attempt_steps_mean": _mean(col("budget_attempt_steps_mean")),
+            "budget_attempt_steps_max": max(col("budget_attempt_steps_max")) if col("budget_attempt_steps_max") else 0.0,
+            "budget_steps_mean": _mean(col("budget_steps_mean")),
+            "budget_steps_max": max(col("budget_steps_max")) if col("budget_steps_max") else 0.0,
+            "budget_ratio_mean": _mean(col("budget_ratio_mean")),
+            "budget_ratio_max": max(col("budget_ratio_max")) if col("budget_ratio_max") else 0.0,
+            "budget_triggered_pair_count_mean": _mean(col("budget_triggered_pair_count")),
+            "budget_over_budget_selected_count_mean": _mean(col("budget_over_budget_selected_count")),
             "episode_steps_mean": _mean(col("steps")),
         }
     ]

@@ -42,6 +42,7 @@ class _FakeCfg:
 
     assignment_cooldown_enabled = False
     assignment_cooldown_scope = "per_robot_target"
+    assignment_cooldown_trigger_mode = "streak"
     assignment_cooldown_trigger_attempts = 3
     assignment_cooldown_trigger_same_target_streak = 10
     assignment_cooldown_trigger_steps_since_global_gain = 10
@@ -53,6 +54,14 @@ class _FakeCfg:
     assignment_cooldown_clear_on_covered = True
     assignment_cooldown_apply_to_action_mask = True
     assignment_cooldown_log_diagnostics = True
+    assignment_cooldown_budget_multiplier = 1.5
+    assignment_cooldown_budget_slack_steps = 5
+    assignment_cooldown_budget_min_streak = 10
+    assignment_cooldown_budget_require_no_global_gain = True
+    assignment_cooldown_budget_require_uncovered = True
+    assignment_cooldown_budget_require_available = True
+    assignment_cooldown_budget_require_feasible = True
+    max_base_xy_step = (0.08, 0.10, 0.06)
 
 
 class _FakeAssignmentEnv:
@@ -67,6 +76,11 @@ class _FakeAssignmentEnv:
         trigger_same_target_streak: int = 10,
         trigger_steps_since_global_gain: int = 10,
         duration_steps: int = 20,
+        trigger_mode: str = "streak",
+        budget_multiplier: float = 1.5,
+        budget_slack_steps: int = 5,
+        budget_min_streak: int = 10,
+        max_base_xy_step: tuple[float, ...] = (0.08, 0.10, 0.06),
     ) -> None:
         self.unwrapped = self
         self.num_envs = int(num_envs)
@@ -79,10 +93,15 @@ class _FakeAssignmentEnv:
         self.observation_spaces = {agent: 96 for agent in self.possible_agents}
         self.cfg = _FakeCfg()
         self.cfg.assignment_cooldown_enabled = bool(cooldown_enabled)
+        self.cfg.assignment_cooldown_trigger_mode = str(trigger_mode)
         self.cfg.assignment_cooldown_trigger_attempts = int(trigger_attempts)
         self.cfg.assignment_cooldown_trigger_same_target_streak = int(trigger_same_target_streak)
         self.cfg.assignment_cooldown_trigger_steps_since_global_gain = int(trigger_steps_since_global_gain)
         self.cfg.assignment_cooldown_duration_steps = int(duration_steps)
+        self.cfg.assignment_cooldown_budget_multiplier = float(budget_multiplier)
+        self.cfg.assignment_cooldown_budget_slack_steps = int(budget_slack_steps)
+        self.cfg.assignment_cooldown_budget_min_streak = int(budget_min_streak)
+        self.cfg.max_base_xy_step = tuple(float(value) for value in max_base_xy_step)
         self.episode_length_buf = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
 
         self.viewpoints_covered = torch.zeros(self.num_envs, self.num_viewpoints, dtype=torch.bool, device=self.device)
@@ -224,6 +243,46 @@ def run_smoke() -> dict[str, Any]:
     _assert(float(trigger_mask[0, 0, 1].item()) == 0.0, "triggered cooldown did not filter mask")
     _assert(float(trigger_mask[0, 1, 1].item()) == 1.0, "per-robot cooldown leaked to another robot")
 
+    budget_wrapper = _make_wrapper(
+        cooldown_enabled=True,
+        trigger_mode="budget_and_streak",
+        trigger_attempts=999999,
+        trigger_same_target_streak=999999,
+        trigger_steps_since_global_gain=0,
+        duration_steps=5,
+        budget_multiplier=1.0,
+        budget_slack_steps=1,
+        budget_min_streak=1,
+        max_base_xy_step=(1.0, 1.0, 1.0),
+    )
+    budget_problem = budget_wrapper.unwrapped.get_assignment_problem()
+    budget_assignment = torch.full((2, 3), -1, dtype=torch.long)
+    budget_assignment[:, 0] = 1
+    _update(budget_wrapper, budget_assignment, budget_problem, budget_problem)
+    _assert(
+        int(budget_wrapper._per_robot_target_cooldown_remaining[0, 0, 1].item()) == 0,
+        "budget cooldown triggered before budget exhaustion at step 1",
+    )
+    _assert(int(budget_wrapper._last_budget_steps_for_selected_pair[0, 0].item()) == 3, "budget steps mismatch")
+    _update(budget_wrapper, budget_assignment, budget_problem, budget_problem)
+    _assert(
+        int(budget_wrapper._per_robot_target_cooldown_remaining[0, 0, 1].item()) == 0,
+        "budget cooldown triggered before budget exhaustion at step 2",
+    )
+    _update(budget_wrapper, budget_assignment, budget_problem, budget_problem)
+    _assert(
+        int(budget_wrapper._per_robot_target_cooldown_remaining[0, 0, 1].item()) == 5,
+        "budget cooldown did not trigger at budget exhaustion",
+    )
+    _assert(bool(budget_wrapper._last_budget_triggered_by_budget[0, 0].item()), "budget trigger diagnostic missing")
+    budget_mask = budget_wrapper._build_available_actions(problem=budget_problem)
+    _assert(float(budget_mask[0, 0, 1].item()) == 0.0, "budget trigger did not filter selected pair")
+    _assert(float(budget_mask[0, 1, 1].item()) == 1.0, "budget trigger leaked to another robot")
+    _assert(bool(torch.all(budget_mask[..., -1] == 1.0)), "budget trigger masked noop")
+    budget_wrapper._reset_assignment_diagnostics(problem=budget_problem)
+    _assert(int(budget_wrapper._budget_attempt_steps.sum().item()) == 0, "full reset missed budget attempt steps")
+    _assert(int((budget_wrapper._budget_attempt_target >= 0).sum().item()) == 0, "full reset missed budget targets")
+
     trigger_wrapper._per_robot_target_cooldown_remaining[:] = 5
     trigger_wrapper._per_robot_target_failed_attempt_count[:] = 5
     trigger_wrapper._assignment_cooldown_trigger_count[:] = 3.0
@@ -250,6 +309,9 @@ def run_smoke() -> dict[str, Any]:
         "noop_available": True,
         "cooldown_decremented": True,
         "covered_target_cleared": True,
+        "budget_trigger_waited_until_budget": True,
+        "budget_trigger_masked_pair_only": True,
+        "budget_reset_cleared": True,
         "full_reset_cleared": True,
         "partial_reset_cleared_done_env_only": True,
     }

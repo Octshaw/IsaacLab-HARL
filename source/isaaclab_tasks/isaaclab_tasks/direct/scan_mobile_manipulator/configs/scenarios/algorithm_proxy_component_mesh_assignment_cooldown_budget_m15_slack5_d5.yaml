@@ -1,4 +1,4 @@
-scenario_name: algorithm_proxy_component_mesh
+scenario_name: algorithm_proxy_component_mesh_assignment_cooldown_budget_m15_slack5_d5
 scenario_type: algorithm_visual_debug
 
 task: Isaac-Scan-Mobile-Manipulator-Direct-v0
@@ -14,7 +14,7 @@ capabilities:
   config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/capabilities/mobile_scanner_profiles.yaml
 
 visualization:
-  robot_visual_mode: debug_marker #mesh
+  robot_visual_mode: debug_marker
   component_visual_mode: mesh
   gui_camera_enabled: true
   gui_camera_eye: [-8.0, -8.0, 8.0]
@@ -51,9 +51,6 @@ obstacle_diagnostics:
   blocked_path_penalty: 100.0
 
 actual_base_motion_obstacle_diagnostics:
-  # Diagnostic-only actual proxy-base motion crossing checks:
-  # previous base XY -> current base XY against the mesh footprint.
-  # This does not change solver inputs, masks, reward, controller behavior, or proxy dynamics.
   enabled: true
   mode: diagnostics_only
   obstacle_source: component_mesh_footprint
@@ -67,22 +64,18 @@ actual_base_motion_obstacle_diagnostics:
     line_width: 0.03
 
 obstacle_debug_visualization:
-  # Currently enabled for manual GUI inspection of actual solver-selected assignment lines.
-  # Use line_source: mesh_footprint_intersections to inspect blocked candidate pairs instead.
-  # Set enabled: false for smoke-only runs that should not author line prims.
   enabled: true
   draw_in_headless: false
-  line_source: selected_assignments # mesh_footprint_intersections #
+  line_source: selected_assignments
   max_lines_per_robot: 5
   max_total_lines: 20
   prefer_shortest_blocked_pairs: true
-  line_z_mode: max_endpoint #fixed
+  line_z_mode: max_endpoint
   line_z_value: 0.20
   line_z_offset: 0.05
   line_width: 0.03
 
 inter_robot_conflict_diagnostics:
-  # Diagnostic-only proxy checks for task-allocation validation; no collision, blocking, or avoidance is applied.
   enabled: true
   mode: diagnostics_only
   robot_footprint_radius: 0.35
@@ -97,7 +90,6 @@ inter_robot_conflict_diagnostics:
     line_width: 0.03
 
 selected_target_conflict_candidate_comparison:
-  # Diagnostic-only copied candidate comparison. Candidate assignments are never executed by env.step(...).
   enabled: true
   mode: diagnostic_only
   candidate_generator: sequential_robot_order
@@ -112,7 +104,6 @@ selected_target_conflict_candidate_comparison:
   max_pairs_sample: 20
 
 conflict_aware_baseline:
-  # Gated baseline variants only. Original random/nearest/greedy behavior is unchanged.
   enabled: true
   methods:
     - greedy_conflict_aware
@@ -126,6 +117,29 @@ conflict_aware_baseline:
   fallback_to_base_method: true
   max_pairs_sample: 20
 
+assignment_cooldown:
+  enabled: true
+  scope: per_robot_target
+  trigger_mode: budget_and_streak
+  trigger_attempts: 999999
+  trigger_same_target_streak: 999999
+  trigger_steps_since_global_gain: 0
+  duration_steps: 5
+  require_uncovered: true
+  require_available: true
+  require_feasible: true
+  require_no_global_gain: true
+  clear_on_covered: true
+  apply_to_action_mask: true
+  log_diagnostics: true
+  budget_multiplier: 1.5
+  budget_slack_steps: 5
+  budget_min_streak: 10
+  budget_require_no_global_gain: true
+  budget_require_uncovered: true
+  budget_require_available: true
+  budget_require_feasible: true
+
 viewpoints:
   csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv
   expect_num_viewpoints: 50
@@ -134,4 +148,4 @@ viewpoints:
   units: meters
 
 output:
-  result_file: results/assignment_diagnostics/algorithm_proxy_component_mesh_phase7a3_smoke.json
+  result_file: results/assignment_diagnostics/algorithm_proxy_component_mesh_assignment_cooldown_budget_m15_slack5_d5_smoke.json

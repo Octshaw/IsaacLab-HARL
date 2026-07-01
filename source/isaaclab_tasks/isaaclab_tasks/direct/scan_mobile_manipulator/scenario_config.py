@@ -36,10 +36,12 @@ SUPPORTED_TARGET_CONFLICT_COMPARE_METHODS = {"nearest", "greedy", "random"}
 SUPPORTED_CONFLICT_AWARE_BASELINE_MODES = {"gated_solver_variant"}
 SUPPORTED_CONFLICT_AWARE_BASELINE_METHODS = {"greedy_conflict_aware", "nearest_conflict_aware"}
 SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES = {"per_robot_target"}
+SUPPORTED_ASSIGNMENT_COOLDOWN_TRIGGER_MODES = {"streak", "budget", "budget_and_streak"}
 
 ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
     "assignment_cooldown_enabled",
     "assignment_cooldown_scope",
+    "assignment_cooldown_trigger_mode",
     "assignment_cooldown_trigger_attempts",
     "assignment_cooldown_trigger_same_target_streak",
     "assignment_cooldown_trigger_steps_since_global_gain",
@@ -51,6 +53,13 @@ ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
     "assignment_cooldown_clear_on_covered",
     "assignment_cooldown_apply_to_action_mask",
     "assignment_cooldown_log_diagnostics",
+    "assignment_cooldown_budget_multiplier",
+    "assignment_cooldown_budget_slack_steps",
+    "assignment_cooldown_budget_min_streak",
+    "assignment_cooldown_budget_require_no_global_gain",
+    "assignment_cooldown_budget_require_uncovered",
+    "assignment_cooldown_budget_require_available",
+    "assignment_cooldown_budget_require_feasible",
 )
 
 ENV_CFG_SCENARIO_ATTRS = (
@@ -209,6 +218,7 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     assignment_cooldown = _mapping(config.get("assignment_cooldown"), "assignment_cooldown", required=False)
     _put(defaults, "assignment_cooldown_enabled", assignment_cooldown.get("enabled"))
     _put(defaults, "assignment_cooldown_scope", assignment_cooldown.get("scope"))
+    _put(defaults, "assignment_cooldown_trigger_mode", assignment_cooldown.get("trigger_mode"))
     _put(defaults, "assignment_cooldown_trigger_attempts", assignment_cooldown.get("trigger_attempts"))
     _put(
         defaults,
@@ -228,6 +238,17 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     _put(defaults, "assignment_cooldown_clear_on_covered", assignment_cooldown.get("clear_on_covered"))
     _put(defaults, "assignment_cooldown_apply_to_action_mask", assignment_cooldown.get("apply_to_action_mask"))
     _put(defaults, "assignment_cooldown_log_diagnostics", assignment_cooldown.get("log_diagnostics"))
+    _put(defaults, "assignment_cooldown_budget_multiplier", assignment_cooldown.get("budget_multiplier"))
+    _put(defaults, "assignment_cooldown_budget_slack_steps", assignment_cooldown.get("budget_slack_steps"))
+    _put(defaults, "assignment_cooldown_budget_min_streak", assignment_cooldown.get("budget_min_streak"))
+    _put(
+        defaults,
+        "assignment_cooldown_budget_require_no_global_gain",
+        assignment_cooldown.get("budget_require_no_global_gain"),
+    )
+    _put(defaults, "assignment_cooldown_budget_require_uncovered", assignment_cooldown.get("budget_require_uncovered"))
+    _put(defaults, "assignment_cooldown_budget_require_available", assignment_cooldown.get("budget_require_available"))
+    _put(defaults, "assignment_cooldown_budget_require_feasible", assignment_cooldown.get("budget_require_feasible"))
 
     obstacle = _mapping(config.get("obstacle_diagnostics"), "obstacle_diagnostics", required=False)
     _put(defaults, "obstacle_diagnostics_enabled", obstacle.get("enabled"))
@@ -1013,6 +1034,7 @@ def _validate_assignment_cooldown_metadata(config: Mapping[str, Any]) -> None:
     block_to_attr = {
         "enabled": "assignment_cooldown_enabled",
         "scope": "assignment_cooldown_scope",
+        "trigger_mode": "assignment_cooldown_trigger_mode",
         "trigger_attempts": "assignment_cooldown_trigger_attempts",
         "trigger_same_target_streak": "assignment_cooldown_trigger_same_target_streak",
         "trigger_steps_since_global_gain": "assignment_cooldown_trigger_steps_since_global_gain",
@@ -1024,6 +1046,13 @@ def _validate_assignment_cooldown_metadata(config: Mapping[str, Any]) -> None:
         "clear_on_covered": "assignment_cooldown_clear_on_covered",
         "apply_to_action_mask": "assignment_cooldown_apply_to_action_mask",
         "log_diagnostics": "assignment_cooldown_log_diagnostics",
+        "budget_multiplier": "assignment_cooldown_budget_multiplier",
+        "budget_slack_steps": "assignment_cooldown_budget_slack_steps",
+        "budget_min_streak": "assignment_cooldown_budget_min_streak",
+        "budget_require_no_global_gain": "assignment_cooldown_budget_require_no_global_gain",
+        "budget_require_uncovered": "assignment_cooldown_budget_require_uncovered",
+        "budget_require_available": "assignment_cooldown_budget_require_available",
+        "budget_require_feasible": "assignment_cooldown_budget_require_feasible",
     }
     for block_key, attr in block_to_attr.items():
         if block.get(block_key) is not None:
@@ -1052,6 +1081,10 @@ def _validate_assignment_cooldown_values(values: Mapping[str, Any]) -> None:
         "assignment_cooldown_clear_on_covered",
         "assignment_cooldown_apply_to_action_mask",
         "assignment_cooldown_log_diagnostics",
+        "assignment_cooldown_budget_require_no_global_gain",
+        "assignment_cooldown_budget_require_uncovered",
+        "assignment_cooldown_budget_require_available",
+        "assignment_cooldown_budget_require_feasible",
     )
     for key in bool_fields:
         value = values.get(key)
@@ -1065,11 +1098,20 @@ def _validate_assignment_cooldown_values(values: Mapping[str, Any]) -> None:
             f"{sorted(SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES)!r}."
         )
 
+    trigger_mode = values.get("assignment_cooldown_trigger_mode")
+    if trigger_mode is not None and str(trigger_mode).strip().lower() not in SUPPORTED_ASSIGNMENT_COOLDOWN_TRIGGER_MODES:
+        raise ValueError(
+            f"Unsupported assignment_cooldown_trigger_mode={trigger_mode!r}; expected one of "
+            f"{sorted(SUPPORTED_ASSIGNMENT_COOLDOWN_TRIGGER_MODES)!r}."
+        )
+
     int_fields = (
         "assignment_cooldown_trigger_attempts",
         "assignment_cooldown_trigger_same_target_streak",
         "assignment_cooldown_trigger_steps_since_global_gain",
         "assignment_cooldown_duration_steps",
+        "assignment_cooldown_budget_slack_steps",
+        "assignment_cooldown_budget_min_streak",
     )
     for key in int_fields:
         value = values.get(key)
@@ -1077,6 +1119,18 @@ def _validate_assignment_cooldown_values(values: Mapping[str, Any]) -> None:
             continue
         if not isinstance(value, int) or value < 0:
             raise ValueError(f"{key} must be a non-negative integer, got {value!r}.")
+
+    value = values.get("assignment_cooldown_budget_multiplier")
+    if value is not None:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"assignment_cooldown_budget_multiplier must be numeric, got {value!r}.") from exc
+        if not math.isfinite(numeric) or numeric < 0.0:
+            raise ValueError(
+                "assignment_cooldown_budget_multiplier must be finite and non-negative, "
+                f"got {value!r}."
+            )
 
 
 def _validate_finite_sequence(value: Any, *, length: int, label: str, positive: bool) -> tuple[float, ...]:

@@ -62,6 +62,7 @@ class AssignmentHarlWrapper:
         self._normalization_horizon = max(1, int(getattr(self._unwrapped, "max_episode_length", 300) or 300))
         self._assignment_reward_config = self._build_assignment_reward_config()
         self._assignment_cooldown_config = self._build_assignment_cooldown_config()
+        self._max_base_xy_step_by_agent = self._infer_max_base_xy_step_by_agent()
 
         self._adapter = AssignmentHarlAdapter(
             num_envs=self._num_envs,
@@ -240,7 +241,7 @@ class AssignmentHarlWrapper:
         return dict(self._assignment_reward_config)
 
     @property
-    def assignment_cooldown_config(self) -> dict[str, bool | int | str]:
+    def assignment_cooldown_config(self) -> dict[str, bool | float | int | str]:
         return dict(self._assignment_cooldown_config)
 
     def reset(self, *args, **kwargs) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
@@ -383,7 +384,7 @@ class AssignmentHarlWrapper:
             "selected_path_cost_penalty_scale": _float_attr("selected_path_cost_penalty_scale", 0.0),
         }
 
-    def _build_assignment_cooldown_config(self) -> dict[str, bool | int | str]:
+    def _build_assignment_cooldown_config(self) -> dict[str, bool | float | int | str]:
         cfg = getattr(self._unwrapped, "cfg", None)
 
         def _bool_attr(name: str, default: bool) -> bool:
@@ -392,16 +393,26 @@ class AssignmentHarlWrapper:
         def _int_attr(name: str, default: int) -> int:
             return max(0, int(getattr(cfg, name, default)))
 
+        def _float_attr(name: str, default: float) -> float:
+            return max(0.0, float(getattr(cfg, name, default)))
+
         scope = str(getattr(cfg, "assignment_cooldown_scope", "per_robot_target")).strip().lower()
         if scope != "per_robot_target":
             raise ValueError(
                 "assignment_cooldown_scope currently supports only 'per_robot_target', "
                 f"got {scope!r}"
             )
+        trigger_mode = str(getattr(cfg, "assignment_cooldown_trigger_mode", "streak")).strip().lower()
+        if trigger_mode not in {"streak", "budget", "budget_and_streak"}:
+            raise ValueError(
+                "assignment_cooldown_trigger_mode must be one of 'streak', 'budget', or 'budget_and_streak', "
+                f"got {trigger_mode!r}"
+            )
 
         return {
             "enabled": _bool_attr("assignment_cooldown_enabled", False),
             "scope": scope,
+            "trigger_mode": trigger_mode,
             "trigger_attempts": _int_attr("assignment_cooldown_trigger_attempts", 3),
             "trigger_same_target_streak": _int_attr("assignment_cooldown_trigger_same_target_streak", 10),
             "trigger_steps_since_global_gain": _int_attr(
@@ -416,7 +427,35 @@ class AssignmentHarlWrapper:
             "clear_on_covered": _bool_attr("assignment_cooldown_clear_on_covered", True),
             "apply_to_action_mask": _bool_attr("assignment_cooldown_apply_to_action_mask", True),
             "log_diagnostics": _bool_attr("assignment_cooldown_log_diagnostics", True),
+            "budget_multiplier": _float_attr("assignment_cooldown_budget_multiplier", 1.5),
+            "budget_slack_steps": _int_attr("assignment_cooldown_budget_slack_steps", 5),
+            "budget_min_streak": _int_attr("assignment_cooldown_budget_min_streak", 10),
+            "budget_require_no_global_gain": _bool_attr("assignment_cooldown_budget_require_no_global_gain", True),
+            "budget_require_uncovered": _bool_attr("assignment_cooldown_budget_require_uncovered", True),
+            "budget_require_available": _bool_attr("assignment_cooldown_budget_require_available", True),
+            "budget_require_feasible": _bool_attr("assignment_cooldown_budget_require_feasible", True),
         }
+
+    def _infer_max_base_xy_step_by_agent(self) -> torch.Tensor:
+        cfg = getattr(self._unwrapped, "cfg", None)
+        value = getattr(cfg, "max_base_xy_step", None)
+        if value is None and self._num_agents == 3:
+            value = (0.08, 0.10, 0.06)
+        if value is None:
+            value = (0.08,) * self._num_agents
+        if isinstance(value, (int, float)):
+            values = [float(value)] * self._num_agents
+        else:
+            values = [float(item) for item in value]
+            if len(values) == 1:
+                values = values * self._num_agents
+        if len(values) != self._num_agents:
+            raise ValueError(
+                "max_base_xy_step must be scalar or have one value per assignment agent, "
+                f"got {len(values)} values for {self._num_agents} agents"
+            )
+        tensor = torch.as_tensor(values, dtype=torch.float32, device=self._device)
+        return torch.clamp(tensor, min=1.0e-6)
 
     def _infer_raw_observation_dims(self) -> dict[str, int]:
         spaces = getattr(self._unwrapped, "observation_spaces", {})
@@ -507,6 +546,121 @@ class AssignmentHarlWrapper:
         cooldown_mask = self._per_robot_target_cooldown_remaining > 0
         return available_mask & (~cooldown_mask)
 
+    def _cooldown_trigger_mode(self) -> str:
+        return str(self._assignment_cooldown_config["trigger_mode"])
+
+    def _cooldown_trigger_uses_budget(self) -> bool:
+        return self._cooldown_trigger_mode() in {"budget", "budget_and_streak"}
+
+    def _budget_expected_and_limit_steps(self, assignment: torch.Tensor, problem: dict) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        selected_cost = self._selected_path_cost(assignment, problem).to(device=self._device, dtype=torch.float32)
+        per_agent_step = self._max_base_xy_step_by_agent.view(1, self._num_agents).expand(self._num_envs, -1)
+        expected_steps = torch.ceil(selected_cost / per_agent_step).to(dtype=torch.long).clamp(min=1)
+        budget_multiplier = float(self._assignment_cooldown_config["budget_multiplier"])
+        budget_slack_steps = int(self._assignment_cooldown_config["budget_slack_steps"])
+        budget_steps = torch.ceil(expected_steps.to(dtype=torch.float32) * budget_multiplier + float(budget_slack_steps))
+        budget_steps = budget_steps.to(dtype=torch.long).clamp(min=1)
+        return selected_cost, expected_steps, budget_steps
+
+    def _update_budget_attempt_tracking(
+        self,
+        *,
+        assignment: torch.Tensor,
+        problem: dict,
+        valid_viewpoint: torch.Tensor,
+    ) -> torch.Tensor:
+        selected_cost, expected_steps, budget_steps = self._budget_expected_and_limit_steps(assignment, problem)
+        same_segment = valid_viewpoint & (self._budget_attempt_target == assignment)
+        new_segment = valid_viewpoint & (~same_segment)
+        inactive_segment = ~valid_viewpoint
+
+        self._budget_attempt_target = torch.where(
+            inactive_segment,
+            torch.full_like(self._budget_attempt_target, -1),
+            self._budget_attempt_target,
+        )
+        self._budget_attempt_steps = torch.where(
+            inactive_segment,
+            torch.zeros_like(self._budget_attempt_steps),
+            self._budget_attempt_steps,
+        )
+        self._budget_attempt_initial_cost = torch.where(
+            inactive_segment,
+            torch.zeros_like(self._budget_attempt_initial_cost),
+            self._budget_attempt_initial_cost,
+        )
+        self._budget_attempt_expected_steps = torch.where(
+            inactive_segment,
+            torch.zeros_like(self._budget_attempt_expected_steps),
+            self._budget_attempt_expected_steps,
+        )
+        self._budget_attempt_budget_steps = torch.where(
+            inactive_segment,
+            torch.zeros_like(self._budget_attempt_budget_steps),
+            self._budget_attempt_budget_steps,
+        )
+
+        self._budget_attempt_steps = torch.where(
+            same_segment,
+            self._budget_attempt_steps + 1,
+            self._budget_attempt_steps,
+        )
+        self._budget_attempt_target = torch.where(new_segment, assignment, self._budget_attempt_target)
+        self._budget_attempt_steps = torch.where(new_segment, torch.ones_like(self._budget_attempt_steps), self._budget_attempt_steps)
+        self._budget_attempt_initial_cost = torch.where(new_segment, selected_cost, self._budget_attempt_initial_cost)
+        self._budget_attempt_expected_steps = torch.where(new_segment, expected_steps, self._budget_attempt_expected_steps)
+        self._budget_attempt_budget_steps = torch.where(new_segment, budget_steps, self._budget_attempt_budget_steps)
+
+        safe_budget = self._budget_attempt_budget_steps.clamp(min=1).to(dtype=torch.float32)
+        budget_ratio = self._budget_attempt_steps.to(dtype=torch.float32) / safe_budget
+        budget_ratio = torch.where(valid_viewpoint, budget_ratio, torch.zeros_like(budget_ratio))
+
+        self._last_budget_attempt_steps_for_selected_pair = torch.where(
+            valid_viewpoint,
+            self._budget_attempt_steps,
+            torch.zeros_like(self._budget_attempt_steps),
+        )
+        self._last_budget_steps_for_selected_pair = torch.where(
+            valid_viewpoint,
+            self._budget_attempt_budget_steps,
+            torch.zeros_like(self._budget_attempt_budget_steps),
+        )
+        self._last_budget_expected_steps_for_selected_pair = torch.where(
+            valid_viewpoint,
+            self._budget_attempt_expected_steps,
+            torch.zeros_like(self._budget_attempt_expected_steps),
+        )
+        self._last_budget_ratio_for_selected_pair = budget_ratio
+        return self._budget_attempt_steps >= self._budget_attempt_budget_steps.clamp(min=1)
+
+    def _reset_budget_attempt_pairs(self, env_indices: torch.Tensor, agent_indices: torch.Tensor) -> None:
+        if env_indices.numel() == 0:
+            return
+        self._budget_attempt_target[env_indices, agent_indices] = -1
+        self._budget_attempt_steps[env_indices, agent_indices] = 0
+        self._budget_attempt_initial_cost[env_indices, agent_indices] = 0.0
+        self._budget_attempt_expected_steps[env_indices, agent_indices] = 0
+        self._budget_attempt_budget_steps[env_indices, agent_indices] = 0
+
+    def _clear_budget_attempts_for_covered_targets(self, covered: torch.Tensor) -> None:
+        if self._num_viewpoints <= 0:
+            return
+        target = self._budget_attempt_target
+        active = target >= 0
+        safe_target = target.clamp(min=0, max=self._num_viewpoints - 1).unsqueeze(-1)
+        selected_covered = torch.gather(
+            covered.to(device=self._device, dtype=torch.bool).unsqueeze(1).expand(
+                self._num_envs,
+                self._num_agents,
+                self._num_viewpoints,
+            ),
+            dim=2,
+            index=safe_target,
+        ).squeeze(-1)
+        clear = active & selected_covered
+        env_indices, agent_indices = torch.nonzero(clear, as_tuple=True)
+        self._reset_budget_attempt_pairs(env_indices, agent_indices)
+
     def _env_spacing(self) -> float:
         cfg = getattr(self._unwrapped, "cfg", None)
         scene_cfg = getattr(cfg, "scene", None)
@@ -596,6 +750,42 @@ class AssignmentHarlWrapper:
             self._last_cooldown_suppressed_available_count_for_robot = torch.zeros(
                 self._num_envs, self._num_agents, dtype=torch.long, device=self._device
             )
+            self._budget_attempt_target = torch.full(
+                (self._num_envs, self._num_agents), -1, dtype=torch.long, device=self._device
+            )
+            self._budget_attempt_steps = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._budget_attempt_initial_cost = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.float32, device=self._device
+            )
+            self._budget_attempt_expected_steps = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._budget_attempt_budget_steps = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._assignment_cooldown_budget_trigger_count = torch.zeros(
+                self._num_envs, dtype=torch.float32, device=self._device
+            )
+            self._assignment_cooldown_budget_over_budget_selected_count = torch.zeros(
+                self._num_envs, dtype=torch.float32, device=self._device
+            )
+            self._last_budget_attempt_steps_for_selected_pair = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_budget_steps_for_selected_pair = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_budget_expected_steps_for_selected_pair = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_budget_ratio_for_selected_pair = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.float32, device=self._device
+            )
+            self._last_budget_triggered_by_budget = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
+            )
 
         self._assignment_step[env_ids] = 0
         self._per_viewpoint_attempted_count[env_ids] = 0.0
@@ -612,6 +802,18 @@ class AssignmentHarlWrapper:
         self._assignment_cooldown_suppressed_count[env_ids] = 0.0
         self._assignment_cooldown_selected_target_was_in_cooldown_count[env_ids] = 0.0
         self._assignment_cooldown_last_triggered_viewpoint[env_ids] = -1
+        self._budget_attempt_target[env_ids] = -1
+        self._budget_attempt_steps[env_ids] = 0
+        self._budget_attempt_initial_cost[env_ids] = 0.0
+        self._budget_attempt_expected_steps[env_ids] = 0
+        self._budget_attempt_budget_steps[env_ids] = 0
+        self._assignment_cooldown_budget_trigger_count[env_ids] = 0.0
+        self._assignment_cooldown_budget_over_budget_selected_count[env_ids] = 0.0
+        self._last_budget_attempt_steps_for_selected_pair[env_ids] = 0
+        self._last_budget_steps_for_selected_pair[env_ids] = 0
+        self._last_budget_expected_steps_for_selected_pair[env_ids] = 0
+        self._last_budget_ratio_for_selected_pair[env_ids] = 0.0
+        self._last_budget_triggered_by_budget[env_ids] = False
         if problem is not None and "viewpoints_covered" in problem:
             self._last_covered_mask[env_ids] = problem["viewpoints_covered"][env_ids].to(dtype=torch.bool)
         else:
@@ -695,6 +897,11 @@ class AssignmentHarlWrapper:
     ) -> None:
         self._last_cooldown_triggered_after_step.zero_()
         self._last_failed_attempt_count_for_selected_pair.zero_()
+        self._last_budget_attempt_steps_for_selected_pair.zero_()
+        self._last_budget_steps_for_selected_pair.zero_()
+        self._last_budget_expected_steps_for_selected_pair.zero_()
+        self._last_budget_ratio_for_selected_pair.zero_()
+        self._last_budget_triggered_by_budget.zero_()
 
         cooldown_enabled = self._assignment_cooldown_enabled()
         base_available = pre_step_problem["available_mask"].to(device=self._device, dtype=torch.bool)
@@ -746,6 +953,7 @@ class AssignmentHarlWrapper:
         feasible = pre_step_problem.get("feasible_mask", base_available).to(device=self._device, dtype=torch.bool)
         selected_feasible = torch.zeros_like(assignment, dtype=torch.bool)
         selected_covered_before = torch.zeros_like(assignment, dtype=torch.bool)
+        selected_covered_after = torch.zeros_like(assignment, dtype=torch.bool)
         if num_viewpoints > 0:
             selected_feasible = torch.gather(feasible, dim=2, index=safe_ids).squeeze(-1) & valid_viewpoint
             selected_covered_before = torch.gather(
@@ -754,6 +962,18 @@ class AssignmentHarlWrapper:
                 index=safe_ids,
             ).squeeze(-1)
             selected_covered_before = selected_covered_before & valid_viewpoint
+            selected_covered_after = torch.gather(
+                covered_after.unsqueeze(1).expand(self._num_envs, self._num_agents, self._num_viewpoints),
+                dim=2,
+                index=safe_ids,
+            ).squeeze(-1)
+            selected_covered_after = selected_covered_after & valid_viewpoint
+
+        over_budget = self._update_budget_attempt_tracking(
+            assignment=assignment,
+            problem=pre_step_problem,
+            valid_viewpoint=valid_viewpoint,
+        )
 
         failed_attempt = valid_viewpoint
         if bool(self._assignment_cooldown_config["require_available"]):
@@ -803,20 +1023,60 @@ class AssignmentHarlWrapper:
             if trigger_streak > 0
             else torch.zeros_like(failed_attempt)
         )
-        trigger = failed_attempt & (attempt_trigger | streak_trigger)
+        streak_mode_trigger = failed_attempt & (attempt_trigger | streak_trigger)
+
+        budget_candidate = valid_viewpoint
+        if bool(self._assignment_cooldown_config["budget_require_available"]):
+            budget_candidate = budget_candidate & selected_available_mask.to(device=self._device, dtype=torch.bool)
+        if bool(self._assignment_cooldown_config["budget_require_feasible"]):
+            budget_candidate = budget_candidate & selected_feasible
+        if bool(self._assignment_cooldown_config["budget_require_uncovered"]):
+            budget_candidate = budget_candidate & (~selected_covered_after)
+        if bool(self._assignment_cooldown_config["budget_require_no_global_gain"]):
+            budget_candidate = budget_candidate & (~global_gain).unsqueeze(-1)
+        budget_over_budget_selected = budget_candidate & over_budget
+        self._assignment_cooldown_budget_over_budget_selected_count += budget_over_budget_selected.to(
+            dtype=torch.float32
+        ).sum(dim=1)
+
+        budget_mode_trigger = budget_over_budget_selected
+        if self._cooldown_trigger_mode() == "budget_and_streak":
+            budget_min_streak = int(self._assignment_cooldown_config["budget_min_streak"])
+            if budget_min_streak > 0:
+                budget_mode_trigger = budget_mode_trigger & (self._same_target_streak >= float(budget_min_streak))
+
+        trigger_mode = self._cooldown_trigger_mode()
+        if trigger_mode == "streak":
+            trigger = streak_mode_trigger
+            budget_trigger = torch.zeros_like(trigger)
+        elif trigger_mode in {"budget", "budget_and_streak"}:
+            trigger = budget_mode_trigger
+            budget_trigger = budget_mode_trigger
+        else:
+            trigger = torch.zeros_like(streak_mode_trigger)
+            budget_trigger = torch.zeros_like(streak_mode_trigger)
+
         duration = int(self._assignment_cooldown_config["duration_steps"])
         if duration <= 0:
             trigger = torch.zeros_like(trigger)
+            budget_trigger = torch.zeros_like(budget_trigger)
 
         trigger_envs, trigger_agents = torch.nonzero(trigger, as_tuple=True)
         if trigger_envs.numel() == 0:
+            if bool(self._assignment_cooldown_config["clear_on_covered"]):
+                self._clear_assignment_cooldown_for_covered_targets(covered_after)
             return
 
         trigger_viewpoints = assignment[trigger_envs, trigger_agents]
         self._per_robot_target_cooldown_remaining[trigger_envs, trigger_agents, trigger_viewpoints] = duration
         self._assignment_cooldown_trigger_count += trigger.to(dtype=torch.float32).sum(dim=1)
+        self._assignment_cooldown_budget_trigger_count += budget_trigger.to(dtype=torch.float32).sum(dim=1)
         self._assignment_cooldown_last_triggered_viewpoint[trigger_envs, trigger_agents] = trigger_viewpoints
         self._last_cooldown_triggered_after_step[trigger_envs, trigger_agents] = True
+        budget_trigger_envs, budget_trigger_agents = torch.nonzero(budget_trigger, as_tuple=True)
+        if budget_trigger_envs.numel() > 0:
+            self._last_budget_triggered_by_budget[budget_trigger_envs, budget_trigger_agents] = True
+        self._reset_budget_attempt_pairs(trigger_envs, trigger_agents)
 
         if bool(self._assignment_cooldown_config["clear_on_covered"]):
             self._clear_assignment_cooldown_for_covered_targets(covered_after)
@@ -835,6 +1095,7 @@ class AssignmentHarlWrapper:
             torch.zeros_like(self._per_robot_target_cooldown_remaining),
             self._per_robot_target_cooldown_remaining,
         )
+        self._clear_budget_attempts_for_covered_targets(covered.to(device=self._device, dtype=torch.bool))
 
     def _compute_assignment_reward_decomposition(
         self,
@@ -1098,6 +1359,19 @@ class AssignmentHarlWrapper:
             max_remaining = self._per_robot_target_cooldown_remaining.amax(dim=(1, 2)).to(dtype=torch.float32)
             last_triggered = self._assignment_cooldown_last_triggered_viewpoint
             triggered_pair_count = self._last_cooldown_triggered_after_step.to(dtype=torch.float32).sum(dim=1)
+            budget_valid = self._last_budget_steps_for_selected_pair > 0
+            budget_valid_float = budget_valid.to(dtype=torch.float32)
+            budget_count = budget_valid_float.sum(dim=1).clamp(min=1.0)
+            budget_attempt_steps = self._last_budget_attempt_steps_for_selected_pair.to(dtype=torch.float32)
+            budget_steps = self._last_budget_steps_for_selected_pair.to(dtype=torch.float32)
+            budget_ratio = self._last_budget_ratio_for_selected_pair.to(dtype=torch.float32)
+            budget_attempt_steps_mean = (budget_attempt_steps * budget_valid_float).sum(dim=1) / budget_count
+            budget_steps_mean = (budget_steps * budget_valid_float).sum(dim=1) / budget_count
+            budget_ratio_mean = (budget_ratio * budget_valid_float).sum(dim=1) / budget_count
+            budget_attempt_steps_max = budget_attempt_steps.amax(dim=1)
+            budget_steps_max = budget_steps.amax(dim=1)
+            budget_ratio_max = budget_ratio.amax(dim=1)
+            budget_triggered_pair_count = self._last_budget_triggered_by_budget.to(dtype=torch.float32).sum(dim=1)
         else:
             active_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
             suppressed_per_env = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
@@ -1113,9 +1387,21 @@ class AssignmentHarlWrapper:
                 (self._num_envs, self._num_agents), -1, dtype=torch.long, device=self._device
             )
             triggered_pair_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            budget_attempt_steps_mean = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            budget_steps_mean = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            budget_ratio_mean = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            budget_attempt_steps_max = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            budget_steps_max = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            budget_ratio_max = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            budget_triggered_pair_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+
+        trigger_mode = self._cooldown_trigger_mode()
+        trigger_mode_code = {"streak": 0.0, "budget": 1.0, "budget_and_streak": 2.0}.get(trigger_mode, -1.0)
 
         return {
             "enabled": float(self._assignment_cooldown_enabled()),
+            "trigger_mode": trigger_mode,
+            "trigger_mode_code": trigger_mode_code,
             "active_count": active_count,
             "active_count_mean": active_count,
             "trigger_count": self._assignment_cooldown_trigger_count
@@ -1136,6 +1422,28 @@ class AssignmentHarlWrapper:
                 else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
             ),
             "last_triggered_viewpoint": last_triggered,
+            "budget_multiplier": float(self._assignment_cooldown_config["budget_multiplier"]),
+            "budget_slack_steps": float(self._assignment_cooldown_config["budget_slack_steps"]),
+            "budget_min_streak": float(self._assignment_cooldown_config["budget_min_streak"]),
+            "budget_trigger_count": self._assignment_cooldown_budget_trigger_count
+            if self._assignment_cooldown_enabled()
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "budget_over_budget_selected_count": self._assignment_cooldown_budget_over_budget_selected_count
+            if self._assignment_cooldown_enabled()
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "budget_triggered_pair_count": budget_triggered_pair_count,
+            "budget_attempt_steps_mean": budget_attempt_steps_mean,
+            "budget_attempt_steps_max": budget_attempt_steps_max,
+            "budget_steps_mean": budget_steps_mean,
+            "budget_steps_max": budget_steps_max,
+            "budget_budget_steps_mean": budget_steps_mean,
+            "budget_budget_steps_max": budget_steps_max,
+            "budget_ratio_mean": budget_ratio_mean,
+            "budget_ratio_max": budget_ratio_max,
+            "budget_last_triggered_by_budget": self._last_budget_triggered_by_budget.to(dtype=torch.float32)
+            if self._assignment_cooldown_enabled()
+            else torch.zeros(self._num_envs, self._num_agents, dtype=torch.float32, device=self._device),
+            "budget_last_triggered_by_budget_count": budget_triggered_pair_count,
         }
 
 
