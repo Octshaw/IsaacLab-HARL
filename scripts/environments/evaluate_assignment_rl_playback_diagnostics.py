@@ -158,6 +158,11 @@ PER_EPISODE_FIELDS = [
     "selected_path_cost_sum",
     "selected_path_cost_mean",
     "selected_path_cost_max",
+    "cooldown_enabled",
+    "cooldown_trigger_count",
+    "cooldown_active_count",
+    "cooldown_suppressed_count",
+    "max_cooldown_remaining",
 ]
 
 SUMMARY_FIELDS = [
@@ -184,6 +189,11 @@ SUMMARY_FIELDS = [
     "selected_path_cost_mean",
     "selected_path_cost_max",
     "late_repeated_assignment_count_mean",
+    "cooldown_enabled",
+    "cooldown_trigger_count_mean",
+    "cooldown_active_count_mean",
+    "cooldown_suppressed_count_mean",
+    "max_cooldown_remaining",
     "episode_steps_mean",
 ]
 
@@ -218,6 +228,11 @@ ASSIGNMENT_HISTORY_FIELDS = [
     "newly_covered_viewpoint_ids",
     "actual_base_motion_intersects_component",
     "actual_base_motion_distance",
+    "cooldown_active_for_selected_pair",
+    "cooldown_remaining_for_selected_pair",
+    "cooldown_triggered_after_step",
+    "cooldown_suppressed_available_count_for_robot",
+    "failed_attempt_count_for_selected_pair",
 ]
 
 
@@ -713,6 +728,11 @@ def _init_buffers(num_envs: int, num_agents: int, num_viewpoints: int, device: t
         "actual_base_motion_intersection_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "actual_base_motion_decisions": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "actual_base_motion_min_distance": torch.full((num_envs,), float("nan"), dtype=torch.float32, device=device),
+        "cooldown_trigger_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_active_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_suppressed_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_max_remaining": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "cooldown_step_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
     }
 
 
@@ -810,6 +830,58 @@ def _update_buffers(
     buffers["actual_base_motion_min_distance"] = _nanmin(buffers["actual_base_motion_min_distance"], row_min)
 
 
+def _info_tensor(
+    cooldown_info: dict[str, Any],
+    key: str,
+    *,
+    num_envs: int,
+    device: torch.device,
+) -> torch.Tensor:
+    value = cooldown_info.get(key)
+    if isinstance(value, torch.Tensor):
+        tensor = value.detach().to(device=device, dtype=torch.float32)
+    elif value is None:
+        tensor = torch.zeros(num_envs, dtype=torch.float32, device=device)
+    else:
+        tensor = torch.as_tensor(value, dtype=torch.float32, device=device)
+    if tensor.numel() == 1:
+        return tensor.reshape(1).expand(num_envs)
+    if tensor.shape[0] != num_envs:
+        return tensor.reshape(num_envs, -1).mean(dim=1)
+    if tensor.ndim > 1:
+        return tensor.reshape(num_envs, -1).mean(dim=1)
+    return tensor
+
+
+def _update_cooldown_buffers(buffers: dict[str, torch.Tensor], info: Any, *, num_envs: int, device: torch.device) -> None:
+    if not isinstance(info, dict):
+        return
+    cooldown_info = info.get("assignment_cooldown")
+    if not isinstance(cooldown_info, dict):
+        return
+    buffers["cooldown_trigger_count"] += _info_tensor(
+        cooldown_info,
+        "triggered_pair_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    buffers["cooldown_active_count_sum"] += _info_tensor(
+        cooldown_info,
+        "active_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    buffers["cooldown_suppressed_count_sum"] += _info_tensor(
+        cooldown_info,
+        "suppressed_action_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    max_remaining = _info_tensor(cooldown_info, "max_cooldown_remaining", num_envs=num_envs, device=device)
+    buffers["cooldown_max_remaining"] = torch.maximum(buffers["cooldown_max_remaining"], max_remaining)
+    buffers["cooldown_step_count"] += 1.0
+
+
 def _nanmin(current: torch.Tensor, candidate: torch.Tensor) -> torch.Tensor:
     current_filled = torch.nan_to_num(current, nan=float("inf"))
     candidate_filled = torch.nan_to_num(candidate, nan=float("inf"))
@@ -841,6 +913,11 @@ def _append_assignment_history(
     covered_before_count = covered_before.to(dtype=torch.float32).sum(dim=-1)
     covered_after_count = covered_after.to(dtype=torch.float32).sum(dim=-1)
     coverage_ratio = covered_after.to(dtype=torch.float32).mean(dim=-1)
+    cooldown_active = getattr(wrapper, "_last_cooldown_active_for_selected_pair", None)
+    cooldown_remaining = getattr(wrapper, "_last_cooldown_remaining_for_selected_pair", None)
+    cooldown_triggered = getattr(wrapper, "_last_cooldown_triggered_after_step", None)
+    cooldown_suppressed = getattr(wrapper, "_last_cooldown_suppressed_available_count_for_robot", None)
+    failed_attempt_count = getattr(wrapper, "_last_failed_attempt_count_for_selected_pair", None)
     for env_id in range(wrapper.num_envs):
         for robot_id, robot_name in enumerate(wrapper.agents):
             raw_action = int(raw_ids[env_id, robot_id].item())
@@ -889,6 +966,21 @@ def _append_assignment_history(
                     "actual_base_motion_distance": float(
                         actual_base_motion["actual_base_motion_distance"][env_id, robot_id].item()
                     ),
+                    "cooldown_active_for_selected_pair": bool(
+                        cooldown_active is not None and cooldown_active[env_id, robot_id].item()
+                    ),
+                    "cooldown_remaining_for_selected_pair": int(
+                        cooldown_remaining[env_id, robot_id].item() if cooldown_remaining is not None else 0
+                    ),
+                    "cooldown_triggered_after_step": bool(
+                        cooldown_triggered is not None and cooldown_triggered[env_id, robot_id].item()
+                    ),
+                    "cooldown_suppressed_available_count_for_robot": int(
+                        cooldown_suppressed[env_id, robot_id].item() if cooldown_suppressed is not None else 0
+                    ),
+                    "failed_attempt_count_for_selected_pair": int(
+                        failed_attempt_count[env_id, robot_id].item() if failed_attempt_count is not None else 0
+                    ),
                 }
             )
 
@@ -918,6 +1010,9 @@ def _make_episode_record(
         if selected_path_cost_count > 0
         else float("nan")
     )
+    cooldown_steps = max(1.0, float(buffers["cooldown_step_count"][env_id].item()))
+    cooldown_config = getattr(wrapper, "assignment_cooldown_config", {})
+    cooldown_enabled = bool(cooldown_config.get("enabled", False)) if isinstance(cooldown_config, dict) else False
     return {
         "method": method,
         "episode": int(episode),
@@ -963,6 +1058,11 @@ def _make_episode_record(
         "selected_path_cost_sum": float(buffers["selected_path_cost_sum"][env_id].item()),
         "selected_path_cost_mean": selected_path_cost_mean,
         "selected_path_cost_max": float(buffers["selected_path_cost_max"][env_id].item()),
+        "cooldown_enabled": bool(cooldown_enabled),
+        "cooldown_trigger_count": float(buffers["cooldown_trigger_count"][env_id].item()),
+        "cooldown_active_count": float(buffers["cooldown_active_count_sum"][env_id].item() / cooldown_steps),
+        "cooldown_suppressed_count": float(buffers["cooldown_suppressed_count_sum"][env_id].item() / cooldown_steps),
+        "max_cooldown_remaining": float(buffers["cooldown_max_remaining"][env_id].item()),
     }
 
 
@@ -997,6 +1097,11 @@ def _summarize(records: list[dict[str, Any]], *, checkpoint_dir: str, checkpoint
             "selected_path_cost_mean": _mean(col("selected_path_cost_mean")),
             "selected_path_cost_max": max(col("selected_path_cost_max")) if col("selected_path_cost_max") else float("nan"),
             "late_repeated_assignment_count_mean": _mean(col("late_repeated_assignment_count")),
+            "cooldown_enabled": bool(any(record.get("cooldown_enabled", False) for record in records)),
+            "cooldown_trigger_count_mean": _mean(col("cooldown_trigger_count")),
+            "cooldown_active_count_mean": _mean(col("cooldown_active_count")),
+            "cooldown_suppressed_count_mean": _mean(col("cooldown_suppressed_count")),
+            "max_cooldown_remaining": max(col("max_cooldown_remaining")) if col("max_cooldown_remaining") else 0.0,
             "episode_steps_mean": _mean(col("steps")),
         }
     ]
@@ -1167,6 +1272,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     inter_robot_conflict=inter_robot_conflict,
                     actual_base_motion=actual_base_motion,
                 )
+                _update_cooldown_buffers(
+                    buffers,
+                    info,
+                    num_envs=wrapper.num_envs,
+                    device=wrapper.device,
+                )
                 _append_assignment_history(
                     assignment_history_rows,
                     method="rl_checkpoint",
@@ -1255,6 +1366,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 "available_actions_shape": [wrapper.num_envs, wrapper.num_agents, wrapper.num_viewpoints + 1],
                 "action_space": {str(agent_id): str(space) for agent_id, space in wrapper.action_space.items()},
                 "observation_layout": wrapper.assignment_observation_layout,
+                "assignment_cooldown_config": wrapper.assignment_cooldown_config,
             },
             "static_diagnostics": static_diagnostics or {},
             "summary": summary_rows,

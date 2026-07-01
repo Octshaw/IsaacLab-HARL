@@ -61,6 +61,7 @@ class AssignmentHarlWrapper:
         self._device = torch.device(getattr(self._unwrapped, "device", "cpu"))
         self._normalization_horizon = max(1, int(getattr(self._unwrapped, "max_episode_length", 300) or 300))
         self._assignment_reward_config = self._build_assignment_reward_config()
+        self._assignment_cooldown_config = self._build_assignment_cooldown_config()
 
         self._adapter = AssignmentHarlAdapter(
             num_envs=self._num_envs,
@@ -238,6 +239,10 @@ class AssignmentHarlWrapper:
     def assignment_reward_config(self) -> dict[str, float | int]:
         return dict(self._assignment_reward_config)
 
+    @property
+    def assignment_cooldown_config(self) -> dict[str, bool | int | str]:
+        return dict(self._assignment_cooldown_config)
+
     def reset(self, *args, **kwargs) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
         obs, _ = self._env.reset(*args, **kwargs)
         problem = self._unwrapped.get_assignment_problem()
@@ -269,6 +274,7 @@ class AssignmentHarlWrapper:
             assignment=assignment,
             pre_step_problem=pre_step_problem,
             post_step_problem=post_step_problem,
+            selected_available_mask=selected_available_mask,
         )
 
         reward_tensor = self._stack_rewards(rewards)
@@ -279,8 +285,6 @@ class AssignmentHarlWrapper:
             post_step_problem=post_step_problem,
         )
         reward_tensor = reward_decomposition["final_reward"]
-        available_actions = self._build_available_actions(problem=post_step_problem)
-
         duplicate_count = compute_assignment_duplicate_count(assignment)
         noop_count = (assignment < 0).sum(dim=1).to(dtype=torch.float32)
         valid_action_count = (assignment >= 0).sum(dim=1).to(dtype=torch.float32)
@@ -288,7 +292,6 @@ class AssignmentHarlWrapper:
         self.last_assignment = assignment
         self.last_env_actions = env_actions
         self.last_pre_step_available_actions = pre_step_available_actions
-        self.last_available_actions = available_actions
         self.last_duplicate_count = duplicate_count
         self.last_noop_count = noop_count
         self.last_valid_action_count = valid_action_count
@@ -310,6 +313,8 @@ class AssignmentHarlWrapper:
         obs = self._augment_assignment_observations(obs, problem=post_step_problem)
         self._sync_agents(obs)
         shared_obs = self._build_shared_obs(obs)
+        available_actions = self._build_available_actions(problem=post_step_problem)
+        self.last_available_actions = available_actions
         return obs, shared_obs, reward_tensor, dones, info, available_actions
 
     def close(self) -> None:
@@ -378,6 +383,41 @@ class AssignmentHarlWrapper:
             "selected_path_cost_penalty_scale": _float_attr("selected_path_cost_penalty_scale", 0.0),
         }
 
+    def _build_assignment_cooldown_config(self) -> dict[str, bool | int | str]:
+        cfg = getattr(self._unwrapped, "cfg", None)
+
+        def _bool_attr(name: str, default: bool) -> bool:
+            return bool(getattr(cfg, name, default))
+
+        def _int_attr(name: str, default: int) -> int:
+            return max(0, int(getattr(cfg, name, default)))
+
+        scope = str(getattr(cfg, "assignment_cooldown_scope", "per_robot_target")).strip().lower()
+        if scope != "per_robot_target":
+            raise ValueError(
+                "assignment_cooldown_scope currently supports only 'per_robot_target', "
+                f"got {scope!r}"
+            )
+
+        return {
+            "enabled": _bool_attr("assignment_cooldown_enabled", False),
+            "scope": scope,
+            "trigger_attempts": _int_attr("assignment_cooldown_trigger_attempts", 3),
+            "trigger_same_target_streak": _int_attr("assignment_cooldown_trigger_same_target_streak", 10),
+            "trigger_steps_since_global_gain": _int_attr(
+                "assignment_cooldown_trigger_steps_since_global_gain",
+                10,
+            ),
+            "duration_steps": _int_attr("assignment_cooldown_duration_steps", 20),
+            "require_uncovered": _bool_attr("assignment_cooldown_require_uncovered", True),
+            "require_available": _bool_attr("assignment_cooldown_require_available", True),
+            "require_feasible": _bool_attr("assignment_cooldown_require_feasible", True),
+            "require_no_global_gain": _bool_attr("assignment_cooldown_require_no_global_gain", True),
+            "clear_on_covered": _bool_attr("assignment_cooldown_clear_on_covered", True),
+            "apply_to_action_mask": _bool_attr("assignment_cooldown_apply_to_action_mask", True),
+            "log_diagnostics": _bool_attr("assignment_cooldown_log_diagnostics", True),
+        }
+
     def _infer_raw_observation_dims(self) -> dict[str, int]:
         spaces = getattr(self._unwrapped, "observation_spaces", {})
         dims = {}
@@ -420,11 +460,52 @@ class AssignmentHarlWrapper:
     def _build_available_actions(self, problem: dict | None = None) -> torch.Tensor:
         if problem is None:
             problem = self._unwrapped.get_assignment_problem()
-        available_actions = make_assignment_action_mask(problem, include_noop=self.include_noop)
+        if not self._assignment_cooldown_mask_enabled():
+            available_actions = make_assignment_action_mask(problem, include_noop=self.include_noop)
+        else:
+            available_mask = problem["available_mask"]
+            if not isinstance(available_mask, torch.Tensor):
+                raise TypeError(
+                    "problem['available_mask'] must be a torch.Tensor, "
+                    f"got {type(available_mask).__name__}"
+                )
+            if tuple(available_mask.shape) != (self._num_envs, self._num_agents, self._num_viewpoints):
+                raise RuntimeError(
+                    "problem['available_mask'] must have shape "
+                    f"{(self._num_envs, self._num_agents, self._num_viewpoints)}, "
+                    f"got {tuple(available_mask.shape)}"
+                )
+            filtered_mask = self._apply_assignment_cooldown_to_available_mask(
+                available_mask.to(device=self._device, dtype=torch.bool)
+            )
+            available_actions = filtered_mask.to(dtype=torch.float32)
+            if self.include_noop:
+                noop_mask = torch.ones(
+                    self._num_envs,
+                    self._num_agents,
+                    1,
+                    dtype=torch.float32,
+                    device=available_actions.device,
+                )
+                available_actions = torch.cat((available_actions, noop_mask), dim=-1)
         expected_shape = (self._num_envs, self._num_agents, self._num_viewpoints + int(self.include_noop))
         if tuple(available_actions.shape) != expected_shape:
             raise RuntimeError(f"available_actions must have shape {expected_shape}, got {tuple(available_actions.shape)}")
+        if bool((available_actions.sum(dim=-1) <= 0.0).any()):
+            raise RuntimeError("available_actions contains an all-zero row")
+        if self.include_noop and not bool(torch.all(available_actions[..., -1] > 0.0)):
+            raise RuntimeError("assignment no-op action must remain available")
         return available_actions
+
+    def _assignment_cooldown_enabled(self) -> bool:
+        return bool(self._assignment_cooldown_config["enabled"])
+
+    def _assignment_cooldown_mask_enabled(self) -> bool:
+        return self._assignment_cooldown_enabled() and bool(self._assignment_cooldown_config["apply_to_action_mask"])
+
+    def _apply_assignment_cooldown_to_available_mask(self, available_mask: torch.Tensor) -> torch.Tensor:
+        cooldown_mask = self._per_robot_target_cooldown_remaining > 0
+        return available_mask & (~cooldown_mask)
 
     def _env_spacing(self) -> float:
         cfg = getattr(self._unwrapped, "cfg", None)
@@ -443,6 +524,8 @@ class AssignmentHarlWrapper:
     def _reset_assignment_diagnostics(self, env_ids: torch.Tensor | None = None, problem: dict | None = None) -> None:
         if env_ids is None:
             env_ids = torch.arange(self._num_envs, device=self._device, dtype=torch.long)
+        else:
+            env_ids = env_ids.to(device=self._device, dtype=torch.long)
         if not hasattr(self, "_assignment_step"):
             self._assignment_step = torch.zeros(self._num_envs, dtype=torch.long, device=self._device)
             self._per_viewpoint_attempted_count = torch.zeros(
@@ -472,6 +555,47 @@ class AssignmentHarlWrapper:
             self._last_covered_mask = torch.zeros(
                 self._num_envs, self._num_viewpoints, dtype=torch.bool, device=self._device
             )
+            self._per_robot_target_failed_attempt_count = torch.zeros(
+                self._num_envs,
+                self._num_agents,
+                self._num_viewpoints,
+                dtype=torch.long,
+                device=self._device,
+            )
+            self._per_robot_target_cooldown_remaining = torch.zeros(
+                self._num_envs,
+                self._num_agents,
+                self._num_viewpoints,
+                dtype=torch.long,
+                device=self._device,
+            )
+            self._assignment_cooldown_trigger_count = torch.zeros(
+                self._num_envs, dtype=torch.float32, device=self._device
+            )
+            self._assignment_cooldown_suppressed_count = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.float32, device=self._device
+            )
+            self._assignment_cooldown_selected_target_was_in_cooldown_count = torch.zeros(
+                self._num_envs, dtype=torch.float32, device=self._device
+            )
+            self._assignment_cooldown_last_triggered_viewpoint = torch.full(
+                (self._num_envs, self._num_agents), -1, dtype=torch.long, device=self._device
+            )
+            self._last_cooldown_active_for_selected_pair = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
+            )
+            self._last_cooldown_remaining_for_selected_pair = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_cooldown_triggered_after_step = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
+            )
+            self._last_failed_attempt_count_for_selected_pair = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_cooldown_suppressed_available_count_for_robot = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
 
         self._assignment_step[env_ids] = 0
         self._per_viewpoint_attempted_count[env_ids] = 0.0
@@ -482,6 +606,12 @@ class AssignmentHarlWrapper:
         self._per_robot_completed_count[env_ids] = 0.0
         self._per_robot_repeated_assignment_count[env_ids] = 0.0
         self._per_robot_selected_count[env_ids] = 0.0
+        self._per_robot_target_failed_attempt_count[env_ids] = 0
+        self._per_robot_target_cooldown_remaining[env_ids] = 0
+        self._assignment_cooldown_trigger_count[env_ids] = 0.0
+        self._assignment_cooldown_suppressed_count[env_ids] = 0.0
+        self._assignment_cooldown_selected_target_was_in_cooldown_count[env_ids] = 0.0
+        self._assignment_cooldown_last_triggered_viewpoint[env_ids] = -1
         if problem is not None and "viewpoints_covered" in problem:
             self._last_covered_mask[env_ids] = problem["viewpoints_covered"][env_ids].to(dtype=torch.bool)
         else:
@@ -493,6 +623,7 @@ class AssignmentHarlWrapper:
         assignment: torch.Tensor,
         pre_step_problem: dict,
         post_step_problem: dict,
+        selected_available_mask: torch.Tensor,
     ) -> None:
         next_step = self._assignment_step + 1
         non_noop = assignment >= 0
@@ -543,6 +674,167 @@ class AssignmentHarlWrapper:
         self._previous_assignment = assignment.clone()
         self._assignment_step = next_step
         self._last_covered_mask = covered_after.clone()
+        self._update_assignment_cooldown(
+            assignment=assignment,
+            pre_step_problem=pre_step_problem,
+            selected_available_mask=selected_available_mask,
+            covered_before=covered_before,
+            covered_after=covered_after,
+            newly_covered=newly_covered,
+        )
+
+    def _update_assignment_cooldown(
+        self,
+        *,
+        assignment: torch.Tensor,
+        pre_step_problem: dict,
+        selected_available_mask: torch.Tensor,
+        covered_before: torch.Tensor,
+        covered_after: torch.Tensor,
+        newly_covered: torch.Tensor,
+    ) -> None:
+        self._last_cooldown_triggered_after_step.zero_()
+        self._last_failed_attempt_count_for_selected_pair.zero_()
+
+        cooldown_enabled = self._assignment_cooldown_enabled()
+        base_available = pre_step_problem["available_mask"].to(device=self._device, dtype=torch.bool)
+        active_before = (
+            self._per_robot_target_cooldown_remaining > 0
+            if cooldown_enabled
+            else torch.zeros_like(self._per_robot_target_cooldown_remaining, dtype=torch.bool)
+        )
+        suppressed_per_robot = (base_available & active_before).sum(dim=-1)
+        self._assignment_cooldown_suppressed_count = suppressed_per_robot.to(dtype=torch.float32)
+        self._last_cooldown_suppressed_available_count_for_robot = suppressed_per_robot.to(dtype=torch.long)
+
+        num_viewpoints = self._num_viewpoints
+        valid_viewpoint = (assignment >= 0) & (assignment < num_viewpoints)
+        safe_ids = assignment.clamp(min=0, max=max(0, num_viewpoints - 1)).unsqueeze(-1)
+
+        selected_cooldown_remaining = torch.zeros_like(assignment, dtype=torch.long)
+        selected_in_cooldown = torch.zeros_like(assignment, dtype=torch.bool)
+        if num_viewpoints > 0 and cooldown_enabled:
+            selected_cooldown_remaining = torch.gather(
+                self._per_robot_target_cooldown_remaining,
+                dim=2,
+                index=safe_ids,
+            ).squeeze(-1)
+            selected_in_cooldown = (selected_cooldown_remaining > 0) & valid_viewpoint
+        self._last_cooldown_remaining_for_selected_pair = torch.where(
+            valid_viewpoint,
+            selected_cooldown_remaining,
+            torch.zeros_like(selected_cooldown_remaining),
+        )
+        self._last_cooldown_active_for_selected_pair = selected_in_cooldown
+        self._assignment_cooldown_selected_target_was_in_cooldown_count += selected_in_cooldown.to(
+            dtype=torch.float32
+        ).sum(dim=1)
+
+        if cooldown_enabled:
+            self._per_robot_target_cooldown_remaining = torch.clamp(
+                self._per_robot_target_cooldown_remaining
+                - (self._per_robot_target_cooldown_remaining > 0).to(dtype=torch.long),
+                min=0,
+            )
+
+        if bool(self._assignment_cooldown_config["clear_on_covered"]):
+            self._clear_assignment_cooldown_for_covered_targets(covered_after)
+
+        if not cooldown_enabled:
+            return
+
+        feasible = pre_step_problem.get("feasible_mask", base_available).to(device=self._device, dtype=torch.bool)
+        selected_feasible = torch.zeros_like(assignment, dtype=torch.bool)
+        selected_covered_before = torch.zeros_like(assignment, dtype=torch.bool)
+        if num_viewpoints > 0:
+            selected_feasible = torch.gather(feasible, dim=2, index=safe_ids).squeeze(-1) & valid_viewpoint
+            selected_covered_before = torch.gather(
+                covered_before.unsqueeze(1).expand(self._num_envs, self._num_agents, self._num_viewpoints),
+                dim=2,
+                index=safe_ids,
+            ).squeeze(-1)
+            selected_covered_before = selected_covered_before & valid_viewpoint
+
+        failed_attempt = valid_viewpoint
+        if bool(self._assignment_cooldown_config["require_available"]):
+            failed_attempt = failed_attempt & selected_available_mask.to(device=self._device, dtype=torch.bool)
+        if bool(self._assignment_cooldown_config["require_feasible"]):
+            failed_attempt = failed_attempt & selected_feasible
+        if bool(self._assignment_cooldown_config["require_uncovered"]):
+            failed_attempt = failed_attempt & (~selected_covered_before)
+
+        global_gain = newly_covered.any(dim=-1)
+        if bool(self._assignment_cooldown_config["require_no_global_gain"]):
+            failed_attempt = failed_attempt & (~global_gain).unsqueeze(-1)
+
+        steps_since_threshold = int(self._assignment_cooldown_config["trigger_steps_since_global_gain"])
+        if steps_since_threshold > 0:
+            failed_attempt = failed_attempt & (
+                self._steps_since_global_coverage_gain >= float(steps_since_threshold)
+            ).unsqueeze(-1)
+
+        env_indices, agent_indices = torch.nonzero(failed_attempt, as_tuple=True)
+        if env_indices.numel() > 0:
+            selected_ids = assignment[env_indices, agent_indices]
+            self._per_robot_target_failed_attempt_count[env_indices, agent_indices, selected_ids] += 1
+
+        failed_counts_for_selected = torch.zeros_like(assignment, dtype=torch.long)
+        if num_viewpoints > 0:
+            failed_counts_for_selected = torch.gather(
+                self._per_robot_target_failed_attempt_count,
+                dim=2,
+                index=safe_ids,
+            ).squeeze(-1)
+        self._last_failed_attempt_count_for_selected_pair = torch.where(
+            valid_viewpoint,
+            failed_counts_for_selected,
+            torch.zeros_like(failed_counts_for_selected),
+        )
+
+        trigger_attempts = int(self._assignment_cooldown_config["trigger_attempts"])
+        trigger_streak = int(self._assignment_cooldown_config["trigger_same_target_streak"])
+        attempt_trigger = (
+            failed_counts_for_selected >= int(trigger_attempts)
+            if trigger_attempts > 0
+            else torch.zeros_like(failed_attempt)
+        )
+        streak_trigger = (
+            self._same_target_streak >= float(trigger_streak)
+            if trigger_streak > 0
+            else torch.zeros_like(failed_attempt)
+        )
+        trigger = failed_attempt & (attempt_trigger | streak_trigger)
+        duration = int(self._assignment_cooldown_config["duration_steps"])
+        if duration <= 0:
+            trigger = torch.zeros_like(trigger)
+
+        trigger_envs, trigger_agents = torch.nonzero(trigger, as_tuple=True)
+        if trigger_envs.numel() == 0:
+            return
+
+        trigger_viewpoints = assignment[trigger_envs, trigger_agents]
+        self._per_robot_target_cooldown_remaining[trigger_envs, trigger_agents, trigger_viewpoints] = duration
+        self._assignment_cooldown_trigger_count += trigger.to(dtype=torch.float32).sum(dim=1)
+        self._assignment_cooldown_last_triggered_viewpoint[trigger_envs, trigger_agents] = trigger_viewpoints
+        self._last_cooldown_triggered_after_step[trigger_envs, trigger_agents] = True
+
+        if bool(self._assignment_cooldown_config["clear_on_covered"]):
+            self._clear_assignment_cooldown_for_covered_targets(covered_after)
+
+    def _clear_assignment_cooldown_for_covered_targets(self, covered: torch.Tensor) -> None:
+        covered_mask = covered.to(device=self._device, dtype=torch.bool).unsqueeze(1)
+        if not bool(covered_mask.any()):
+            return
+        self._per_robot_target_failed_attempt_count = torch.where(
+            covered_mask,
+            torch.zeros_like(self._per_robot_target_failed_attempt_count),
+            self._per_robot_target_failed_attempt_count,
+        )
+        self._per_robot_target_cooldown_remaining = torch.where(
+            covered_mask,
+            torch.zeros_like(self._per_robot_target_cooldown_remaining),
+            self._per_robot_target_cooldown_remaining,
+        )
 
     def _compute_assignment_reward_decomposition(
         self,
@@ -794,7 +1086,57 @@ class AssignmentHarlWrapper:
             "selected_available_mask": selected_available_mask,
         }
         augmented["assignment_rl_reward"] = reward_decomposition
+        if bool(self._assignment_cooldown_config["log_diagnostics"]):
+            augmented["assignment_cooldown"] = self._assignment_cooldown_info()
         return augmented
+
+    def _assignment_cooldown_info(self) -> dict[str, Any]:
+        if self._assignment_cooldown_enabled():
+            active_count = (self._per_robot_target_cooldown_remaining > 0).to(dtype=torch.float32).sum(dim=(1, 2))
+            suppressed_per_env = self._assignment_cooldown_suppressed_count.sum(dim=1)
+            failed_attempt_count = self._per_robot_target_failed_attempt_count.to(dtype=torch.float32)
+            max_remaining = self._per_robot_target_cooldown_remaining.amax(dim=(1, 2)).to(dtype=torch.float32)
+            last_triggered = self._assignment_cooldown_last_triggered_viewpoint
+            triggered_pair_count = self._last_cooldown_triggered_after_step.to(dtype=torch.float32).sum(dim=1)
+        else:
+            active_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            suppressed_per_env = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            failed_attempt_count = torch.zeros(
+                self._num_envs,
+                self._num_agents,
+                self._num_viewpoints,
+                dtype=torch.float32,
+                device=self._device,
+            )
+            max_remaining = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            last_triggered = torch.full(
+                (self._num_envs, self._num_agents), -1, dtype=torch.long, device=self._device
+            )
+            triggered_pair_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+
+        return {
+            "enabled": float(self._assignment_cooldown_enabled()),
+            "active_count": active_count,
+            "active_count_mean": active_count,
+            "trigger_count": self._assignment_cooldown_trigger_count
+            if self._assignment_cooldown_enabled()
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "trigger_count_mean": self._assignment_cooldown_trigger_count
+            if self._assignment_cooldown_enabled()
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "triggered_pair_count": triggered_pair_count,
+            "suppressed_action_count": suppressed_per_env,
+            "suppressed_action_count_mean": suppressed_per_env,
+            "failed_attempt_count_mean": failed_attempt_count,
+            "max_cooldown_remaining": max_remaining,
+            "max_cooldown_remaining_mean": max_remaining,
+            "selected_target_was_in_cooldown_count": (
+                self._assignment_cooldown_selected_target_was_in_cooldown_count
+                if self._assignment_cooldown_enabled()
+                else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            ),
+            "last_triggered_viewpoint": last_triggered,
+        }
 
 
 def make_assignment_harl_env(

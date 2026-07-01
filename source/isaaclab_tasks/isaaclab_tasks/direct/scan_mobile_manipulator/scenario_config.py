@@ -35,6 +35,23 @@ SUPPORTED_TARGET_CONFLICT_ROBOT_ORDERS = {"robot_index"}
 SUPPORTED_TARGET_CONFLICT_COMPARE_METHODS = {"nearest", "greedy", "random"}
 SUPPORTED_CONFLICT_AWARE_BASELINE_MODES = {"gated_solver_variant"}
 SUPPORTED_CONFLICT_AWARE_BASELINE_METHODS = {"greedy_conflict_aware", "nearest_conflict_aware"}
+SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES = {"per_robot_target"}
+
+ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
+    "assignment_cooldown_enabled",
+    "assignment_cooldown_scope",
+    "assignment_cooldown_trigger_attempts",
+    "assignment_cooldown_trigger_same_target_streak",
+    "assignment_cooldown_trigger_steps_since_global_gain",
+    "assignment_cooldown_duration_steps",
+    "assignment_cooldown_require_uncovered",
+    "assignment_cooldown_require_available",
+    "assignment_cooldown_require_feasible",
+    "assignment_cooldown_require_no_global_gain",
+    "assignment_cooldown_clear_on_covered",
+    "assignment_cooldown_apply_to_action_mask",
+    "assignment_cooldown_log_diagnostics",
+)
 
 ENV_CFG_SCENARIO_ATTRS = (
     "viewpoint_csv_path",
@@ -100,6 +117,7 @@ ENV_CFG_SCENARIO_ATTRS = (
     "inter_robot_conflict_debug_visualization_draw_in_headless",
     "inter_robot_conflict_debug_visualization_max_lines",
     "inter_robot_conflict_debug_visualization_line_width",
+    *ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS,
 )
 
 
@@ -185,6 +203,31 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
 
     assignment = _mapping(config.get("assignment"), "assignment", required=False)
     _put(defaults, "viewpoint_candidate_top_k", assignment.get("viewpoint_candidate_top_k"))
+
+    for attr in ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS:
+        _put(defaults, attr, config.get(attr))
+    assignment_cooldown = _mapping(config.get("assignment_cooldown"), "assignment_cooldown", required=False)
+    _put(defaults, "assignment_cooldown_enabled", assignment_cooldown.get("enabled"))
+    _put(defaults, "assignment_cooldown_scope", assignment_cooldown.get("scope"))
+    _put(defaults, "assignment_cooldown_trigger_attempts", assignment_cooldown.get("trigger_attempts"))
+    _put(
+        defaults,
+        "assignment_cooldown_trigger_same_target_streak",
+        assignment_cooldown.get("trigger_same_target_streak"),
+    )
+    _put(
+        defaults,
+        "assignment_cooldown_trigger_steps_since_global_gain",
+        assignment_cooldown.get("trigger_steps_since_global_gain"),
+    )
+    _put(defaults, "assignment_cooldown_duration_steps", assignment_cooldown.get("duration_steps"))
+    _put(defaults, "assignment_cooldown_require_uncovered", assignment_cooldown.get("require_uncovered"))
+    _put(defaults, "assignment_cooldown_require_available", assignment_cooldown.get("require_available"))
+    _put(defaults, "assignment_cooldown_require_feasible", assignment_cooldown.get("require_feasible"))
+    _put(defaults, "assignment_cooldown_require_no_global_gain", assignment_cooldown.get("require_no_global_gain"))
+    _put(defaults, "assignment_cooldown_clear_on_covered", assignment_cooldown.get("clear_on_covered"))
+    _put(defaults, "assignment_cooldown_apply_to_action_mask", assignment_cooldown.get("apply_to_action_mask"))
+    _put(defaults, "assignment_cooldown_log_diagnostics", assignment_cooldown.get("log_diagnostics"))
 
     obstacle = _mapping(config.get("obstacle_diagnostics"), "obstacle_diagnostics", required=False)
     _put(defaults, "obstacle_diagnostics_enabled", obstacle.get("enabled"))
@@ -371,6 +414,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
         _validate_inter_robot_conflict_diagnostics_metadata(config)
         _validate_target_conflict_candidate_comparison_metadata(config)
         _validate_conflict_aware_baseline_metadata(config)
+        _validate_assignment_cooldown_metadata(config)
     _validate_visual_mode_arg(
         getattr(args, "robot_visual_mode", None),
         label="visualization.robot_visual_mode",
@@ -417,6 +461,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
     if capability_config_path is not None:
         resolve_path(capability_config_path, repo_root=repo_root, must_exist=True, label="capabilities.config_path")
     _ensure_output_parent(getattr(args, "result_file", None), repo_root=repo_root, label="output.result_file")
+    _validate_assignment_cooldown_args(args)
 
 
 def validate_generation_args(args: Namespace, *, repo_root: Path) -> None:
@@ -960,6 +1005,78 @@ def _validate_conflict_aware_baseline_metadata(config: Mapping[str, Any]) -> Non
         raise ValueError(
             f"conflict_aware_baseline.max_pairs_sample must be a non-negative integer, got {max_pairs!r}."
         )
+
+
+def _validate_assignment_cooldown_metadata(config: Mapping[str, Any]) -> None:
+    values = {attr: config.get(attr) for attr in ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS if config.get(attr) is not None}
+    block = _mapping(config.get("assignment_cooldown"), "assignment_cooldown", required=False)
+    block_to_attr = {
+        "enabled": "assignment_cooldown_enabled",
+        "scope": "assignment_cooldown_scope",
+        "trigger_attempts": "assignment_cooldown_trigger_attempts",
+        "trigger_same_target_streak": "assignment_cooldown_trigger_same_target_streak",
+        "trigger_steps_since_global_gain": "assignment_cooldown_trigger_steps_since_global_gain",
+        "duration_steps": "assignment_cooldown_duration_steps",
+        "require_uncovered": "assignment_cooldown_require_uncovered",
+        "require_available": "assignment_cooldown_require_available",
+        "require_feasible": "assignment_cooldown_require_feasible",
+        "require_no_global_gain": "assignment_cooldown_require_no_global_gain",
+        "clear_on_covered": "assignment_cooldown_clear_on_covered",
+        "apply_to_action_mask": "assignment_cooldown_apply_to_action_mask",
+        "log_diagnostics": "assignment_cooldown_log_diagnostics",
+    }
+    for block_key, attr in block_to_attr.items():
+        if block.get(block_key) is not None:
+            values[attr] = block.get(block_key)
+    _validate_assignment_cooldown_values(values)
+
+
+def _validate_assignment_cooldown_args(args: Namespace) -> None:
+    values = {
+        attr: getattr(args, attr, None)
+        for attr in ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS
+        if getattr(args, attr, None) is not None
+    }
+    _validate_assignment_cooldown_values(values)
+
+
+def _validate_assignment_cooldown_values(values: Mapping[str, Any]) -> None:
+    if not values:
+        return
+    bool_fields = (
+        "assignment_cooldown_enabled",
+        "assignment_cooldown_require_uncovered",
+        "assignment_cooldown_require_available",
+        "assignment_cooldown_require_feasible",
+        "assignment_cooldown_require_no_global_gain",
+        "assignment_cooldown_clear_on_covered",
+        "assignment_cooldown_apply_to_action_mask",
+        "assignment_cooldown_log_diagnostics",
+    )
+    for key in bool_fields:
+        value = values.get(key)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"{key} must be boolean, got {value!r}.")
+
+    scope = values.get("assignment_cooldown_scope")
+    if scope is not None and str(scope).strip().lower() not in SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES:
+        raise ValueError(
+            f"Unsupported assignment_cooldown_scope={scope!r}; expected one of "
+            f"{sorted(SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES)!r}."
+        )
+
+    int_fields = (
+        "assignment_cooldown_trigger_attempts",
+        "assignment_cooldown_trigger_same_target_streak",
+        "assignment_cooldown_trigger_steps_since_global_gain",
+        "assignment_cooldown_duration_steps",
+    )
+    for key in int_fields:
+        value = values.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, int) or value < 0:
+            raise ValueError(f"{key} must be a non-negative integer, got {value!r}.")
 
 
 def _validate_finite_sequence(value: Any, *, length: int, label: str, positive: bool) -> tuple[float, ...]:

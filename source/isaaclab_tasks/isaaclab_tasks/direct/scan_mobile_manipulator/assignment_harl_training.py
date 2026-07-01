@@ -310,6 +310,10 @@ class AssignmentIsaacLabEnv:
                 f"assignment_rl available_actions must have shape {expected_shape}, "
                 f"got {tuple(available_actions.shape)}"
             )
+        if bool((available_actions.sum(dim=-1) <= 0.0).any()):
+            raise RuntimeError("assignment_rl available_actions contains an all-zero row")
+        if not bool(torch.all(available_actions[..., -1] > 0.0)):
+            raise RuntimeError("assignment_rl no-op action must remain available")
 
     def _update_log_info(self, info: Any) -> None:
         log_info: dict[str, float] = {}
@@ -320,6 +324,9 @@ class AssignmentIsaacLabEnv:
             assignment_log = info.get("assignment_rl")
             if isinstance(assignment_log, Mapping):
                 log_info.update(_flatten_numeric_log(assignment_log, "assignment_rl"))
+            cooldown_log = info.get("assignment_cooldown")
+            if isinstance(cooldown_log, Mapping):
+                log_info.update(_flatten_numeric_log(cooldown_log, "assignment_cooldown"))
             assignment_reward_log = info.get("assignment_rl_reward")
             if isinstance(assignment_reward_log, Mapping):
                 log_info.update(_flatten_assignment_reward_log(assignment_reward_log))
@@ -562,6 +569,7 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
         print(f"[INFO]: Assignment RL num_viewpoints={self.env.num_viewpoints}")
         print(f"[INFO]: Assignment RL no-op action id={self.env.noop_action_id}")
         print(f"[INFO]: Assignment RL scalar action storage dim={self.max_action_space}")
+        print(f"[INFO]: Assignment RL cooldown config={self.env.assignment_env.assignment_cooldown_config}")
         for agent_id, action_space in self.env.action_space.items():
             print(f"[INFO]: Assignment RL agent {agent_id} action_space={action_space}")
 
