@@ -235,10 +235,29 @@ ASSIGNMENT_HISTORY_FIELDS = [
     "coverage_ratio_after_step",
     "robot_base_x",
     "robot_base_y",
+    "robot_base_post_x",
+    "robot_base_post_y",
     "target_x",
     "target_y",
     "selected_path_cost",
     "duplicate_selected_target_on_step",
+    "selected_target_conflict_pair_count",
+    "selected_target_conflict_pairs",
+    "selected_target_min_distance_to_other_selected",
+    "selected_target_conflict_threshold",
+    "same_step_claimed_target_count",
+    "same_step_claimed_target_robot_ids",
+    "same_step_nearby_claimed_target_count",
+    "same_step_nearby_claimed_target_robot_ids",
+    "inter_robot_overlap_pair_count",
+    "inter_robot_overlap_pairs",
+    "inter_robot_min_base_distance",
+    "inter_robot_overlap_threshold",
+    "inter_robot_path_crossing_pair_count",
+    "inter_robot_path_crossing_pairs",
+    "inter_robot_path_near_miss_pair_count",
+    "inter_robot_path_near_miss_pairs",
+    "inter_robot_path_near_miss_threshold",
     "noop_when_available",
     "same_target_streak",
     "steps_since_global_coverage_gain",
@@ -260,6 +279,16 @@ ASSIGNMENT_HISTORY_FIELDS = [
     "budget_ratio_for_selected_pair",
     "budget_triggered_after_step",
     "budget_triggered_by_budget",
+    "redirect_guardrail_active_for_robot",
+    "redirect_guardrail_context",
+    "claimed_target_redirect_suppressed_count",
+    "spacing_redirect_suppressed_count",
+    "redirect_guardrail_overmask_non_noop_count",
+    "redirect_guardrail_only_noop_remaining",
+    "redirect_guardrail_fail_open_reason",
+    "redirect_guardrail_threshold",
+    "redirect_guardrail_claimed_target_robot_ids",
+    "redirect_guardrail_nearby_target_robot_ids",
 ]
 
 
@@ -963,6 +992,279 @@ def _nanmin(current: torch.Tensor, candidate: torch.Tensor) -> torch.Tensor:
     return torch.where(torch.isinf(result), torch.full_like(result, float("nan")), result)
 
 
+def _tensor_int_at(value: Any, *indices: int, default: int = 0) -> int:
+    if not isinstance(value, torch.Tensor):
+        return default
+    try:
+        return int(value[indices].detach().cpu().item())
+    except (IndexError, RuntimeError, ValueError):
+        return default
+
+
+def _tensor_bool_at(value: Any, *indices: int, default: bool = False) -> bool:
+    if not isinstance(value, torch.Tensor):
+        return default
+    try:
+        return bool(value[indices].detach().cpu().item())
+    except (IndexError, RuntimeError, ValueError):
+        return default
+
+
+def _tensor_float_at(value: Any, *indices: int, default: float = 0.0) -> float:
+    if not isinstance(value, torch.Tensor):
+        return default
+    try:
+        return float(value[indices].detach().cpu().item())
+    except (IndexError, RuntimeError, ValueError):
+        return default
+
+
+def _nested_list_at(value: Any, env_id: int, robot_id: int) -> list[Any]:
+    try:
+        row = value[env_id][robot_id]
+    except (IndexError, TypeError):
+        return []
+    if isinstance(row, list):
+        return row
+    if isinstance(row, tuple):
+        return list(row)
+    return []
+
+
+def _nested_str_at(value: Any, env_id: int, robot_id: int) -> str:
+    try:
+        row = value[env_id][robot_id]
+    except (IndexError, TypeError):
+        return ""
+    return str(row) if row is not None else ""
+
+
+def _xy_from_tensor(value: torch.Tensor, env_id: int, robot_id: int) -> tuple[float, float]:
+    return (
+        float(value[env_id, robot_id, 0].detach().cpu().item()),
+        float(value[env_id, robot_id, 1].detach().cpu().item()),
+    )
+
+
+def _point_distance(a: tuple[float, float], b: tuple[float, float]) -> float:
+    return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+def _point_segment_distance(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+    length_sq = (dx * dx) + (dy * dy)
+    if length_sq <= 1.0e-12:
+        return _point_distance(point, start)
+    t = ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / length_sq
+    t = max(0.0, min(1.0, t))
+    closest = (start[0] + (t * dx), start[1] + (t * dy))
+    return _point_distance(point, closest)
+
+
+def _orientation(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    c: tuple[float, float],
+) -> float:
+    return ((b[0] - a[0]) * (c[1] - a[1])) - ((b[1] - a[1]) * (c[0] - a[0]))
+
+
+def _on_segment(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    c: tuple[float, float],
+) -> bool:
+    eps = 1.0e-9
+    return (
+        min(a[0], c[0]) - eps <= b[0] <= max(a[0], c[0]) + eps
+        and min(a[1], c[1]) - eps <= b[1] <= max(a[1], c[1]) + eps
+    )
+
+
+def _segments_intersect(
+    a0: tuple[float, float],
+    a1: tuple[float, float],
+    b0: tuple[float, float],
+    b1: tuple[float, float],
+) -> bool:
+    if _point_distance(a0, a1) <= 1.0e-9 and _point_distance(b0, b1) <= 1.0e-9:
+        return False
+    o1 = _orientation(a0, a1, b0)
+    o2 = _orientation(a0, a1, b1)
+    o3 = _orientation(b0, b1, a0)
+    o4 = _orientation(b0, b1, a1)
+    eps = 1.0e-9
+    if o1 * o2 < -eps and o3 * o4 < -eps:
+        return True
+    return (
+        abs(o1) <= eps and _on_segment(a0, b0, a1)
+        or abs(o2) <= eps and _on_segment(a0, b1, a1)
+        or abs(o3) <= eps and _on_segment(b0, a0, b1)
+        or abs(o4) <= eps and _on_segment(b0, a1, b1)
+    )
+
+
+def _segment_distance(
+    a0: tuple[float, float],
+    a1: tuple[float, float],
+    b0: tuple[float, float],
+    b1: tuple[float, float],
+) -> float:
+    if _segments_intersect(a0, a1, b0, b1):
+        return 0.0
+    return min(
+        _point_segment_distance(a0, b0, b1),
+        _point_segment_distance(a1, b0, b1),
+        _point_segment_distance(b0, a0, a1),
+        _point_segment_distance(b1, a0, a1),
+    )
+
+
+def _json_ready_float(value: float) -> float | str:
+    return float(value) if math.isfinite(value) else "nan"
+
+
+def _selected_target_step_details(
+    *,
+    assignment: torch.Tensor,
+    viewpoint_pos: torch.Tensor,
+    threshold: float,
+    num_viewpoints: int,
+) -> list[dict[str, Any]]:
+    num_envs, num_agents = assignment.shape
+    details: list[dict[str, Any]] = []
+    for env_id in range(num_envs):
+        min_distance_by_robot = [float("nan")] * num_agents
+        claimed_ids_by_robot: list[list[int]] = [[] for _ in range(num_agents)]
+        nearby_ids_by_robot: list[list[int]] = [[] for _ in range(num_agents)]
+        conflict_pairs: list[dict[str, Any]] = []
+        for robot_i in range(num_agents):
+            view_i = int(assignment[env_id, robot_i].item())
+            if view_i < 0 or view_i >= num_viewpoints:
+                continue
+            pos_i = viewpoint_pos[env_id, view_i, :2]
+            for robot_j in range(num_agents):
+                if robot_i == robot_j:
+                    continue
+                view_j = int(assignment[env_id, robot_j].item())
+                if view_j < 0 or view_j >= num_viewpoints:
+                    continue
+                pos_j = viewpoint_pos[env_id, view_j, :2]
+                distance = float(torch.linalg.norm(pos_i - pos_j).detach().cpu().item())
+                if not math.isfinite(min_distance_by_robot[robot_i]) or distance < min_distance_by_robot[robot_i]:
+                    min_distance_by_robot[robot_i] = distance
+                if view_i == view_j:
+                    claimed_ids_by_robot[robot_i].append(robot_j)
+                elif distance < threshold:
+                    nearby_ids_by_robot[robot_i].append(robot_j)
+            for robot_j in range(robot_i + 1, num_agents):
+                view_j = int(assignment[env_id, robot_j].item())
+                if view_j < 0 or view_j >= num_viewpoints:
+                    continue
+                pos_j = viewpoint_pos[env_id, view_j, :2]
+                distance = float(torch.linalg.norm(pos_i - pos_j).detach().cpu().item())
+                if distance < threshold:
+                    conflict_pairs.append(
+                        {
+                            "robot_i": int(robot_i),
+                            "robot_j": int(robot_j),
+                            "viewpoint_i": int(view_i),
+                            "viewpoint_j": int(view_j),
+                            "distance": float(distance),
+                            "clearance": float(distance - threshold),
+                            "threshold": float(threshold),
+                            "exact_duplicate": bool(view_i == view_j),
+                        }
+                    )
+        details.append(
+            {
+                "conflict_pairs": conflict_pairs,
+                "min_distance_by_robot": min_distance_by_robot,
+                "claimed_ids_by_robot": claimed_ids_by_robot,
+                "nearby_ids_by_robot": nearby_ids_by_robot,
+            }
+        )
+    return details
+
+
+def _inter_robot_overlap_step_details(
+    *,
+    current_base_pos: torch.Tensor,
+    threshold: float,
+) -> list[dict[str, Any]]:
+    num_envs, num_agents = current_base_pos.shape[:2]
+    details: list[dict[str, Any]] = []
+    for env_id in range(num_envs):
+        min_distance_by_robot = [float("nan")] * num_agents
+        overlap_pairs: list[dict[str, Any]] = []
+        for robot_i in range(num_agents):
+            pos_i = _xy_from_tensor(current_base_pos, env_id, robot_i)
+            for robot_j in range(num_agents):
+                if robot_i == robot_j:
+                    continue
+                pos_j = _xy_from_tensor(current_base_pos, env_id, robot_j)
+                distance = _point_distance(pos_i, pos_j)
+                if not math.isfinite(min_distance_by_robot[robot_i]) or distance < min_distance_by_robot[robot_i]:
+                    min_distance_by_robot[robot_i] = distance
+            for robot_j in range(robot_i + 1, num_agents):
+                pos_j = _xy_from_tensor(current_base_pos, env_id, robot_j)
+                distance = _point_distance(pos_i, pos_j)
+                if distance < threshold:
+                    overlap_pairs.append(
+                        {
+                            "robot_i": int(robot_i),
+                            "robot_j": int(robot_j),
+                            "distance": float(distance),
+                            "clearance": float(distance - threshold),
+                            "threshold": float(threshold),
+                        }
+                    )
+        details.append({"overlap_pairs": overlap_pairs, "min_distance_by_robot": min_distance_by_robot})
+    return details
+
+
+def _inter_robot_path_step_details(
+    *,
+    previous_base_pos: torch.Tensor,
+    current_base_pos: torch.Tensor,
+    threshold: float,
+) -> list[dict[str, Any]]:
+    num_envs, num_agents = current_base_pos.shape[:2]
+    details: list[dict[str, Any]] = []
+    for env_id in range(num_envs):
+        crossing_pairs: list[dict[str, Any]] = []
+        near_miss_pairs: list[dict[str, Any]] = []
+        for robot_i in range(num_agents):
+            start_i = _xy_from_tensor(previous_base_pos, env_id, robot_i)
+            end_i = _xy_from_tensor(current_base_pos, env_id, robot_i)
+            for robot_j in range(robot_i + 1, num_agents):
+                start_j = _xy_from_tensor(previous_base_pos, env_id, robot_j)
+                end_j = _xy_from_tensor(current_base_pos, env_id, robot_j)
+                min_distance = _segment_distance(start_i, end_i, start_j, end_j)
+                crossing = _segments_intersect(start_i, end_i, start_j, end_j)
+                record = {
+                    "robot_i": int(robot_i),
+                    "robot_j": int(robot_j),
+                    "min_distance": _json_ready_float(min_distance),
+                    "threshold": float(threshold),
+                    "robot_i_start": [float(start_i[0]), float(start_i[1])],
+                    "robot_i_end": [float(end_i[0]), float(end_i[1])],
+                    "robot_j_start": [float(start_j[0]), float(start_j[1])],
+                    "robot_j_end": [float(end_j[0]), float(end_j[1])],
+                }
+                if crossing:
+                    crossing_pairs.append(record)
+                elif min_distance < threshold:
+                    near_miss_pairs.append(record)
+        details.append({"crossing_pairs": crossing_pairs, "near_miss_pairs": near_miss_pairs})
+    return details
+
+
 def _append_assignment_history(
     rows: list[dict[str, Any]],
     *,
@@ -976,9 +1278,12 @@ def _append_assignment_history(
     covered_before: torch.Tensor,
     covered_after: torch.Tensor,
     reporting: dict[str, torch.Tensor],
+    selected_target_conflict: dict[str, Any],
+    inter_robot_conflict: dict[str, Any],
     actual_base_motion: dict[str, Any],
     buffers: dict[str, torch.Tensor],
     previous_base_pos: torch.Tensor,
+    current_base_pos: torch.Tensor,
 ) -> None:
     viewpoint_pos = problem["viewpoint_pos"].to(dtype=torch.float32)
     available = problem["available_mask"].to(dtype=torch.bool)
@@ -1001,6 +1306,68 @@ def _append_assignment_history(
     budget_expected_steps = getattr(wrapper, "_last_budget_expected_steps_for_selected_pair", None)
     budget_ratio = getattr(wrapper, "_last_budget_ratio_for_selected_pair", None)
     budget_triggered = getattr(wrapper, "_last_budget_triggered_by_budget", None)
+    redirect_guardrail_config = getattr(wrapper, "assignment_redirect_guardrail_config", {})
+    redirect_guardrail_context = (
+        str(redirect_guardrail_config.get("apply_context", ""))
+        if isinstance(redirect_guardrail_config, dict)
+        else ""
+    )
+    redirect_guardrail_active = getattr(wrapper, "_last_pre_step_redirect_guardrail_active_for_robot", None)
+    redirect_guardrail_claimed_count = getattr(
+        wrapper,
+        "_last_pre_step_redirect_guardrail_claimed_suppressed_count",
+        None,
+    )
+    redirect_guardrail_spacing_count = getattr(
+        wrapper,
+        "_last_pre_step_redirect_guardrail_spacing_suppressed_count",
+        None,
+    )
+    redirect_guardrail_overmask_count = getattr(
+        wrapper,
+        "_last_pre_step_redirect_guardrail_overmask_non_noop_count",
+        None,
+    )
+    redirect_guardrail_only_noop = getattr(wrapper, "_last_pre_step_redirect_guardrail_only_noop_remaining", None)
+    redirect_guardrail_fail_open_reason = getattr(
+        wrapper,
+        "_last_pre_step_redirect_guardrail_fail_open_reason",
+        None,
+    )
+    redirect_guardrail_threshold = getattr(wrapper, "_last_pre_step_redirect_guardrail_threshold", None)
+    redirect_guardrail_claimed_robot_ids = getattr(
+        wrapper,
+        "_last_pre_step_redirect_guardrail_claimed_target_robot_ids",
+        None,
+    )
+    redirect_guardrail_nearby_robot_ids = getattr(
+        wrapper,
+        "_last_pre_step_redirect_guardrail_nearby_target_robot_ids",
+        None,
+    )
+    selected_target_threshold = float(selected_target_conflict.get("selected_target_conflict_threshold", 0.85))
+    if not math.isfinite(selected_target_threshold):
+        selected_target_threshold = 0.85
+    inter_robot_radius = float(inter_robot_conflict.get("inter_robot_conflict_robot_footprint_radius", 0.35))
+    inter_robot_margin = float(inter_robot_conflict.get("inter_robot_conflict_safety_margin", 0.15))
+    inter_robot_overlap_threshold = (2.0 * inter_robot_radius) + inter_robot_margin
+    selected_details = _selected_target_step_details(
+        assignment=assignment,
+        viewpoint_pos=viewpoint_pos,
+        threshold=selected_target_threshold,
+        num_viewpoints=wrapper.num_viewpoints,
+    )
+    overlap_details = _inter_robot_overlap_step_details(
+        current_base_pos=current_base_pos,
+        threshold=inter_robot_overlap_threshold,
+    )
+    path_details = _inter_robot_path_step_details(
+        previous_base_pos=previous_base_pos,
+        current_base_pos=current_base_pos,
+        threshold=inter_robot_overlap_threshold,
+    )
+    selected_target_trace_enabled = selected_target_conflict.get("selected_target_conflict_skipped_reason") is None
+    inter_robot_overlap_trace_enabled = inter_robot_conflict.get("inter_robot_conflict_skipped_reason") is None
     for env_id in range(wrapper.num_envs):
         for robot_id, robot_name in enumerate(wrapper.agents):
             raw_action = int(raw_ids[env_id, robot_id].item())
@@ -1011,6 +1378,31 @@ def _append_assignment_history(
             if not is_noop and selected_id < wrapper.num_viewpoints:
                 target_x = float(viewpoint_pos[env_id, selected_id, 0].item())
                 target_y = float(viewpoint_pos[env_id, selected_id, 1].item())
+            selected_env_details = selected_details[env_id]
+            overlap_env_details = overlap_details[env_id]
+            path_env_details = path_details[env_id]
+            selected_conflict_pairs = (
+                selected_env_details["conflict_pairs"] if selected_target_trace_enabled else []
+            )
+            selected_min_distance = (
+                selected_env_details["min_distance_by_robot"][robot_id]
+                if selected_target_trace_enabled
+                else float("nan")
+            )
+            same_step_claimed_robot_ids = selected_env_details["claimed_ids_by_robot"][robot_id]
+            same_step_nearby_robot_ids = (
+                selected_env_details["nearby_ids_by_robot"][robot_id]
+                if selected_target_trace_enabled
+                else []
+            )
+            overlap_pairs = overlap_env_details["overlap_pairs"] if inter_robot_overlap_trace_enabled else []
+            inter_robot_min_base_distance = (
+                overlap_env_details["min_distance_by_robot"][robot_id]
+                if inter_robot_overlap_trace_enabled
+                else float("nan")
+            )
+            path_crossing_pairs = path_env_details["crossing_pairs"]
+            path_near_miss_pairs = path_env_details["near_miss_pairs"]
             rows.append(
                 {
                     "method": method,
@@ -1032,10 +1424,35 @@ def _append_assignment_history(
                     "coverage_ratio_after_step": float(coverage_ratio[env_id].item()),
                     "robot_base_x": float(previous_base_pos[env_id, robot_id, 0].item()),
                     "robot_base_y": float(previous_base_pos[env_id, robot_id, 1].item()),
+                    "robot_base_post_x": float(current_base_pos[env_id, robot_id, 0].item()),
+                    "robot_base_post_y": float(current_base_pos[env_id, robot_id, 1].item()),
                     "target_x": target_x,
                     "target_y": target_y,
                     "selected_path_cost": float(reporting["selected_path_cost"][env_id, robot_id].item()),
                     "duplicate_selected_target_on_step": int(compute_assignment_duplicate_count(assignment)[env_id].item()),
+                    "selected_target_conflict_pair_count": _tensor_int_at(
+                        selected_target_conflict.get("selected_target_conflict_pair_count"),
+                        env_id,
+                    ),
+                    "selected_target_conflict_pairs": selected_conflict_pairs,
+                    "selected_target_min_distance_to_other_selected": float(selected_min_distance),
+                    "selected_target_conflict_threshold": float(selected_target_threshold),
+                    "same_step_claimed_target_count": len(same_step_claimed_robot_ids),
+                    "same_step_claimed_target_robot_ids": same_step_claimed_robot_ids,
+                    "same_step_nearby_claimed_target_count": len(same_step_nearby_robot_ids),
+                    "same_step_nearby_claimed_target_robot_ids": same_step_nearby_robot_ids,
+                    "inter_robot_overlap_pair_count": _tensor_int_at(
+                        inter_robot_conflict.get("inter_robot_overlap_pair_count"),
+                        env_id,
+                    ),
+                    "inter_robot_overlap_pairs": overlap_pairs,
+                    "inter_robot_min_base_distance": float(inter_robot_min_base_distance),
+                    "inter_robot_overlap_threshold": float(inter_robot_overlap_threshold),
+                    "inter_robot_path_crossing_pair_count": len(path_crossing_pairs),
+                    "inter_robot_path_crossing_pairs": path_crossing_pairs,
+                    "inter_robot_path_near_miss_pair_count": len(path_near_miss_pairs),
+                    "inter_robot_path_near_miss_pairs": path_near_miss_pairs,
+                    "inter_robot_path_near_miss_threshold": float(inter_robot_overlap_threshold),
                     "noop_when_available": bool(reporting["noop_when_available"][env_id, robot_id].item()),
                     "same_target_streak": float(reporting["same_target_streak_next"][env_id, robot_id].item()),
                     "steps_since_global_coverage_gain": float(buffers["steps_since_gain"][env_id].item()),
@@ -1082,6 +1499,54 @@ def _append_assignment_history(
                     ),
                     "budget_triggered_by_budget": bool(
                         budget_triggered is not None and budget_triggered[env_id, robot_id].item()
+                    ),
+                    "redirect_guardrail_active_for_robot": _tensor_bool_at(
+                        redirect_guardrail_active,
+                        env_id,
+                        robot_id,
+                    ),
+                    "redirect_guardrail_context": redirect_guardrail_context
+                    if _tensor_bool_at(redirect_guardrail_active, env_id, robot_id)
+                    else "",
+                    "claimed_target_redirect_suppressed_count": _tensor_int_at(
+                        redirect_guardrail_claimed_count,
+                        env_id,
+                        robot_id,
+                    ),
+                    "spacing_redirect_suppressed_count": _tensor_int_at(
+                        redirect_guardrail_spacing_count,
+                        env_id,
+                        robot_id,
+                    ),
+                    "redirect_guardrail_overmask_non_noop_count": _tensor_int_at(
+                        redirect_guardrail_overmask_count,
+                        env_id,
+                        robot_id,
+                    ),
+                    "redirect_guardrail_only_noop_remaining": _tensor_bool_at(
+                        redirect_guardrail_only_noop,
+                        env_id,
+                        robot_id,
+                    ),
+                    "redirect_guardrail_fail_open_reason": _nested_str_at(
+                        redirect_guardrail_fail_open_reason,
+                        env_id,
+                        robot_id,
+                    ),
+                    "redirect_guardrail_threshold": _tensor_float_at(
+                        redirect_guardrail_threshold,
+                        env_id,
+                        robot_id,
+                    ),
+                    "redirect_guardrail_claimed_target_robot_ids": _nested_list_at(
+                        redirect_guardrail_claimed_robot_ids,
+                        env_id,
+                        robot_id,
+                    ),
+                    "redirect_guardrail_nearby_target_robot_ids": _nested_list_at(
+                        redirect_guardrail_nearby_robot_ids,
+                        env_id,
+                        robot_id,
                     ),
                 }
             )
@@ -1422,9 +1887,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     covered_before=covered_before,
                     covered_after=covered_after,
                     reporting=reporting,
+                    selected_target_conflict=selected_target_conflict,
+                    inter_robot_conflict=inter_robot_conflict,
                     actual_base_motion=actual_base_motion,
                     buffers=buffers,
                     previous_base_pos=previous_base_pos,
+                    current_base_pos=current_base_pos,
                 )
                 covered_final = covered_after
                 last_covered_final = covered_final.detach().clone()
@@ -1499,6 +1967,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 "action_space": {str(agent_id): str(space) for agent_id, space in wrapper.action_space.items()},
                 "observation_layout": wrapper.assignment_observation_layout,
                 "assignment_cooldown_config": wrapper.assignment_cooldown_config,
+                "assignment_redirect_guardrail_config": wrapper.assignment_redirect_guardrail_config,
             },
             "static_diagnostics": static_diagnostics or {},
             "summary": summary_rows,

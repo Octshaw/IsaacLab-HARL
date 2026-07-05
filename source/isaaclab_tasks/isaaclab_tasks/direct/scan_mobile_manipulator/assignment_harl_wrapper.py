@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, Mapping
 
 import gymnasium
@@ -62,6 +63,7 @@ class AssignmentHarlWrapper:
         self._normalization_horizon = max(1, int(getattr(self._unwrapped, "max_episode_length", 300) or 300))
         self._assignment_reward_config = self._build_assignment_reward_config()
         self._assignment_cooldown_config = self._build_assignment_cooldown_config()
+        self._assignment_redirect_guardrail_config = self._build_assignment_redirect_guardrail_config()
         self._max_base_xy_step_by_agent = self._infer_max_base_xy_step_by_agent()
 
         self._adapter = AssignmentHarlAdapter(
@@ -244,6 +246,10 @@ class AssignmentHarlWrapper:
     def assignment_cooldown_config(self) -> dict[str, bool | float | int | str]:
         return dict(self._assignment_cooldown_config)
 
+    @property
+    def assignment_redirect_guardrail_config(self) -> dict[str, bool | float | int | str | None]:
+        return dict(self._assignment_redirect_guardrail_config)
+
     def reset(self, *args, **kwargs) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
         obs, _ = self._env.reset(*args, **kwargs)
         problem = self._unwrapped.get_assignment_problem()
@@ -263,6 +269,7 @@ class AssignmentHarlWrapper:
     ) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor, dict, torch.Tensor]:
         pre_step_problem = self._unwrapped.get_assignment_problem()
         pre_step_available_actions = self._build_available_actions(problem=pre_step_problem)
+        self._capture_pre_step_assignment_redirect_guardrail_diagnostics()
         assignment = self.decode_actions(discrete_actions, layout=layout)
         env_actions = self.assignment_to_env_actions(assignment)
         selected_available_mask = self._selected_available_mask(assignment, pre_step_available_actions)
@@ -436,6 +443,47 @@ class AssignmentHarlWrapper:
             "budget_require_feasible": _bool_attr("assignment_cooldown_budget_require_feasible", True),
         }
 
+    def _build_assignment_redirect_guardrail_config(self) -> dict[str, bool | float | int | str | None]:
+        cfg = getattr(self._unwrapped, "cfg", None)
+
+        def _bool_attr(name: str, default: bool) -> bool:
+            return bool(getattr(cfg, name, default))
+
+        def _int_attr(name: str, default: int) -> int:
+            return max(0, int(getattr(cfg, name, default)))
+
+        def _optional_float_attr(name: str) -> float | None:
+            value = getattr(cfg, name, None)
+            if value is None:
+                return None
+            numeric = float(value)
+            if not math.isfinite(numeric) or numeric <= 0.0:
+                raise ValueError(f"{name} must be finite and positive when provided, got {value!r}")
+            return numeric
+
+        context = str(getattr(cfg, "assignment_redirect_guardrail_apply_context", "recent_budget_trigger")).strip().lower()
+        if context != "recent_budget_trigger":
+            raise ValueError(
+                "assignment_redirect_guardrail_apply_context currently supports only 'recent_budget_trigger', "
+                f"got {context!r}"
+            )
+        window_steps = _int_attr("assignment_redirect_guardrail_window_steps", 1)
+        enabled = _bool_attr("assignment_redirect_guardrail_enabled", False)
+        if enabled and window_steps <= 0:
+            raise ValueError("assignment_redirect_guardrail_window_steps must be positive when the guardrail is enabled")
+
+        return {
+            "enabled": enabled,
+            "apply_context": context,
+            "window_steps": window_steps,
+            "claimed_target_enabled": _bool_attr("assignment_redirect_guardrail_claimed_target_enabled", True),
+            "spacing_enabled": _bool_attr("assignment_redirect_guardrail_spacing_enabled", True),
+            "spacing_threshold": _optional_float_attr("assignment_redirect_guardrail_spacing_threshold"),
+            "fail_open_spacing": _bool_attr("assignment_redirect_guardrail_fail_open_spacing", True),
+            "fail_open_claimed": _bool_attr("assignment_redirect_guardrail_fail_open_claimed", True),
+            "log_diagnostics": _bool_attr("assignment_redirect_guardrail_log_diagnostics", True),
+        }
+
     def _infer_max_base_xy_step_by_agent(self) -> torch.Tensor:
         cfg = getattr(self._unwrapped, "cfg", None)
         value = getattr(cfg, "max_base_xy_step", None)
@@ -499,7 +547,10 @@ class AssignmentHarlWrapper:
     def _build_available_actions(self, problem: dict | None = None) -> torch.Tensor:
         if problem is None:
             problem = self._unwrapped.get_assignment_problem()
-        if not self._assignment_cooldown_mask_enabled():
+        cooldown_mask_enabled = self._assignment_cooldown_mask_enabled()
+        redirect_guardrail_enabled = self._assignment_redirect_guardrail_enabled()
+        if not cooldown_mask_enabled and not redirect_guardrail_enabled:
+            self._reset_assignment_redirect_guardrail_mask_diagnostics()
             available_actions = make_assignment_action_mask(problem, include_noop=self.include_noop)
         else:
             available_mask = problem["available_mask"]
@@ -514,9 +565,16 @@ class AssignmentHarlWrapper:
                     f"{(self._num_envs, self._num_agents, self._num_viewpoints)}, "
                     f"got {tuple(available_mask.shape)}"
                 )
-            filtered_mask = self._apply_assignment_cooldown_to_available_mask(
-                available_mask.to(device=self._device, dtype=torch.bool)
-            )
+            filtered_mask = available_mask.to(device=self._device, dtype=torch.bool).clone()
+            if cooldown_mask_enabled:
+                filtered_mask = self._apply_assignment_cooldown_to_available_mask(filtered_mask)
+            if redirect_guardrail_enabled:
+                filtered_mask = self._apply_assignment_redirect_guardrail_to_available_mask(
+                    filtered_mask,
+                    problem=problem,
+                )
+            else:
+                self._reset_assignment_redirect_guardrail_mask_diagnostics()
             available_actions = filtered_mask.to(dtype=torch.float32)
             if self.include_noop:
                 noop_mask = torch.ones(
@@ -545,6 +603,286 @@ class AssignmentHarlWrapper:
     def _apply_assignment_cooldown_to_available_mask(self, available_mask: torch.Tensor) -> torch.Tensor:
         cooldown_mask = self._per_robot_target_cooldown_remaining > 0
         return available_mask & (~cooldown_mask)
+
+    def _assignment_redirect_guardrail_enabled(self) -> bool:
+        return bool(self._assignment_redirect_guardrail_config["enabled"])
+
+    def _assignment_redirect_guardrail_spacing_threshold(self, problem: dict) -> float:
+        configured = self._assignment_redirect_guardrail_config.get("spacing_threshold")
+        if configured is not None:
+            return float(configured)
+
+        cfg = getattr(self._unwrapped, "cfg", None)
+
+        def _scalar(value: Any, default: float) -> float:
+            if value is None:
+                return default
+            if isinstance(value, torch.Tensor):
+                if value.numel() == 0:
+                    return default
+                value = value.detach().flatten()[0].cpu().item()
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                return default
+            return numeric if math.isfinite(numeric) else default
+
+        radius = _scalar(
+            problem.get("inter_robot_target_conflict_radius", getattr(cfg, "inter_robot_target_conflict_radius", None)),
+            0.35,
+        )
+        margin = _scalar(
+            problem.get(
+                "inter_robot_target_conflict_safety_margin",
+                getattr(cfg, "inter_robot_target_conflict_safety_margin", None),
+            ),
+            0.15,
+        )
+        return max(1.0e-6, (2.0 * radius) + margin)
+
+    def _empty_redirect_guardrail_robot_id_lists(self) -> list[list[list[int]]]:
+        return [[[] for _ in range(self._num_agents)] for _ in range(self._num_envs)]
+
+    def _reset_assignment_redirect_guardrail_mask_diagnostics(self, env_ids: torch.Tensor | None = None) -> None:
+        if env_ids is None:
+            env_ids = torch.arange(self._num_envs, device=self._device, dtype=torch.long)
+        else:
+            env_ids = env_ids.to(device=self._device, dtype=torch.long)
+        if not hasattr(self, "_last_redirect_guardrail_active_for_robot"):
+            self._last_redirect_guardrail_active_for_robot = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
+            )
+            self._last_redirect_guardrail_claimed_suppressed_count = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_redirect_guardrail_spacing_suppressed_count = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_redirect_guardrail_overmask_non_noop_count = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_redirect_guardrail_only_noop_remaining = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
+            )
+            self._last_redirect_guardrail_fail_open_count = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_redirect_guardrail_threshold = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.float32, device=self._device
+            )
+            self._last_redirect_guardrail_fail_open_reason = [
+                ["" for _ in range(self._num_agents)] for _ in range(self._num_envs)
+            ]
+            self._last_redirect_guardrail_claimed_target_robot_ids = self._empty_redirect_guardrail_robot_id_lists()
+            self._last_redirect_guardrail_nearby_target_robot_ids = self._empty_redirect_guardrail_robot_id_lists()
+            self._capture_pre_step_assignment_redirect_guardrail_diagnostics()
+
+        self._last_redirect_guardrail_active_for_robot[env_ids] = False
+        self._last_redirect_guardrail_claimed_suppressed_count[env_ids] = 0
+        self._last_redirect_guardrail_spacing_suppressed_count[env_ids] = 0
+        self._last_redirect_guardrail_overmask_non_noop_count[env_ids] = 0
+        self._last_redirect_guardrail_only_noop_remaining[env_ids] = False
+        self._last_redirect_guardrail_fail_open_count[env_ids] = 0
+        self._last_redirect_guardrail_threshold[env_ids] = 0.0
+        for env_id in env_ids.detach().cpu().tolist():
+            for robot_id in range(self._num_agents):
+                self._last_redirect_guardrail_fail_open_reason[env_id][robot_id] = ""
+                self._last_redirect_guardrail_claimed_target_robot_ids[env_id][robot_id] = []
+                self._last_redirect_guardrail_nearby_target_robot_ids[env_id][robot_id] = []
+
+    def _capture_pre_step_assignment_redirect_guardrail_diagnostics(self) -> None:
+        if not hasattr(self, "_last_redirect_guardrail_active_for_robot"):
+            return
+        self._last_pre_step_redirect_guardrail_active_for_robot = (
+            self._last_redirect_guardrail_active_for_robot.clone()
+        )
+        self._last_pre_step_redirect_guardrail_claimed_suppressed_count = (
+            self._last_redirect_guardrail_claimed_suppressed_count.clone()
+        )
+        self._last_pre_step_redirect_guardrail_spacing_suppressed_count = (
+            self._last_redirect_guardrail_spacing_suppressed_count.clone()
+        )
+        self._last_pre_step_redirect_guardrail_overmask_non_noop_count = (
+            self._last_redirect_guardrail_overmask_non_noop_count.clone()
+        )
+        self._last_pre_step_redirect_guardrail_only_noop_remaining = (
+            self._last_redirect_guardrail_only_noop_remaining.clone()
+        )
+        self._last_pre_step_redirect_guardrail_fail_open_count = (
+            self._last_redirect_guardrail_fail_open_count.clone()
+        )
+        self._last_pre_step_redirect_guardrail_threshold = self._last_redirect_guardrail_threshold.clone()
+        self._last_pre_step_redirect_guardrail_fail_open_reason = [
+            list(row) for row in self._last_redirect_guardrail_fail_open_reason
+        ]
+        self._last_pre_step_redirect_guardrail_claimed_target_robot_ids = [
+            [list(ids) for ids in row] for row in self._last_redirect_guardrail_claimed_target_robot_ids
+        ]
+        self._last_pre_step_redirect_guardrail_nearby_target_robot_ids = [
+            [list(ids) for ids in row] for row in self._last_redirect_guardrail_nearby_target_robot_ids
+        ]
+
+    def _append_redirect_guardrail_fail_reason(self, current: str, reason: str) -> str:
+        if not current:
+            return reason
+        if reason in current.split(";"):
+            return current
+        return f"{current};{reason}"
+
+    def _apply_assignment_redirect_guardrail_to_available_mask(
+        self,
+        available_mask: torch.Tensor,
+        *,
+        problem: dict,
+    ) -> torch.Tensor:
+        result = available_mask.to(device=self._device, dtype=torch.bool).clone()
+        self._reset_assignment_redirect_guardrail_mask_diagnostics()
+        if not self._assignment_redirect_guardrail_enabled() or self._num_viewpoints <= 0:
+            return result
+
+        active = self._assignment_redirect_guardrail_remaining > 0
+        if not bool(active.any()):
+            return result
+
+        viewpoint_pos = problem.get("viewpoint_pos")
+        spacing_enabled = bool(self._assignment_redirect_guardrail_config["spacing_enabled"])
+        if spacing_enabled:
+            if not isinstance(viewpoint_pos, torch.Tensor):
+                spacing_enabled = False
+            else:
+                viewpoint_pos = viewpoint_pos.to(device=self._device, dtype=torch.float32)
+                if tuple(viewpoint_pos.shape[:2]) != (self._num_envs, self._num_viewpoints):
+                    spacing_enabled = False
+        threshold = self._assignment_redirect_guardrail_spacing_threshold(problem)
+        claimed_enabled = bool(self._assignment_redirect_guardrail_config["claimed_target_enabled"])
+        fail_open_claimed = bool(self._assignment_redirect_guardrail_config["fail_open_claimed"])
+        fail_open_spacing = bool(self._assignment_redirect_guardrail_config["fail_open_spacing"])
+
+        for env_id in range(self._num_envs):
+            for robot_id in range(self._num_agents):
+                if not bool(active[env_id, robot_id].item()):
+                    continue
+
+                self._last_redirect_guardrail_active_for_robot[env_id, robot_id] = True
+                self._last_redirect_guardrail_threshold[env_id, robot_id] = float(threshold)
+                row_before = result[env_id, robot_id].clone()
+                row = row_before.clone()
+
+                teammate_targets: dict[int, list[int]] = {}
+                for other_robot_id in range(self._num_agents):
+                    if other_robot_id == robot_id:
+                        continue
+                    target_id = int(self._previous_assignment[env_id, other_robot_id].item())
+                    if 0 <= target_id < self._num_viewpoints:
+                        teammate_targets.setdefault(target_id, []).append(other_robot_id)
+
+                fail_reason = ""
+                claimed_robot_ids: set[int] = set()
+                if claimed_enabled and teammate_targets:
+                    claimed_mask = torch.zeros(self._num_viewpoints, dtype=torch.bool, device=self._device)
+                    for target_id, owner_ids in teammate_targets.items():
+                        if bool(row[target_id].item()):
+                            claimed_mask[target_id] = True
+                            claimed_robot_ids.update(owner_ids)
+                    if bool(claimed_mask.any()):
+                        tentative = row & (~claimed_mask)
+                        claimed_count = int(claimed_mask.to(dtype=torch.long).sum().item())
+                        if bool(row.any()) and not bool(tentative.any()):
+                            self._last_redirect_guardrail_overmask_non_noop_count[env_id, robot_id] += claimed_count
+                            self._last_redirect_guardrail_fail_open_count[env_id, robot_id] += 1
+                            fail_reason = self._append_redirect_guardrail_fail_reason(fail_reason, "claimed_overmask")
+                            if not fail_open_claimed:
+                                row = tentative
+                                self._last_redirect_guardrail_claimed_suppressed_count[env_id, robot_id] += claimed_count
+                        else:
+                            row = tentative
+                            self._last_redirect_guardrail_claimed_suppressed_count[env_id, robot_id] += claimed_count
+
+                nearby_robot_ids: set[int] = set()
+                if spacing_enabled and teammate_targets and bool(row.any()):
+                    spacing_mask = torch.zeros(self._num_viewpoints, dtype=torch.bool, device=self._device)
+                    teammate_positions: list[tuple[int, torch.Tensor]] = []
+                    assert isinstance(viewpoint_pos, torch.Tensor)
+                    for target_id, owner_ids in teammate_targets.items():
+                        target_xy = viewpoint_pos[env_id, target_id, :2]
+                        for owner_id in owner_ids:
+                            teammate_positions.append((owner_id, target_xy))
+                    candidate_ids = torch.nonzero(row, as_tuple=False).flatten().detach().cpu().tolist()
+                    for candidate_id in candidate_ids:
+                        if candidate_id in teammate_targets:
+                            continue
+                        candidate_xy = viewpoint_pos[env_id, candidate_id, :2]
+                        close_owner_ids = [
+                            owner_id
+                            for owner_id, owner_xy in teammate_positions
+                            if float(torch.linalg.norm(candidate_xy - owner_xy).item()) < threshold
+                        ]
+                        if close_owner_ids:
+                            spacing_mask[candidate_id] = True
+                            nearby_robot_ids.update(close_owner_ids)
+                    if bool(spacing_mask.any()):
+                        tentative = row & (~spacing_mask)
+                        spacing_count = int(spacing_mask.to(dtype=torch.long).sum().item())
+                        if bool(row.any()) and not bool(tentative.any()):
+                            self._last_redirect_guardrail_overmask_non_noop_count[env_id, robot_id] += spacing_count
+                            self._last_redirect_guardrail_fail_open_count[env_id, robot_id] += 1
+                            fail_reason = self._append_redirect_guardrail_fail_reason(fail_reason, "spacing_overmask")
+                            if not fail_open_spacing:
+                                row = tentative
+                                self._last_redirect_guardrail_spacing_suppressed_count[env_id, robot_id] += spacing_count
+                        else:
+                            row = tentative
+                            self._last_redirect_guardrail_spacing_suppressed_count[env_id, robot_id] += spacing_count
+
+                result[env_id, robot_id] = row
+                self._last_redirect_guardrail_only_noop_remaining[env_id, robot_id] = not bool(row.any())
+                self._last_redirect_guardrail_fail_open_reason[env_id][robot_id] = fail_reason
+                self._last_redirect_guardrail_claimed_target_robot_ids[env_id][robot_id] = sorted(claimed_robot_ids)
+                self._last_redirect_guardrail_nearby_target_robot_ids[env_id][robot_id] = sorted(nearby_robot_ids)
+
+        return result
+
+    def _advance_assignment_redirect_guardrail_window_after_action(self) -> None:
+        if not hasattr(self, "_assignment_redirect_guardrail_remaining"):
+            return
+        active = self._assignment_redirect_guardrail_remaining > 0
+        if not bool(active.any()):
+            return
+        self._assignment_redirect_guardrail_remaining = torch.clamp(
+            self._assignment_redirect_guardrail_remaining - active.to(dtype=torch.long),
+            min=0,
+        )
+        self._assignment_redirect_guardrail_triggered_target = torch.where(
+            self._assignment_redirect_guardrail_remaining > 0,
+            self._assignment_redirect_guardrail_triggered_target,
+            torch.full_like(self._assignment_redirect_guardrail_triggered_target, -1),
+        )
+
+    def _activate_assignment_redirect_guardrail_for_budget_triggers(
+        self,
+        *,
+        budget_trigger: torch.Tensor,
+        assignment: torch.Tensor,
+    ) -> None:
+        if not self._assignment_redirect_guardrail_enabled():
+            return
+        if self._assignment_redirect_guardrail_config["apply_context"] != "recent_budget_trigger":
+            return
+        window_steps = int(self._assignment_redirect_guardrail_config["window_steps"])
+        if window_steps <= 0:
+            return
+        env_indices, agent_indices = torch.nonzero(budget_trigger, as_tuple=True)
+        if env_indices.numel() == 0:
+            return
+        triggered_targets = assignment[env_indices, agent_indices]
+        valid = (triggered_targets >= 0) & (triggered_targets < self._num_viewpoints)
+        if not bool(valid.any()):
+            return
+        env_indices = env_indices[valid]
+        agent_indices = agent_indices[valid]
+        triggered_targets = triggered_targets[valid]
+        self._assignment_redirect_guardrail_remaining[env_indices, agent_indices] = window_steps
+        self._assignment_redirect_guardrail_triggered_target[env_indices, agent_indices] = triggered_targets
 
     def _cooldown_trigger_mode(self) -> str:
         return str(self._assignment_cooldown_config["trigger_mode"])
@@ -786,6 +1124,13 @@ class AssignmentHarlWrapper:
             self._last_budget_triggered_by_budget = torch.zeros(
                 self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
             )
+            self._assignment_redirect_guardrail_remaining = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._assignment_redirect_guardrail_triggered_target = torch.full(
+                (self._num_envs, self._num_agents), -1, dtype=torch.long, device=self._device
+            )
+            self._reset_assignment_redirect_guardrail_mask_diagnostics()
 
         self._assignment_step[env_ids] = 0
         self._per_viewpoint_attempted_count[env_ids] = 0.0
@@ -814,6 +1159,10 @@ class AssignmentHarlWrapper:
         self._last_budget_expected_steps_for_selected_pair[env_ids] = 0
         self._last_budget_ratio_for_selected_pair[env_ids] = 0.0
         self._last_budget_triggered_by_budget[env_ids] = False
+        self._assignment_redirect_guardrail_remaining[env_ids] = 0
+        self._assignment_redirect_guardrail_triggered_target[env_ids] = -1
+        self._reset_assignment_redirect_guardrail_mask_diagnostics(env_ids=env_ids)
+        self._capture_pre_step_assignment_redirect_guardrail_diagnostics()
         if problem is not None and "viewpoints_covered" in problem:
             self._last_covered_mask[env_ids] = problem["viewpoints_covered"][env_ids].to(dtype=torch.bool)
         else:
@@ -902,6 +1251,7 @@ class AssignmentHarlWrapper:
         self._last_budget_expected_steps_for_selected_pair.zero_()
         self._last_budget_ratio_for_selected_pair.zero_()
         self._last_budget_triggered_by_budget.zero_()
+        self._advance_assignment_redirect_guardrail_window_after_action()
 
         cooldown_enabled = self._assignment_cooldown_enabled()
         base_available = pre_step_problem["available_mask"].to(device=self._device, dtype=torch.bool)
@@ -1076,6 +1426,10 @@ class AssignmentHarlWrapper:
         budget_trigger_envs, budget_trigger_agents = torch.nonzero(budget_trigger, as_tuple=True)
         if budget_trigger_envs.numel() > 0:
             self._last_budget_triggered_by_budget[budget_trigger_envs, budget_trigger_agents] = True
+            self._activate_assignment_redirect_guardrail_for_budget_triggers(
+                budget_trigger=budget_trigger,
+                assignment=assignment,
+            )
         self._reset_budget_attempt_pairs(trigger_envs, trigger_agents)
 
         if bool(self._assignment_cooldown_config["clear_on_covered"]):
@@ -1349,6 +1703,8 @@ class AssignmentHarlWrapper:
         augmented["assignment_rl_reward"] = reward_decomposition
         if bool(self._assignment_cooldown_config["log_diagnostics"]):
             augmented["assignment_cooldown"] = self._assignment_cooldown_info()
+        if bool(self._assignment_redirect_guardrail_config["log_diagnostics"]):
+            augmented["assignment_redirect_guardrail"] = self._assignment_redirect_guardrail_info()
         return augmented
 
     def _assignment_cooldown_info(self) -> dict[str, Any]:
@@ -1444,6 +1800,70 @@ class AssignmentHarlWrapper:
             if self._assignment_cooldown_enabled()
             else torch.zeros(self._num_envs, self._num_agents, dtype=torch.float32, device=self._device),
             "budget_last_triggered_by_budget_count": budget_triggered_pair_count,
+        }
+
+    def _assignment_redirect_guardrail_info(self) -> dict[str, Any]:
+        enabled = self._assignment_redirect_guardrail_enabled()
+        active = getattr(
+            self,
+            "_last_pre_step_redirect_guardrail_active_for_robot",
+            torch.zeros(self._num_envs, self._num_agents, dtype=torch.bool, device=self._device),
+        )
+        claimed_count = getattr(
+            self,
+            "_last_pre_step_redirect_guardrail_claimed_suppressed_count",
+            torch.zeros(self._num_envs, self._num_agents, dtype=torch.long, device=self._device),
+        )
+        spacing_count = getattr(
+            self,
+            "_last_pre_step_redirect_guardrail_spacing_suppressed_count",
+            torch.zeros(self._num_envs, self._num_agents, dtype=torch.long, device=self._device),
+        )
+        overmask_count = getattr(
+            self,
+            "_last_pre_step_redirect_guardrail_overmask_non_noop_count",
+            torch.zeros(self._num_envs, self._num_agents, dtype=torch.long, device=self._device),
+        )
+        only_noop = getattr(
+            self,
+            "_last_pre_step_redirect_guardrail_only_noop_remaining",
+            torch.zeros(self._num_envs, self._num_agents, dtype=torch.bool, device=self._device),
+        )
+        fail_open_count = getattr(
+            self,
+            "_last_pre_step_redirect_guardrail_fail_open_count",
+            torch.zeros(self._num_envs, self._num_agents, dtype=torch.long, device=self._device),
+        )
+        threshold = getattr(
+            self,
+            "_last_pre_step_redirect_guardrail_threshold",
+            torch.zeros(self._num_envs, self._num_agents, dtype=torch.float32, device=self._device),
+        )
+        active_float = active.to(dtype=torch.float32)
+        active_count = active_float.sum(dim=1)
+        threshold_count = active_count.clamp(min=1.0)
+        threshold_mean = (threshold.to(dtype=torch.float32) * active_float).sum(dim=1) / threshold_count
+        threshold_mean = torch.where(active_count > 0.0, threshold_mean, torch.zeros_like(threshold_mean))
+        return {
+            "enabled": float(enabled),
+            "context": str(self._assignment_redirect_guardrail_config["apply_context"]),
+            "active_count": active_count if enabled else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "claimed_suppressed_count": claimed_count.to(dtype=torch.float32).sum(dim=1)
+            if enabled
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "spacing_suppressed_count": spacing_count.to(dtype=torch.float32).sum(dim=1)
+            if enabled
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "overmask_count": overmask_count.to(dtype=torch.float32).sum(dim=1)
+            if enabled
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "only_noop_remaining_count": only_noop.to(dtype=torch.float32).sum(dim=1)
+            if enabled
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "fail_open_count": fail_open_count.to(dtype=torch.float32).sum(dim=1)
+            if enabled
+            else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+            "threshold": threshold_mean if enabled else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
         }
 
 

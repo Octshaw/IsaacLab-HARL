@@ -1,0 +1,162 @@
+scenario_name: algorithm_proxy_component_mesh_assignment_cooldown_budget_m15_slack5_d5
+scenario_type: algorithm_visual_debug
+
+task: Isaac-Scan-Mobile-Manipulator-Direct-v0
+num_envs: 1
+max_steps: 1
+headless: false
+device: cuda:0
+
+robots:
+  config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/robots/robots_real_proxy.yaml
+
+capabilities:
+  config_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/capabilities/mobile_scanner_profiles.yaml
+
+visualization:
+  robot_visual_mode: debug_marker
+  component_visual_mode: mesh
+  gui_camera_enabled: true
+  gui_camera_eye: [-8.0, -8.0, 8.0]
+  gui_camera_target: [0.0, 0.0, 0.0]
+  ground_grid_enabled: true
+  ground_grid_half_extent: 6.0
+  ground_grid_spacing: 0.5
+  ground_grid_z: 0.01
+  ground_grid_line_width: 0.008
+
+component_mesh:
+  path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/Model/aircraft_skin_with_frame.obj
+  format: obj
+  unit: mm
+  scale: [0.001, 0.001, 0.001]
+  orientation: [1.0, 0.0, 0.0, 0.0]
+  orientation_format: qwxyz
+  align_base_center_to_world_origin: true
+  visible: true
+
+component_proxy:
+  type: bbox
+  auto_from_mesh: false
+  padding: 0.0
+  visual_visible: false
+
+obstacle_diagnostics:
+  enabled: true
+  mode: diagnostics_only
+  obstacle_source: component_mesh_footprint
+  footprint_resolution: 0.10
+  footprint_inflation_radius: 0.30
+  line_sample_step: 0.10
+  blocked_path_penalty: 100.0
+
+actual_base_motion_obstacle_diagnostics:
+  enabled: true
+  mode: diagnostics_only
+  obstacle_source: component_mesh_footprint
+  line_sample_step: 0.10
+  min_motion_distance: 1.0e-6
+  max_pairs_sample: 20
+  debug_visualization:
+    enabled: false
+    draw_in_headless: false
+    max_lines: 20
+    line_width: 0.03
+
+obstacle_debug_visualization:
+  enabled: true
+  draw_in_headless: false
+  line_source: selected_assignments
+  max_lines_per_robot: 5
+  max_total_lines: 20
+  prefer_shortest_blocked_pairs: true
+  line_z_mode: max_endpoint
+  line_z_value: 0.20
+  line_z_offset: 0.05
+  line_width: 0.03
+
+inter_robot_conflict_diagnostics:
+  enabled: true
+  mode: diagnostics_only
+  robot_footprint_radius: 0.35
+  safety_margin: 0.15
+  target_conflict_enabled: true
+  target_conflict_radius: 0.35
+  target_conflict_safety_margin: 0.15
+  debug_visualization:
+    enabled: true
+    draw_in_headless: false
+    max_lines: 10
+    line_width: 0.03
+
+selected_target_conflict_candidate_comparison:
+  enabled: true
+  mode: diagnostic_only
+  candidate_generator: sequential_robot_order
+  robot_order: robot_index
+  target_conflict_radius: 0.35
+  target_conflict_safety_margin: 0.15
+  selected_target_conflict_penalty: 100.0
+  compare_methods:
+    - nearest
+    - greedy
+  include_random_as_baseline_only: true
+  max_pairs_sample: 20
+
+conflict_aware_baseline:
+  enabled: true
+  methods:
+    - greedy_conflict_aware
+    - nearest_conflict_aware
+  mode: gated_solver_variant
+  top_k: 10
+  target_conflict_radius: 0.35
+  target_conflict_safety_margin: 0.15
+  target_conflict_penalty: 100.0
+  duplicate_penalty: 1000000.0
+  fallback_to_base_method: true
+  max_pairs_sample: 20
+
+assignment_cooldown:
+  enabled: true
+  scope: per_robot_target
+  trigger_mode: budget_and_streak
+  trigger_attempts: 999999
+  trigger_same_target_streak: 999999
+  trigger_steps_since_global_gain: 0
+  duration_steps: 5
+  require_uncovered: true
+  require_available: true
+  require_feasible: true
+  require_no_global_gain: true
+  clear_on_covered: true
+  apply_to_action_mask: true
+  log_diagnostics: true
+  budget_multiplier: 1.5
+  budget_slack_steps: 5
+  budget_min_streak: 10
+  budget_require_no_global_gain: true
+  budget_require_uncovered: true
+  budget_require_available: true
+  budget_require_feasible: true
+
+assignment_redirect_guardrail:
+  enabled: true
+  apply_context: recent_budget_trigger
+  window_steps: 1
+  claimed_target_enabled: true
+  spacing_enabled: true
+  spacing_threshold: null
+  fail_open_spacing: true
+  fail_open_claimed: true
+  log_diagnostics: true
+
+viewpoints:
+  csv_path: source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs/viewpoints/component_mesh_jittered_n50.csv
+  expect_num_viewpoints: 50
+  format: scanner_pose_world_quat_wxyz_v1
+  frame: world
+  units: meters
+
+output:
+  result_file: results/assignment_diagnostics/algorithm_proxy_component_mesh_assignment_cooldown_budget_m15_slack5_d5_smoke.json

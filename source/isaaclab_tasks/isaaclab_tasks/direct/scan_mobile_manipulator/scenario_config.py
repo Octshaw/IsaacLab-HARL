@@ -37,6 +37,7 @@ SUPPORTED_CONFLICT_AWARE_BASELINE_MODES = {"gated_solver_variant"}
 SUPPORTED_CONFLICT_AWARE_BASELINE_METHODS = {"greedy_conflict_aware", "nearest_conflict_aware"}
 SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES = {"per_robot_target"}
 SUPPORTED_ASSIGNMENT_COOLDOWN_TRIGGER_MODES = {"streak", "budget", "budget_and_streak"}
+SUPPORTED_ASSIGNMENT_REDIRECT_GUARDRAIL_CONTEXTS = {"recent_budget_trigger"}
 
 ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
     "assignment_cooldown_enabled",
@@ -60,6 +61,18 @@ ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
     "assignment_cooldown_budget_require_uncovered",
     "assignment_cooldown_budget_require_available",
     "assignment_cooldown_budget_require_feasible",
+)
+
+ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS = (
+    "assignment_redirect_guardrail_enabled",
+    "assignment_redirect_guardrail_apply_context",
+    "assignment_redirect_guardrail_window_steps",
+    "assignment_redirect_guardrail_claimed_target_enabled",
+    "assignment_redirect_guardrail_spacing_enabled",
+    "assignment_redirect_guardrail_spacing_threshold",
+    "assignment_redirect_guardrail_fail_open_spacing",
+    "assignment_redirect_guardrail_fail_open_claimed",
+    "assignment_redirect_guardrail_log_diagnostics",
 )
 
 ENV_CFG_SCENARIO_ATTRS = (
@@ -127,6 +140,7 @@ ENV_CFG_SCENARIO_ATTRS = (
     "inter_robot_conflict_debug_visualization_max_lines",
     "inter_robot_conflict_debug_visualization_line_width",
     *ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS,
+    *ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS,
 )
 
 
@@ -249,6 +263,47 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     _put(defaults, "assignment_cooldown_budget_require_uncovered", assignment_cooldown.get("budget_require_uncovered"))
     _put(defaults, "assignment_cooldown_budget_require_available", assignment_cooldown.get("budget_require_available"))
     _put(defaults, "assignment_cooldown_budget_require_feasible", assignment_cooldown.get("budget_require_feasible"))
+
+    for attr in ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS:
+        _put(defaults, attr, config.get(attr))
+    assignment_redirect_guardrail = _mapping(
+        config.get("assignment_redirect_guardrail"),
+        "assignment_redirect_guardrail",
+        required=False,
+    )
+    _put(defaults, "assignment_redirect_guardrail_enabled", assignment_redirect_guardrail.get("enabled"))
+    _put(defaults, "assignment_redirect_guardrail_apply_context", assignment_redirect_guardrail.get("apply_context"))
+    _put(defaults, "assignment_redirect_guardrail_window_steps", assignment_redirect_guardrail.get("window_steps"))
+    _put(
+        defaults,
+        "assignment_redirect_guardrail_claimed_target_enabled",
+        assignment_redirect_guardrail.get("claimed_target_enabled"),
+    )
+    _put(
+        defaults,
+        "assignment_redirect_guardrail_spacing_enabled",
+        assignment_redirect_guardrail.get("spacing_enabled"),
+    )
+    _put(
+        defaults,
+        "assignment_redirect_guardrail_spacing_threshold",
+        assignment_redirect_guardrail.get("spacing_threshold"),
+    )
+    _put(
+        defaults,
+        "assignment_redirect_guardrail_fail_open_spacing",
+        assignment_redirect_guardrail.get("fail_open_spacing"),
+    )
+    _put(
+        defaults,
+        "assignment_redirect_guardrail_fail_open_claimed",
+        assignment_redirect_guardrail.get("fail_open_claimed"),
+    )
+    _put(
+        defaults,
+        "assignment_redirect_guardrail_log_diagnostics",
+        assignment_redirect_guardrail.get("log_diagnostics"),
+    )
 
     obstacle = _mapping(config.get("obstacle_diagnostics"), "obstacle_diagnostics", required=False)
     _put(defaults, "obstacle_diagnostics_enabled", obstacle.get("enabled"))
@@ -436,6 +491,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
         _validate_target_conflict_candidate_comparison_metadata(config)
         _validate_conflict_aware_baseline_metadata(config)
         _validate_assignment_cooldown_metadata(config)
+        _validate_assignment_redirect_guardrail_metadata(config)
     _validate_visual_mode_arg(
         getattr(args, "robot_visual_mode", None),
         label="visualization.robot_visual_mode",
@@ -483,6 +539,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
         resolve_path(capability_config_path, repo_root=repo_root, must_exist=True, label="capabilities.config_path")
     _ensure_output_parent(getattr(args, "result_file", None), repo_root=repo_root, label="output.result_file")
     _validate_assignment_cooldown_args(args)
+    _validate_assignment_redirect_guardrail_args(args)
 
 
 def validate_generation_args(args: Namespace, *, repo_root: Path) -> None:
@@ -1130,6 +1187,87 @@ def _validate_assignment_cooldown_values(values: Mapping[str, Any]) -> None:
             raise ValueError(
                 "assignment_cooldown_budget_multiplier must be finite and non-negative, "
                 f"got {value!r}."
+            )
+
+
+def _validate_assignment_redirect_guardrail_metadata(config: Mapping[str, Any]) -> None:
+    values = {
+        attr: config.get(attr)
+        for attr in ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS
+        if config.get(attr) is not None
+    }
+    block = _mapping(config.get("assignment_redirect_guardrail"), "assignment_redirect_guardrail", required=False)
+    block_to_attr = {
+        "enabled": "assignment_redirect_guardrail_enabled",
+        "apply_context": "assignment_redirect_guardrail_apply_context",
+        "window_steps": "assignment_redirect_guardrail_window_steps",
+        "claimed_target_enabled": "assignment_redirect_guardrail_claimed_target_enabled",
+        "spacing_enabled": "assignment_redirect_guardrail_spacing_enabled",
+        "spacing_threshold": "assignment_redirect_guardrail_spacing_threshold",
+        "fail_open_spacing": "assignment_redirect_guardrail_fail_open_spacing",
+        "fail_open_claimed": "assignment_redirect_guardrail_fail_open_claimed",
+        "log_diagnostics": "assignment_redirect_guardrail_log_diagnostics",
+    }
+    for block_key, attr in block_to_attr.items():
+        if block.get(block_key) is not None:
+            values[attr] = block.get(block_key)
+    _validate_assignment_redirect_guardrail_values(values)
+
+
+def _validate_assignment_redirect_guardrail_args(args: Namespace) -> None:
+    values = {
+        attr: getattr(args, attr, None)
+        for attr in ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS
+        if getattr(args, attr, None) is not None
+    }
+    _validate_assignment_redirect_guardrail_values(values)
+
+
+def _validate_assignment_redirect_guardrail_values(values: Mapping[str, Any]) -> None:
+    if not values:
+        return
+    bool_fields = (
+        "assignment_redirect_guardrail_enabled",
+        "assignment_redirect_guardrail_claimed_target_enabled",
+        "assignment_redirect_guardrail_spacing_enabled",
+        "assignment_redirect_guardrail_fail_open_spacing",
+        "assignment_redirect_guardrail_fail_open_claimed",
+        "assignment_redirect_guardrail_log_diagnostics",
+    )
+    for key in bool_fields:
+        value = values.get(key)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"{key} must be boolean, got {value!r}.")
+
+    context = values.get("assignment_redirect_guardrail_apply_context")
+    if context is not None and str(context).strip().lower() not in SUPPORTED_ASSIGNMENT_REDIRECT_GUARDRAIL_CONTEXTS:
+        raise ValueError(
+            f"Unsupported assignment_redirect_guardrail_apply_context={context!r}; expected one of "
+            f"{sorted(SUPPORTED_ASSIGNMENT_REDIRECT_GUARDRAIL_CONTEXTS)!r}."
+        )
+
+    window_steps = values.get("assignment_redirect_guardrail_window_steps")
+    if window_steps is not None and (not isinstance(window_steps, int) or window_steps < 0):
+        raise ValueError(
+            "assignment_redirect_guardrail_window_steps must be a non-negative integer, "
+            f"got {window_steps!r}."
+        )
+    if values.get("assignment_redirect_guardrail_enabled") is True and window_steps == 0:
+        raise ValueError("assignment_redirect_guardrail_window_steps must be positive when the guardrail is enabled.")
+
+    spacing_threshold = values.get("assignment_redirect_guardrail_spacing_threshold")
+    if spacing_threshold is not None:
+        try:
+            numeric = float(spacing_threshold)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "assignment_redirect_guardrail_spacing_threshold must be numeric or null, "
+                f"got {spacing_threshold!r}."
+            ) from exc
+        if not math.isfinite(numeric) or numeric <= 0.0:
+            raise ValueError(
+                "assignment_redirect_guardrail_spacing_threshold must be finite and positive when provided, "
+                f"got {spacing_threshold!r}."
             )
 
 

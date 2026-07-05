@@ -310,6 +310,18 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     assignment_cooldown_budget_require_available = True
     assignment_cooldown_budget_require_feasible = True
 
+    # Assignment-wrapper redirect guardrail. Defaults keep all existing assignment masks unchanged unless explicitly
+    # enabled by a scenario/config object; this is consumed by AssignmentHarlWrapper only.
+    assignment_redirect_guardrail_enabled = False
+    assignment_redirect_guardrail_apply_context = "recent_budget_trigger"
+    assignment_redirect_guardrail_window_steps = 1
+    assignment_redirect_guardrail_claimed_target_enabled = True
+    assignment_redirect_guardrail_spacing_enabled = True
+    assignment_redirect_guardrail_spacing_threshold = None
+    assignment_redirect_guardrail_fail_open_spacing = True
+    assignment_redirect_guardrail_fail_open_claimed = True
+    assignment_redirect_guardrail_log_diagnostics = True
+
 
 def _as_float_tuple(value, *, name: str, length: int) -> tuple[float, ...]:
     try:

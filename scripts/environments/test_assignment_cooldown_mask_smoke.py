@@ -61,6 +61,17 @@ class _FakeCfg:
     assignment_cooldown_budget_require_uncovered = True
     assignment_cooldown_budget_require_available = True
     assignment_cooldown_budget_require_feasible = True
+    assignment_redirect_guardrail_enabled = False
+    assignment_redirect_guardrail_apply_context = "recent_budget_trigger"
+    assignment_redirect_guardrail_window_steps = 1
+    assignment_redirect_guardrail_claimed_target_enabled = True
+    assignment_redirect_guardrail_spacing_enabled = True
+    assignment_redirect_guardrail_spacing_threshold = None
+    assignment_redirect_guardrail_fail_open_spacing = True
+    assignment_redirect_guardrail_fail_open_claimed = True
+    assignment_redirect_guardrail_log_diagnostics = True
+    inter_robot_target_conflict_radius = 0.35
+    inter_robot_target_conflict_safety_margin = 0.15
     max_base_xy_step = (0.08, 0.10, 0.06)
 
 
@@ -81,6 +92,13 @@ class _FakeAssignmentEnv:
         budget_slack_steps: int = 5,
         budget_min_streak: int = 10,
         max_base_xy_step: tuple[float, ...] = (0.08, 0.10, 0.06),
+        redirect_guardrail_enabled: bool = False,
+        redirect_guardrail_window_steps: int = 1,
+        redirect_guardrail_claimed_target_enabled: bool = True,
+        redirect_guardrail_spacing_enabled: bool = True,
+        redirect_guardrail_spacing_threshold: float | None = None,
+        redirect_guardrail_fail_open_spacing: bool = True,
+        redirect_guardrail_fail_open_claimed: bool = True,
     ) -> None:
         self.unwrapped = self
         self.num_envs = int(num_envs)
@@ -102,6 +120,15 @@ class _FakeAssignmentEnv:
         self.cfg.assignment_cooldown_budget_slack_steps = int(budget_slack_steps)
         self.cfg.assignment_cooldown_budget_min_streak = int(budget_min_streak)
         self.cfg.max_base_xy_step = tuple(float(value) for value in max_base_xy_step)
+        self.cfg.assignment_redirect_guardrail_enabled = bool(redirect_guardrail_enabled)
+        self.cfg.assignment_redirect_guardrail_window_steps = int(redirect_guardrail_window_steps)
+        self.cfg.assignment_redirect_guardrail_claimed_target_enabled = bool(
+            redirect_guardrail_claimed_target_enabled
+        )
+        self.cfg.assignment_redirect_guardrail_spacing_enabled = bool(redirect_guardrail_spacing_enabled)
+        self.cfg.assignment_redirect_guardrail_spacing_threshold = redirect_guardrail_spacing_threshold
+        self.cfg.assignment_redirect_guardrail_fail_open_spacing = bool(redirect_guardrail_fail_open_spacing)
+        self.cfg.assignment_redirect_guardrail_fail_open_claimed = bool(redirect_guardrail_fail_open_claimed)
         self.episode_length_buf = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
 
         self.viewpoints_covered = torch.zeros(self.num_envs, self.num_viewpoints, dtype=torch.bool, device=self.device)
@@ -147,6 +174,8 @@ class _FakeAssignmentEnv:
             "static_geometric_feasible_mask": feasible,
             "feasible_mask": feasible,
             "available_mask": available,
+            "inter_robot_target_conflict_radius": 0.35,
+            "inter_robot_target_conflict_safety_margin": 0.15,
         }
 
     def close(self) -> None:
@@ -283,6 +312,157 @@ def run_smoke() -> dict[str, Any]:
     _assert(int(budget_wrapper._budget_attempt_steps.sum().item()) == 0, "full reset missed budget attempt steps")
     _assert(int((budget_wrapper._budget_attempt_target >= 0).sum().item()) == 0, "full reset missed budget targets")
 
+    guardrail_disabled = _make_wrapper(
+        cooldown_enabled=False,
+        redirect_guardrail_enabled=False,
+    )
+    guardrail_disabled_problem = guardrail_disabled.unwrapped.get_assignment_problem()
+    guardrail_disabled._assignment_redirect_guardrail_remaining[0, 0] = 1
+    guardrail_disabled._previous_assignment[0, 1] = 2
+    guardrail_disabled_mask = guardrail_disabled._build_available_actions(problem=guardrail_disabled_problem)
+    guardrail_disabled_baseline = make_assignment_action_mask(guardrail_disabled_problem, include_noop=True)
+    _assert(
+        torch.equal(guardrail_disabled_mask, guardrail_disabled_baseline),
+        "disabled redirect guardrail changed available_actions",
+    )
+    _assert(bool(torch.all(guardrail_disabled_mask[..., -1] == 1.0)), "disabled redirect guardrail masked noop")
+
+    guardrail = _make_wrapper(
+        cooldown_enabled=True,
+        num_envs=1,
+        num_agents=3,
+        num_viewpoints=6,
+        redirect_guardrail_enabled=True,
+    )
+    guardrail.unwrapped.viewpoint_pos[3, 0] = 2.4
+    guardrail_problem = guardrail.unwrapped.get_assignment_problem()
+    guardrail_available_before = guardrail_problem["available_mask"].clone()
+    guardrail._assignment_redirect_guardrail_remaining[0, 0] = 1
+    guardrail._previous_assignment[0] = torch.tensor([-1, 2, -1], dtype=torch.long)
+    guardrail_mask = guardrail._build_available_actions(problem=guardrail_problem)
+    _assert(
+        torch.equal(guardrail_problem["available_mask"], guardrail_available_before),
+        "redirect guardrail mutated base available_mask",
+    )
+    _assert(tuple(guardrail_mask.shape) == (1, 3, 7), "redirect guardrail changed available_actions shape")
+    _assert(float(guardrail_mask[0, 0, 2].item()) == 0.0, "claimed-target guardrail did not suppress claim")
+    _assert(float(guardrail_mask[0, 0, 3].item()) == 0.0, "spacing guardrail did not suppress nearby target")
+    _assert(float(guardrail_mask[0, 0, 4].item()) == 1.0, "spacing guardrail over-suppressed distant target")
+    _assert(float(guardrail_mask[0, 1, 2].item()) == 1.0, "guardrail affected robot without active redirect window")
+    _assert(float(guardrail_mask[0, 1, 3].item()) == 1.0, "spacing affected robot without active redirect window")
+    _assert(float(guardrail_mask[0, 0, -1].item()) == 1.0, "redirect guardrail masked noop")
+    _assert(
+        int(guardrail._last_redirect_guardrail_claimed_suppressed_count[0, 0].item()) == 1,
+        "claimed-target suppression count mismatch",
+    )
+    _assert(
+        int(guardrail._last_redirect_guardrail_spacing_suppressed_count[0, 0].item()) == 1,
+        "spacing suppression count mismatch",
+    )
+    _assert(
+        guardrail._last_redirect_guardrail_claimed_target_robot_ids[0][0] == [1],
+        "claimed-target suppressor robot ids missing",
+    )
+    _assert(
+        guardrail._last_redirect_guardrail_nearby_target_robot_ids[0][0] == [1],
+        "nearby-target suppressor robot ids missing",
+    )
+
+    spacing_fail_open = _make_wrapper(
+        cooldown_enabled=True,
+        num_envs=1,
+        num_agents=3,
+        num_viewpoints=3,
+        redirect_guardrail_enabled=True,
+    )
+    spacing_fail_open.unwrapped.viewpoint_pos[1, 0] = 0.4
+    spacing_problem = spacing_fail_open.unwrapped.get_assignment_problem()
+    spacing_problem["available_mask"] = spacing_problem["available_mask"].clone()
+    spacing_problem["available_mask"][0, 0, :] = False
+    spacing_problem["available_mask"][0, 0, 0] = True
+    spacing_problem["available_mask"][0, 0, 1] = True
+    spacing_available_before = spacing_problem["available_mask"].clone()
+    spacing_fail_open._assignment_redirect_guardrail_remaining[0, 0] = 1
+    spacing_fail_open._previous_assignment[0] = torch.tensor([-1, 0, -1], dtype=torch.long)
+    spacing_mask = spacing_fail_open._build_available_actions(problem=spacing_problem)
+    _assert(torch.equal(spacing_problem["available_mask"], spacing_available_before), "spacing fail-open mutated mask")
+    _assert(float(spacing_mask[0, 0, 0].item()) == 0.0, "claimed target should remain suppressed before spacing")
+    _assert(float(spacing_mask[0, 0, 1].item()) == 1.0, "spacing over-mask did not fail open")
+    _assert(
+        spacing_fail_open._last_redirect_guardrail_fail_open_reason[0][0] == "spacing_overmask",
+        "spacing fail-open reason missing",
+    )
+    _assert(
+        int(spacing_fail_open._last_redirect_guardrail_spacing_suppressed_count[0, 0].item()) == 0,
+        "failed-open spacing should not count as actual suppression",
+    )
+
+    claimed_fail_open = _make_wrapper(
+        cooldown_enabled=True,
+        num_envs=1,
+        num_agents=3,
+        num_viewpoints=2,
+        redirect_guardrail_enabled=True,
+        redirect_guardrail_spacing_enabled=False,
+    )
+    claimed_problem = claimed_fail_open.unwrapped.get_assignment_problem()
+    claimed_problem["available_mask"] = claimed_problem["available_mask"].clone()
+    claimed_problem["available_mask"][0, 0, :] = False
+    claimed_problem["available_mask"][0, 0, 0] = True
+    claimed_fail_open._assignment_redirect_guardrail_remaining[0, 0] = 1
+    claimed_fail_open._previous_assignment[0] = torch.tensor([-1, 0, -1], dtype=torch.long)
+    claimed_mask = claimed_fail_open._build_available_actions(problem=claimed_problem)
+    _assert(float(claimed_mask[0, 0, 0].item()) == 1.0, "claimed over-mask did not fail open")
+    _assert(
+        claimed_fail_open._last_redirect_guardrail_fail_open_reason[0][0] == "claimed_overmask",
+        "claimed fail-open reason missing",
+    )
+    _assert(
+        int(claimed_fail_open._last_redirect_guardrail_claimed_suppressed_count[0, 0].item()) == 0,
+        "failed-open claimed mask should not count as actual suppression",
+    )
+    _assert(float(claimed_mask[0, 0, -1].item()) == 1.0, "claimed fail-open masked noop")
+
+    redirect_budget_wrapper = _make_wrapper(
+        cooldown_enabled=True,
+        trigger_mode="budget_and_streak",
+        trigger_attempts=999999,
+        trigger_same_target_streak=999999,
+        trigger_steps_since_global_gain=0,
+        duration_steps=5,
+        budget_multiplier=1.0,
+        budget_slack_steps=1,
+        budget_min_streak=1,
+        max_base_xy_step=(1.0, 1.0, 1.0),
+        redirect_guardrail_enabled=True,
+    )
+    redirect_budget_problem = redirect_budget_wrapper.unwrapped.get_assignment_problem()
+    redirect_budget_assignment = torch.full((2, 3), -1, dtype=torch.long)
+    redirect_budget_assignment[:, 0] = 1
+    _update(redirect_budget_wrapper, redirect_budget_assignment, redirect_budget_problem, redirect_budget_problem)
+    _update(redirect_budget_wrapper, redirect_budget_assignment, redirect_budget_problem, redirect_budget_problem)
+    _update(redirect_budget_wrapper, redirect_budget_assignment, redirect_budget_problem, redirect_budget_problem)
+    _assert(
+        int(redirect_budget_wrapper._assignment_redirect_guardrail_remaining[0, 0].item()) == 1,
+        "budget trigger did not activate redirect guardrail window",
+    )
+    _assert(
+        int(redirect_budget_wrapper._assignment_redirect_guardrail_triggered_target[0, 0].item()) == 1,
+        "redirect guardrail did not record triggered target",
+    )
+    redirect_guarded_mask = redirect_budget_wrapper._build_available_actions(problem=redirect_budget_problem)
+    _assert(
+        bool(redirect_budget_wrapper._last_redirect_guardrail_active_for_robot[0, 0].item()),
+        "redirect guardrail active diagnostic missing after budget trigger",
+    )
+    _assert(float(redirect_guarded_mask[0, 0, -1].item()) == 1.0, "active redirect guardrail masked noop")
+    redirect_noop = torch.full((2, 3), -1, dtype=torch.long)
+    _update(redirect_budget_wrapper, redirect_noop, redirect_budget_problem, redirect_budget_problem)
+    _assert(
+        int(redirect_budget_wrapper._assignment_redirect_guardrail_remaining[0, 0].item()) == 0,
+        "redirect guardrail window did not decrement after next action",
+    )
+
     trigger_wrapper._per_robot_target_cooldown_remaining[:] = 5
     trigger_wrapper._per_robot_target_failed_attempt_count[:] = 5
     trigger_wrapper._assignment_cooldown_trigger_count[:] = 3.0
@@ -312,6 +492,16 @@ def run_smoke() -> dict[str, Any]:
         "budget_trigger_waited_until_budget": True,
         "budget_trigger_masked_pair_only": True,
         "budget_reset_cleared": True,
+        "redirect_guardrail_disabled_matches_baseline": True,
+        "redirect_guardrail_claimed_target_suppressed": True,
+        "redirect_guardrail_spacing_suppressed": True,
+        "redirect_guardrail_scope_limited_to_active_window": True,
+        "redirect_guardrail_spacing_fail_open": True,
+        "redirect_guardrail_claimed_fail_open": True,
+        "redirect_guardrail_window_activated_by_budget_trigger": True,
+        "redirect_guardrail_window_decremented_after_action": True,
+        "redirect_guardrail_base_mask_not_mutated": True,
+        "redirect_guardrail_noop_available": True,
         "full_reset_cleared": True,
         "partial_reset_cleared_done_env_only": True,
     }
