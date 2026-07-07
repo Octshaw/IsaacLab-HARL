@@ -217,6 +217,18 @@ parser.add_argument(
     help="Write controller_state_trace.csv for selected full-episode agent-viewpoint pairs.",
 )
 parser.add_argument(
+    "--log_assignment_lifecycle",
+    action="store_true",
+    default=False,
+    help="Write passive assignment lifecycle diagnostics. Disabled by default and behavior-neutral.",
+)
+parser.add_argument(
+    "--assignment_lifecycle_output_dir",
+    type=str,
+    default=None,
+    help="Optional output directory for passive lifecycle JSONL/summary diagnostics.",
+)
+parser.add_argument(
     "--controller_trace_pairs",
     nargs="*",
     default=[],
@@ -303,6 +315,10 @@ import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_controller import viewpoint_assignment_to_actions
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_adapter import make_harl_action_tensor
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import make_assignment_harl_env
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_diagnostics import (
+    AssignmentLifecycleDiagnosticsAdapter,
+    make_assignment_lifecycle_post_problem,
+)
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_rl_interface import compute_assignment_duplicate_count
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_state import status_counts
 from isaaclab_tasks.direct.scan_mobile_manipulator.solvers import make_solver
@@ -5169,6 +5185,45 @@ def _should_print_assignment_diag(step_id: int) -> bool:
     return args_cli.diagnostic_interval > 0 and step_id % args_cli.diagnostic_interval == 0
 
 
+def _assignment_lifecycle_safe_name(value: str) -> str:
+    safe = []
+    for char in str(value).strip():
+        safe.append(char if char.isalnum() or char in ("-", "_") else "_")
+    result = "".join(safe).strip("_")
+    while "__" in result:
+        result = result.replace("__", "_")
+    return result or "run"
+
+
+def _assignment_lifecycle_output_root() -> Path:
+    if args_cli.assignment_lifecycle_output_dir is not None:
+        return Path(args_cli.assignment_lifecycle_output_dir).expanduser().resolve()
+    if args_cli.output_dir is not None:
+        base = Path(args_cli.output_dir).expanduser()
+        if args_cli.output_name is not None:
+            base = base / _assignment_lifecycle_safe_name(args_cli.output_name)
+        return (base / "assignment_lifecycle").resolve()
+    return Path("results/assignment_evaluation/assignment_lifecycle_diagnostics").resolve()
+
+
+def _make_assignment_lifecycle_adapter(
+    *,
+    method: str,
+    problem: dict,
+    device: torch.device,
+) -> AssignmentLifecycleDiagnosticsAdapter:
+    return AssignmentLifecycleDiagnosticsAdapter(
+        enabled=bool(args_cli.log_assignment_lifecycle),
+        num_envs=int(problem["num_envs"]),
+        num_robots=int(problem["num_agents"]),
+        num_tasks=int(problem["num_viewpoints"]),
+        device=device,
+        method_name=str(method),
+        output_dir=_assignment_lifecycle_output_root() / _assignment_lifecycle_safe_name(str(method)),
+        proposal_type="standardized_assignment",
+    )
+
+
 def _evaluate_baseline(method: str, env_cfg) -> tuple[list[dict], dict]:
     env = gym.make(args_cli.task, cfg=env_cfg)
     unwrapped = env.unwrapped
@@ -5294,6 +5349,8 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
     conflict_aware_solver_rows: list[dict] = []
     actual_base_motion_rows: list[dict] = []
     retry_fallback_stats = _init_retry_fallback_stats()
+    lifecycle_summaries: list[dict] = []
+    lifecycle_adapters: list[AssignmentLifecycleDiagnosticsAdapter] = []
     diagnostics: dict | None = None
     agent_names = _agent_names_from_unwrapped(unwrapped)
     controller_trace_pairs = _controller_trace_pairs(agent_names, viewpoint_ids)
@@ -5315,6 +5372,9 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                 num_viewpoints=int(problem["num_viewpoints"]),
             )
             _validate_evaluation_scenario(unwrapped, problem, method)
+            lifecycle_adapter = _make_assignment_lifecycle_adapter(method=method, problem=problem, device=device)
+            lifecycle_adapters.append(lifecycle_adapter)
+            lifecycle_adapter.reset_envs(env_ids=None, episode_ids=episode_index_by_env.clone())
             if diagnostics is None:
                 diagnostics = _collect_evaluation_diagnostics(unwrapped, problem, methods)
                 diagnostics["controller_state_trace"] = {
@@ -5394,6 +5454,15 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     )
                     covered_before = unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
                     reporting_step = _assignment_reporting_step_diagnostics(buffers, problem, assignment)
+                    lifecycle_adapter.observe_pre_step(
+                        problem=problem,
+                        assignment_proposal=assignment,
+                        episode_ids=episode_index_by_env.clone(),
+                        method_metadata={
+                            "method_name": str(method),
+                            "proposal_type": "standardized_assignment",
+                        },
+                    )
                     if args_cli.compare_obstacle_aware_candidates:
                         obstacle_candidate_comparison_rows.append(
                             _compare_obstacle_aware_candidate_step(
@@ -5524,6 +5593,22 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     script_done = buffers["length"] >= args_cli.max_steps
                     done = env_done | script_done
                     done_ids = torch.nonzero(done, as_tuple=False).flatten()
+                    lifecycle_post_problem = make_assignment_lifecycle_post_problem(
+                        unwrapped.get_assignment_problem(),
+                        covered_after=covered_mask,
+                    )
+                    lifecycle_adapter.observe_post_step(
+                        pre_step_problem=problem,
+                        assignment_proposal=assignment,
+                        post_step_problem=lifecycle_post_problem,
+                        external_diagnostics=None,
+                        done_env_ids=done_ids,
+                        episode_ids=episode_index_by_env.clone(),
+                        method_metadata={
+                            "method_name": str(method),
+                            "proposal_type": "standardized_assignment",
+                        },
+                    )
                     if done_ids.numel() == 0:
                         continue
 
@@ -5577,10 +5662,13 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     _reset_buffers(buffers, done_ids)
                     solver.reset()
             all_records.extend(records)
+            lifecycle_summaries.append(lifecycle_adapter.finalize())
             if diagnostics is not None and args_cli.write_controller_state_trace:
                 unavailable = diagnostics.setdefault("controller_state_trace", {}).setdefault("unavailable_fields", [])
                 unavailable.extend(str(value) for value in sorted(trace_state["unavailable_fields"]) if str(value) not in unavailable)
     finally:
+        for lifecycle_adapter in lifecycle_adapters:
+            lifecycle_adapter.finalize()
         unwrapped._reset_idx = original_reset_idx
         env.close()
     if diagnostics is None:
@@ -5607,6 +5695,13 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
             methods,
             agent_names,
         )
+    if bool(args_cli.log_assignment_lifecycle):
+        diagnostics["assignment_lifecycle"] = {
+            "enabled": True,
+            "output_root": str(_assignment_lifecycle_output_root()),
+            "summaries": lifecycle_summaries,
+            "behavior_changed": False,
+        }
     return all_records, diagnostics, assignment_history, retry_fallback_events, controller_state_trace
 
 

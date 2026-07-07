@@ -67,6 +67,18 @@ parser.add_argument("--dir", type=str, required=True, help="Assignment RL checkp
 parser.add_argument("--num_episodes", type=int, default=1, help="Number of playback episodes.")
 parser.add_argument("--max_steps", type=int, default=300, help="Maximum wrapper steps per episode.")
 parser.add_argument("--output_dir", type=str, required=True, help="Directory for diagnostics.json/CSV outputs.")
+parser.add_argument(
+    "--log_assignment_lifecycle",
+    action="store_true",
+    default=False,
+    help="Write passive assignment lifecycle diagnostics. Disabled by default and behavior-neutral.",
+)
+parser.add_argument(
+    "--assignment_lifecycle_output_dir",
+    type=str,
+    default=None,
+    help="Optional output directory for passive lifecycle JSONL/summary diagnostics.",
+)
 parser.add_argument("--stop_on_done", action="store_true", help="End each episode when any env reports done.")
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
@@ -105,6 +117,11 @@ from isaaclab.envs import DirectMARLEnvCfg, DirectRLEnvCfg, ManagerBasedRLEnvCfg
 import isaaclab_tasks  # noqa: F401,E402
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_adapter import make_harl_action_tensor  # noqa: E402
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import make_assignment_harl_env  # noqa: E402
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_diagnostics import (  # noqa: E402
+    AssignmentLifecycleDiagnosticsAdapter,
+    build_assignment_lifecycle_external_diagnostics,
+    make_assignment_lifecycle_post_problem,
+)
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_rl_interface import (  # noqa: E402
     compute_assignment_duplicate_count,
 )
@@ -2014,6 +2031,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     wrapper = None
     capture_state: dict[str, Any] | None = None
+    lifecycle_adapter: AssignmentLifecycleDiagnosticsAdapter | None = None
     try:
         wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
         capture_state = _install_prereset_coverage_capture(wrapper.unwrapped)
@@ -2032,6 +2050,22 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 f"got N={wrapper.num_viewpoints}, M={wrapper.num_agents}, noop={wrapper.noop_action_id}"
             )
 
+        lifecycle_output_dir = (
+            Path(args_cli.assignment_lifecycle_output_dir).expanduser().resolve()
+            if args_cli.assignment_lifecycle_output_dir is not None
+            else output_dir / "assignment_lifecycle"
+        )
+        lifecycle_adapter = AssignmentLifecycleDiagnosticsAdapter(
+            enabled=bool(args_cli.log_assignment_lifecycle),
+            num_envs=wrapper.num_envs,
+            num_robots=wrapper.num_agents,
+            num_tasks=wrapper.num_viewpoints,
+            device=wrapper.device,
+            method_name="rl_checkpoint",
+            output_dir=lifecycle_output_dir,
+            proposal_type="decoded_rl_assignment",
+        )
+
         rnn_hidden_size = int(agent_cfg["model"]["hidden_sizes"][-1])
         recurrent_n = int(agent_cfg["model"]["recurrent_n"])
         all_episode_records: list[dict[str, Any]] = []
@@ -2042,6 +2076,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         for episode in range(args_cli.num_episodes):
             reset_kwargs = {"seed": int(args_cli.seed) + episode} if args_cli.seed is not None else {}
             obs, _, available_actions = wrapper.reset(**reset_kwargs)
+            lifecycle_episode_ids = torch.full(
+                (wrapper.num_envs,),
+                int(episode),
+                dtype=torch.long,
+                device=wrapper.device,
+            )
+            lifecycle_adapter.reset_envs(env_ids=None, episode_ids=lifecycle_episode_ids)
             _assert_available_actions(wrapper, available_actions)
             problem = wrapper.unwrapped.get_assignment_problem()
             if static_diagnostics is None:
@@ -2091,12 +2132,41 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     assignment,
                     torch.arange(wrapper.num_viewpoints, device=wrapper.device, dtype=torch.long),
                 )
+                lifecycle_adapter.observe_pre_step(
+                    problem=pre_problem,
+                    assignment_proposal=assignment,
+                    episode_ids=lifecycle_episode_ids,
+                    method_metadata={
+                        "method_name": "rl_checkpoint",
+                        "proposal_type": "decoded_rl_assignment",
+                    },
+                )
 
                 obs, _, rewards, dones, info, available_actions = wrapper.step(actions)
                 _assert_available_actions(wrapper, available_actions)
                 done_envs = torch.all(dones, dim=1)
                 current_base_pos = wrapper.unwrapped.base_pos.detach().clone()
                 covered_after = _coverage_from_env(wrapper.unwrapped, done_envs, capture_state)
+                post_problem = make_assignment_lifecycle_post_problem(
+                    wrapper.unwrapped.get_assignment_problem(),
+                    covered_after=covered_after,
+                )
+                lifecycle_external = build_assignment_lifecycle_external_diagnostics(
+                    assignment_proposal=assignment,
+                    info=info if isinstance(info, dict) else None,
+                )
+                lifecycle_adapter.observe_post_step(
+                    pre_step_problem=pre_problem,
+                    assignment_proposal=assignment,
+                    post_step_problem=post_problem,
+                    external_diagnostics=lifecycle_external,
+                    done_env_ids=torch.nonzero(done_envs, as_tuple=False).flatten(),
+                    episode_ids=lifecycle_episode_ids,
+                    method_metadata={
+                        "method_name": "rl_checkpoint",
+                        "proposal_type": "decoded_rl_assignment",
+                    },
+                )
                 inter_robot_conflict = wrapper.unwrapped.get_inter_robot_conflict_diagnostics()
                 actual_base_motion = _actual_base_motion_step_diagnostics(
                     wrapper.unwrapped,
@@ -2200,6 +2270,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     episode_records_written.add(env_id)
 
         summary_rows = _summarize(all_episode_records, checkpoint_dir=str(model_dir), checkpoint_kind=checkpoint_kind, wrapper=wrapper)
+        lifecycle_summary = lifecycle_adapter.finalize()
         diagnostics = {
             "metadata": {
                 "method": "rl_checkpoint",
@@ -2240,6 +2311,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 "last_error": (capture_state or {}).get("last_error"),
             },
         }
+        if bool(args_cli.log_assignment_lifecycle):
+            diagnostics["assignment_lifecycle"] = lifecycle_summary
         if last_covered_final is not None:
             diagnostics["final_uncovered_viewpoint_ids_by_env"] = _ids_from_mask(~last_covered_final)
 
@@ -2249,6 +2322,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         _write_csv(output_dir / "assignment_history.csv", assignment_history_rows, ASSIGNMENT_HISTORY_FIELDS)
         print(f"[OK]: wrote diagnostics to {output_dir}")
     finally:
+        if lifecycle_adapter is not None:
+            lifecycle_adapter.finalize()
         if wrapper is not None:
             if capture_state is not None:
                 _restore_prereset_coverage_capture(wrapper.unwrapped, capture_state)

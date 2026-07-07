@@ -4,177 +4,197 @@ Compact handoff for the assignment-based scan-mobile-manipulator work.
 
 ## Current Status
 
-Phase 9G-5 design decision review is complete.
+Phase 9G-6E commit-readiness review for the complete Phase 9G-6 block is complete.
 
-Phase 9G-5 was documentation-only. No code behavior changed. No Python source files were modified in this phase. No training was run. No playback was run. No broad evaluation or simulation rollout was run. No commit was made.
-
-No wrapper behavior, env behavior, TTL duration default, TTL decrement timing, reward formula/scale, actor/shared observation, `available_actions` shape, assignment action id semantics, controller behavior, HARL code, baseline solver, scenario YAML, installed package, cooldown tuning, Phase 9F redirect guardrail tuning, new failure criteria, or env-level lifecycle behavior was changed.
-
-## Latest Decision
-
-Phase 9G-5 decision:
+Classification:
 
 ```text
-Stop extending TTL-only failed-pair memory as the main solution path.
-Retain the current failed-pair memory code disabled-by-default as diagnostic/experimental guardrail code.
-Do not run D=10 automatically.
-Treat D=10 as optional only if the user explicitly wants one bounded playback-only stress test.
-Proceed toward explicit active-task/release lifecycle design through a narrow documentation-only boundary audit.
+COMMIT-READY
 ```
 
-Reason:
+No commit was made. The user will manually stage and commit.
+
+No training was run. No short training smoke was run. No new playback or comparison-method evaluation episode was run in Phase 9G-6E.
+
+## Phase 9G-6 Scope Summary
+
+Phase 9G-6A:
 
 ```text
-D=6 proved TTL memory can suppress and delay the previously missed T+6 return rows.
-D=6 did not reduce total same-owner returns.
-D=6 did not produce coverage gain after release or within 20 steps.
-The same failed pairs were selected at T+7 immediately after memory expiry.
-TTL-only masking changes temporary action availability, not task ownership, execution state, release semantics, or policy-visible failure state.
+active-task / release lifecycle transition interface audit
+documentation/design only
 ```
 
-## Latest Completed Phase
-
-Phase 9G-5: failed-pair memory design decision review.
-
-Report:
+Phase 9G-6B:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G5_FAILED_PAIR_MEMORY_DESIGN_DECISION_REVIEW.md
+passive shared lifecycle transition logger
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle.py
+scripts/environments/test_assignment_lifecycle_transition_logger_smoke.py
 ```
 
-Archive:
+Phase 9G-6C:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G5_FAILED_PAIR_MEMORY_DESIGN_DECISION_REVIEW_20260707.md
+default-off passive lifecycle diagnostics integration for:
+  RL playback diagnostics
+  generic comparison-method evaluation
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_diagnostics.py
 ```
 
-## Files Created Or Updated In Phase 9G-5
-
-Created:
+Phase 9G-6D:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G5_FAILED_PAIR_MEMORY_DESIGN_DECISION_REVIEW.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G5_FAILED_PAIR_MEMORY_DESIGN_DECISION_REVIEW_20260707.md
+bounded runtime validation
+PASS
+RL enabled/disabled identity: exact SHA matches
+nearest enabled/disabled identity: exact SHA matches
+RL, nearest, random, greedy lifecycle outputs populated and schema-consistent
 ```
 
-Updated:
+Phase 9G-6E:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md
+commit-readiness review
+COMMIT-READY
+offline analyzer schema comparator tightened to exact event and summary field-set equality
 ```
-
-Not modified in Phase 9G-5:
-
-```text
-Python source files
-assignment_harl_wrapper.py
-scenario_config.py
-scan_mobile_manipulator_env.py
-assignment_state.py
-analyzer scripts
-repository scenario YAML files
-```
-
-Note: the worktree still contains earlier uncommitted Phase 9G-1/9G-2/9G-3/9G-4A/9G-4B files and modifications.
 
 ## Active Architecture / Implementation Path
 
-Current failed-pair memory status:
+Current diagnostics path:
 
 ```text
-disabled by default
-wrapper-local
-pair-scoped as (env, robot, target)
-useful as diagnostic/experimental guardrail code
-not a full active-task lifecycle
-not recommended as the main solution path
+method-specific output
+  -> method adapter / decoder
+  -> standardized assignment_proposal [E, M]
+  -> shared AssignmentLifecycleDiagnosticsAdapter
+  -> passive AssignmentLifecycleTransitionLogger
+  -> assignment_lifecycle_events.jsonl + assignment_lifecycle_summary.json
 ```
 
-Recommended path:
+Runtime diagnostics remain default-off:
 
 ```text
-Phase 9G-6A: explicit active-task/release lifecycle boundary audit.
+--log_assignment_lifecycle
+--assignment_lifecycle_output_dir
 ```
 
-Keep the next phase documentation-only and focused on:
+The lifecycle state is proxy-only and diagnostics-only.
 
-```text
-ownership
-robot idle/executing transitions
-pair failure
-release
-reassignment
-observation visibility
-action semantics
-checkpoint compatibility
-baseline comparability
-```
+## Behavior-Neutral Status
 
-## Latest Verification
+No assignment behavior changed.
 
-Allowed validation for Phase 9G-5 completed:
+No action, mask, observation, reward, controller command, env action, env dynamic, task-completion, HARL, solver, scenario YAML, cooldown, redirect guardrail, failed-pair memory, or checkpoint behavior changed.
 
-```text
-git status --short --untracked-files=all
-result: completed; worktree still contains earlier uncommitted Phase 9G files plus the new Phase 9G-5 report/archive.
+No effective assignment resolver, ownership enforcement, hypothetical arbitration application, Contract C behavior, or action latching was implemented.
 
+## Validation Results
+
+Phase 9G-6E reran:
+
+```powershell
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_diagnostics.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_transition_logger_smoke.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_runtime_integration_smoke.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_rl_playback_diagnostics.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_methods.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/analyze_phase9g6d_lifecycle_runtime_validation.py
+conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_transition_logger_smoke.py
+conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_runtime_integration_smoke.py
+conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/analyze_phase9g6d_lifecycle_runtime_validation.py --root results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation --output_dir results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation/comparison
 git diff --check
-result: passed with LF-to-CRLF working-copy warnings only.
+git status --short --untracked-files=all
 ```
 
-No Python validation is required because Phase 9G-5 modified documentation only and did not modify Python source files.
+Result:
+
+```text
+all py_compile checks: PASS
+transition logger smoke: PASS
+runtime integration smoke: PASS
+offline Phase 9G-6D analyzer: PASS
+git diff --check: PASS with LF-to-CRLF warnings only
+git status --short --untracked-files=all: completed
+```
+
+## Generated Result Artifacts
+
+Generated runtime results are ignored and should not be committed:
+
+```text
+results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation/
+```
+
+Evidence is preserved in:
+
+```text
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6D_PASSIVE_LIFECYCLE_BOUNDED_RUNTIME_VALIDATION_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6E_COMMIT_READINESS_REVIEW.md
+```
 
 ## Known Issues / Blockers
 
-Temporary TTL-only failed-pair memory can delay same-owner reacquisition but has not reduced total same-owner returns or improved coverage.
+No commit-readiness blockers remain.
 
-D=10 is not necessary for the main design decision. It may be run only as an explicitly authorized bounded diagnostic to test whether longer TTL merely shifts the return again.
+The only Phase 9G-6E code change was a diagnostic-only offline analyzer tightening:
 
-A true lifecycle likely changes action semantics even if `available_actions` shape stays `[M, N+1]`: assignment would mean "assign a target when idle or released" rather than "choose a target every step."
+```text
+scripts/environments/analyze_phase9g6d_lifecycle_runtime_validation.py
+```
+
+It requires exact event and summary schema field-set equality and does not affect runtime behavior.
 
 ## Do Not Do
 
-Do not commit unless explicitly asked.
+Do not use `git add .`.
+
+Do not commit generated runtime results.
 
 Do not train.
 
-Do not run playback or D=10 unless explicitly authorized.
+Do not rerun playback or comparison-method evaluation for the readiness review unless the user explicitly asks.
 
-Do not continue TTL tuning as the main solution path.
+Do not implement action latching, Contract C behavior, effective assignment resolution, ownership enforcement, mask changes, observation changes, reward changes, controller/env changes, HARL changes, baseline behavior changes, scenario YAML changes, cooldown tuning, redirect tuning, or failed-pair memory tuning without a separate explicit phase.
 
-Do not change reward formulas or reward scales, actor/shared observations, `available_actions` shape, assignment action semantics, env dynamics, controller behavior, HARL, baseline solvers, scenario YAML, installed `site-packages`, cooldown tuning, or redirect guardrail tuning.
+## Next Action
 
-Do not implement env-level lifecycle without a separate design and implementation phase.
+User manual staging and commit.
 
-## Next Step
-
-Recommended Phase 9G-6A:
+Use the exact file list and staging commands in:
 
 ```text
-Explicit active-task/release lifecycle boundary audit.
-Documentation/design only.
-No implementation.
-No training.
-No playback.
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6E_COMMIT_READINESS_REVIEW.md
 ```
 
-Optional alternative, only if explicitly authorized:
+Recommended final staged-diff checks after manual staging:
+
+```powershell
+git diff --cached --stat
+git diff --cached --name-status
+git diff --cached --check
+git status --short
+```
+
+Recommended commit message:
 
 ```text
-Phase 9G-6B: one bounded D=10 playback-only diagnostic.
+Add passive lifecycle diagnostics integration
 ```
-
-Do not treat D=10 as a tuning loop or as the default next phase.
 
 ## Detailed Reports / Archives
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G5_FAILED_PAIR_MEMORY_DESIGN_DECISION_REVIEW.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G5_FAILED_PAIR_MEMORY_DESIGN_DECISION_REVIEW_20260707.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260706/PHASE9G4B_FAILED_PAIR_MEMORY_D6_PLAYBACK_VALIDATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260706/PHASE9G4A_TTL_BOUNDARY_SEMANTICS_REVIEW.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260706/PHASE9G3_FAILED_PAIR_MEMORY_PLAYBACK_VALIDATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260706/PHASE9G2_FAILED_PAIR_RELEASE_MEMORY_IMPLEMENTATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260706/PHASE9G1_LIFECYCLE_RECONSTRUCTION_ANALYZER_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260705/PHASE9G0_ACTIVE_TASK_LIFECYCLE_DESIGN_AUDIT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6E_COMMIT_READINESS_REVIEW.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6E_COMMIT_READINESS_REVIEW_20260707.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6D_PASSIVE_LIFECYCLE_BOUNDED_RUNTIME_VALIDATION_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6D_PASSIVE_LIFECYCLE_BOUNDED_RUNTIME_VALIDATION_20260707.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6C_PASSIVE_LIFECYCLE_RUNTIME_INTEGRATION_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6C_PASSIVE_LIFECYCLE_RUNTIME_INTEGRATION_20260707.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6B_PASSIVE_SHARED_LIFECYCLE_TRANSITION_LOGGER_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6B_PASSIVE_SHARED_LIFECYCLE_TRANSITION_LOGGER_20260707.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6A_ACTIVE_TASK_LIFECYCLE_TRANSITION_INTERFACE_AUDIT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6A_ACTIVE_TASK_LIFECYCLE_TRANSITION_INTERFACE_AUDIT_20260707.md
 ```
