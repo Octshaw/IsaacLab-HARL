@@ -38,6 +38,7 @@ SUPPORTED_CONFLICT_AWARE_BASELINE_METHODS = {"greedy_conflict_aware", "nearest_c
 SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES = {"per_robot_target"}
 SUPPORTED_ASSIGNMENT_COOLDOWN_TRIGGER_MODES = {"streak", "budget", "budget_and_streak"}
 SUPPORTED_ASSIGNMENT_REDIRECT_GUARDRAIL_CONTEXTS = {"recent_budget_trigger"}
+SUPPORTED_ASSIGNMENT_FAILED_PAIR_MEMORY_SOURCES = {"budget_trigger"}
 
 ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
     "assignment_cooldown_enabled",
@@ -73,6 +74,16 @@ ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS = (
     "assignment_redirect_guardrail_fail_open_spacing",
     "assignment_redirect_guardrail_fail_open_claimed",
     "assignment_redirect_guardrail_log_diagnostics",
+)
+
+ASSIGNMENT_FAILED_PAIR_MEMORY_SCENARIO_ATTRS = (
+    "assignment_failed_pair_memory_enabled",
+    "assignment_failed_pair_memory_duration_steps",
+    "assignment_failed_pair_memory_apply_to_action_mask",
+    "assignment_failed_pair_memory_source",
+    "assignment_failed_pair_memory_fail_open",
+    "assignment_failed_pair_memory_clear_on_coverage",
+    "assignment_failed_pair_memory_log_diagnostics",
 )
 
 ENV_CFG_SCENARIO_ATTRS = (
@@ -141,6 +152,7 @@ ENV_CFG_SCENARIO_ATTRS = (
     "inter_robot_conflict_debug_visualization_line_width",
     *ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS,
     *ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS,
+    *ASSIGNMENT_FAILED_PAIR_MEMORY_SCENARIO_ATTRS,
 )
 
 
@@ -303,6 +315,33 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
         defaults,
         "assignment_redirect_guardrail_log_diagnostics",
         assignment_redirect_guardrail.get("log_diagnostics"),
+    )
+
+    for attr in ASSIGNMENT_FAILED_PAIR_MEMORY_SCENARIO_ATTRS:
+        _put(defaults, attr, config.get(attr))
+    assignment_failed_pair_memory = _mapping(
+        config.get("assignment_failed_pair_memory"),
+        "assignment_failed_pair_memory",
+        required=False,
+    )
+    _put(defaults, "assignment_failed_pair_memory_enabled", assignment_failed_pair_memory.get("enabled"))
+    _put(defaults, "assignment_failed_pair_memory_duration_steps", assignment_failed_pair_memory.get("duration_steps"))
+    _put(
+        defaults,
+        "assignment_failed_pair_memory_apply_to_action_mask",
+        assignment_failed_pair_memory.get("apply_to_action_mask"),
+    )
+    _put(defaults, "assignment_failed_pair_memory_source", assignment_failed_pair_memory.get("source"))
+    _put(defaults, "assignment_failed_pair_memory_fail_open", assignment_failed_pair_memory.get("fail_open"))
+    _put(
+        defaults,
+        "assignment_failed_pair_memory_clear_on_coverage",
+        assignment_failed_pair_memory.get("clear_on_coverage"),
+    )
+    _put(
+        defaults,
+        "assignment_failed_pair_memory_log_diagnostics",
+        assignment_failed_pair_memory.get("log_diagnostics"),
     )
 
     obstacle = _mapping(config.get("obstacle_diagnostics"), "obstacle_diagnostics", required=False)
@@ -492,6 +531,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
         _validate_conflict_aware_baseline_metadata(config)
         _validate_assignment_cooldown_metadata(config)
         _validate_assignment_redirect_guardrail_metadata(config)
+        _validate_assignment_failed_pair_memory_metadata(config)
     _validate_visual_mode_arg(
         getattr(args, "robot_visual_mode", None),
         label="visualization.robot_visual_mode",
@@ -540,6 +580,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
     _ensure_output_parent(getattr(args, "result_file", None), repo_root=repo_root, label="output.result_file")
     _validate_assignment_cooldown_args(args)
     _validate_assignment_redirect_guardrail_args(args)
+    _validate_assignment_failed_pair_memory_args(args)
 
 
 def validate_generation_args(args: Namespace, *, repo_root: Path) -> None:
@@ -1269,6 +1310,71 @@ def _validate_assignment_redirect_guardrail_values(values: Mapping[str, Any]) ->
                 "assignment_redirect_guardrail_spacing_threshold must be finite and positive when provided, "
                 f"got {spacing_threshold!r}."
             )
+
+
+def _validate_assignment_failed_pair_memory_metadata(config: Mapping[str, Any]) -> None:
+    values = {
+        attr: config.get(attr)
+        for attr in ASSIGNMENT_FAILED_PAIR_MEMORY_SCENARIO_ATTRS
+        if config.get(attr) is not None
+    }
+    block = _mapping(config.get("assignment_failed_pair_memory"), "assignment_failed_pair_memory", required=False)
+    block_to_attr = {
+        "enabled": "assignment_failed_pair_memory_enabled",
+        "duration_steps": "assignment_failed_pair_memory_duration_steps",
+        "apply_to_action_mask": "assignment_failed_pair_memory_apply_to_action_mask",
+        "source": "assignment_failed_pair_memory_source",
+        "fail_open": "assignment_failed_pair_memory_fail_open",
+        "clear_on_coverage": "assignment_failed_pair_memory_clear_on_coverage",
+        "log_diagnostics": "assignment_failed_pair_memory_log_diagnostics",
+    }
+    for block_key, attr in block_to_attr.items():
+        if block.get(block_key) is not None:
+            values[attr] = block.get(block_key)
+    _validate_assignment_failed_pair_memory_values(values)
+
+
+def _validate_assignment_failed_pair_memory_args(args: Namespace) -> None:
+    values = {
+        attr: getattr(args, attr, None)
+        for attr in ASSIGNMENT_FAILED_PAIR_MEMORY_SCENARIO_ATTRS
+        if getattr(args, attr, None) is not None
+    }
+    _validate_assignment_failed_pair_memory_values(values)
+
+
+def _validate_assignment_failed_pair_memory_values(values: Mapping[str, Any]) -> None:
+    if not values:
+        return
+    bool_fields = (
+        "assignment_failed_pair_memory_enabled",
+        "assignment_failed_pair_memory_apply_to_action_mask",
+        "assignment_failed_pair_memory_fail_open",
+        "assignment_failed_pair_memory_clear_on_coverage",
+        "assignment_failed_pair_memory_log_diagnostics",
+    )
+    for key in bool_fields:
+        value = values.get(key)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"{key} must be boolean, got {value!r}.")
+
+    source = values.get("assignment_failed_pair_memory_source")
+    if source is not None and str(source).strip().lower() not in SUPPORTED_ASSIGNMENT_FAILED_PAIR_MEMORY_SOURCES:
+        raise ValueError(
+            f"Unsupported assignment_failed_pair_memory_source={source!r}; expected one of "
+            f"{sorted(SUPPORTED_ASSIGNMENT_FAILED_PAIR_MEMORY_SOURCES)!r}."
+        )
+
+    duration_steps = values.get("assignment_failed_pair_memory_duration_steps")
+    if duration_steps is not None and (not isinstance(duration_steps, int) or duration_steps < 0):
+        raise ValueError(
+            "assignment_failed_pair_memory_duration_steps must be a non-negative integer, "
+            f"got {duration_steps!r}."
+        )
+    if values.get("assignment_failed_pair_memory_enabled") is True and duration_steps == 0:
+        raise ValueError(
+            "assignment_failed_pair_memory_duration_steps must be positive when failed-pair memory is enabled."
+        )
 
 
 def _validate_finite_sequence(value: Any, *, length: int, label: str, positive: bool) -> tuple[float, ...]:

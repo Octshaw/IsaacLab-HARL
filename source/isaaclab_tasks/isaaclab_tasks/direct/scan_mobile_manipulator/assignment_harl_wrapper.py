@@ -64,6 +64,7 @@ class AssignmentHarlWrapper:
         self._assignment_reward_config = self._build_assignment_reward_config()
         self._assignment_cooldown_config = self._build_assignment_cooldown_config()
         self._assignment_redirect_guardrail_config = self._build_assignment_redirect_guardrail_config()
+        self._assignment_failed_pair_memory_config = self._build_assignment_failed_pair_memory_config()
         self._max_base_xy_step_by_agent = self._infer_max_base_xy_step_by_agent()
 
         self._adapter = AssignmentHarlAdapter(
@@ -249,6 +250,10 @@ class AssignmentHarlWrapper:
     @property
     def assignment_redirect_guardrail_config(self) -> dict[str, bool | float | int | str | None]:
         return dict(self._assignment_redirect_guardrail_config)
+
+    @property
+    def assignment_failed_pair_memory_config(self) -> dict[str, bool | int | str]:
+        return dict(self._assignment_failed_pair_memory_config)
 
     def reset(self, *args, **kwargs) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
         obs, _ = self._env.reset(*args, **kwargs)
@@ -484,6 +489,36 @@ class AssignmentHarlWrapper:
             "log_diagnostics": _bool_attr("assignment_redirect_guardrail_log_diagnostics", True),
         }
 
+    def _build_assignment_failed_pair_memory_config(self) -> dict[str, bool | int | str]:
+        cfg = getattr(self._unwrapped, "cfg", None)
+
+        def _bool_attr(name: str, default: bool) -> bool:
+            return bool(getattr(cfg, name, default))
+
+        def _int_attr(name: str, default: int) -> int:
+            return max(0, int(getattr(cfg, name, default)))
+
+        source = str(getattr(cfg, "assignment_failed_pair_memory_source", "budget_trigger")).strip().lower()
+        if source != "budget_trigger":
+            raise ValueError(
+                "assignment_failed_pair_memory_source currently supports only 'budget_trigger', "
+                f"got {source!r}"
+            )
+        duration_steps = _int_attr("assignment_failed_pair_memory_duration_steps", 5)
+        enabled = _bool_attr("assignment_failed_pair_memory_enabled", False)
+        if enabled and duration_steps <= 0:
+            raise ValueError("assignment_failed_pair_memory_duration_steps must be positive when the guardrail is enabled")
+
+        return {
+            "enabled": enabled,
+            "duration_steps": duration_steps,
+            "apply_to_action_mask": _bool_attr("assignment_failed_pair_memory_apply_to_action_mask", True),
+            "source": source,
+            "fail_open": _bool_attr("assignment_failed_pair_memory_fail_open", True),
+            "clear_on_coverage": _bool_attr("assignment_failed_pair_memory_clear_on_coverage", True),
+            "log_diagnostics": _bool_attr("assignment_failed_pair_memory_log_diagnostics", True),
+        }
+
     def _infer_max_base_xy_step_by_agent(self) -> torch.Tensor:
         cfg = getattr(self._unwrapped, "cfg", None)
         value = getattr(cfg, "max_base_xy_step", None)
@@ -549,8 +584,10 @@ class AssignmentHarlWrapper:
             problem = self._unwrapped.get_assignment_problem()
         cooldown_mask_enabled = self._assignment_cooldown_mask_enabled()
         redirect_guardrail_enabled = self._assignment_redirect_guardrail_enabled()
-        if not cooldown_mask_enabled and not redirect_guardrail_enabled:
+        failed_pair_memory_mask_enabled = self._assignment_failed_pair_memory_mask_enabled()
+        if not cooldown_mask_enabled and not redirect_guardrail_enabled and not failed_pair_memory_mask_enabled:
             self._reset_assignment_redirect_guardrail_mask_diagnostics()
+            self._reset_assignment_failed_pair_memory_mask_diagnostics()
             available_actions = make_assignment_action_mask(problem, include_noop=self.include_noop)
         else:
             available_mask = problem["available_mask"]
@@ -575,6 +612,10 @@ class AssignmentHarlWrapper:
                 )
             else:
                 self._reset_assignment_redirect_guardrail_mask_diagnostics()
+            if failed_pair_memory_mask_enabled:
+                filtered_mask = self._apply_assignment_failed_pair_memory_to_available_mask(filtered_mask)
+            else:
+                self._reset_assignment_failed_pair_memory_mask_diagnostics()
             available_actions = filtered_mask.to(dtype=torch.float32)
             if self.include_noop:
                 noop_mask = torch.ones(
@@ -606,6 +647,97 @@ class AssignmentHarlWrapper:
 
     def _assignment_redirect_guardrail_enabled(self) -> bool:
         return bool(self._assignment_redirect_guardrail_config["enabled"])
+
+    def _assignment_failed_pair_memory_enabled(self) -> bool:
+        return bool(self._assignment_failed_pair_memory_config["enabled"])
+
+    def _assignment_failed_pair_memory_mask_enabled(self) -> bool:
+        return self._assignment_failed_pair_memory_enabled() and bool(
+            self._assignment_failed_pair_memory_config["apply_to_action_mask"]
+        )
+
+    def _empty_failed_pair_memory_trigger_lists(self) -> tuple[list[list[int]], list[list[int]], list[list[str]]]:
+        return (
+            [[] for _ in range(self._num_envs)],
+            [[] for _ in range(self._num_envs)],
+            [[] for _ in range(self._num_envs)],
+        )
+
+    def _reset_assignment_failed_pair_memory_mask_diagnostics(self, env_ids: torch.Tensor | None = None) -> None:
+        if env_ids is None:
+            env_ids = torch.arange(self._num_envs, device=self._device, dtype=torch.long)
+        else:
+            env_ids = env_ids.to(device=self._device, dtype=torch.long)
+        if not hasattr(self, "_last_failed_pair_memory_suppressed_count"):
+            self._last_failed_pair_memory_suppressed_count = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_failed_pair_memory_fail_open_count = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            self._last_failed_pair_memory_only_noop_remaining = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
+            )
+        self._last_failed_pair_memory_suppressed_count[env_ids] = 0
+        self._last_failed_pair_memory_fail_open_count[env_ids] = 0
+        self._last_failed_pair_memory_only_noop_remaining[env_ids] = False
+
+    def _reset_assignment_failed_pair_memory_step_diagnostics(self, env_ids: torch.Tensor | None = None) -> None:
+        if env_ids is None:
+            env_ids = torch.arange(self._num_envs, device=self._device, dtype=torch.long)
+        else:
+            env_ids = env_ids.to(device=self._device, dtype=torch.long)
+        if not hasattr(self, "_last_failed_pair_memory_selected_pair_active"):
+            self._last_failed_pair_memory_selected_pair_active = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.bool, device=self._device
+            )
+            self._last_failed_pair_memory_selected_pair_ttl_remaining = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.long, device=self._device
+            )
+            (
+                self._last_failed_pair_memory_trigger_robot_ids,
+                self._last_failed_pair_memory_trigger_target_ids,
+                self._last_failed_pair_memory_trigger_reasons,
+            ) = self._empty_failed_pair_memory_trigger_lists()
+        self._last_failed_pair_memory_selected_pair_active[env_ids] = False
+        self._last_failed_pair_memory_selected_pair_ttl_remaining[env_ids] = 0
+        for env_id in env_ids.detach().cpu().tolist():
+            self._last_failed_pair_memory_trigger_robot_ids[env_id] = []
+            self._last_failed_pair_memory_trigger_target_ids[env_id] = []
+            self._last_failed_pair_memory_trigger_reasons[env_id] = []
+
+    def _apply_assignment_failed_pair_memory_to_available_mask(self, available_mask: torch.Tensor) -> torch.Tensor:
+        result = available_mask.to(device=self._device, dtype=torch.bool).clone()
+        self._reset_assignment_failed_pair_memory_mask_diagnostics()
+        if not self._assignment_failed_pair_memory_mask_enabled() or self._num_viewpoints <= 0:
+            return result
+
+        active = self._assignment_failed_pair_memory_remaining > 0
+        if not bool(active.any()):
+            return result
+
+        fail_open = bool(self._assignment_failed_pair_memory_config["fail_open"])
+        for env_id in range(self._num_envs):
+            for robot_id in range(self._num_agents):
+                row = result[env_id, robot_id]
+                memory_mask = active[env_id, robot_id] & row
+                if not bool(memory_mask.any()):
+                    self._last_failed_pair_memory_only_noop_remaining[env_id, robot_id] = not bool(row.any())
+                    continue
+
+                tentative = row & (~memory_mask)
+                suppressed_count = int(memory_mask.to(dtype=torch.long).sum().item())
+                if bool(row.any()) and not bool(tentative.any()):
+                    self._last_failed_pair_memory_fail_open_count[env_id, robot_id] += 1
+                    if fail_open:
+                        self._last_failed_pair_memory_only_noop_remaining[env_id, robot_id] = False
+                        continue
+
+                result[env_id, robot_id] = tentative
+                self._last_failed_pair_memory_suppressed_count[env_id, robot_id] += suppressed_count
+                self._last_failed_pair_memory_only_noop_remaining[env_id, robot_id] = not bool(tentative.any())
+
+        return result
 
     def _assignment_redirect_guardrail_spacing_threshold(self, problem: dict) -> float:
         configured = self._assignment_redirect_guardrail_config.get("spacing_threshold")
@@ -884,6 +1016,83 @@ class AssignmentHarlWrapper:
         self._assignment_redirect_guardrail_remaining[env_indices, agent_indices] = window_steps
         self._assignment_redirect_guardrail_triggered_target[env_indices, agent_indices] = triggered_targets
 
+    def _capture_assignment_failed_pair_memory_selected_pairs(
+        self,
+        *,
+        assignment: torch.Tensor,
+        valid_viewpoint: torch.Tensor,
+        safe_ids: torch.Tensor,
+    ) -> None:
+        self._last_failed_pair_memory_selected_pair_active.zero_()
+        self._last_failed_pair_memory_selected_pair_ttl_remaining.zero_()
+        if not self._assignment_failed_pair_memory_enabled() or self._num_viewpoints <= 0:
+            return
+        selected_ttl = torch.gather(
+            self._assignment_failed_pair_memory_remaining,
+            dim=2,
+            index=safe_ids,
+        ).squeeze(-1)
+        selected_active = (selected_ttl > 0) & valid_viewpoint
+        self._last_failed_pair_memory_selected_pair_active = selected_active
+        self._last_failed_pair_memory_selected_pair_ttl_remaining = torch.where(
+            valid_viewpoint,
+            selected_ttl,
+            torch.zeros_like(selected_ttl),
+        )
+
+    def _advance_assignment_failed_pair_memory_after_action(self, covered: torch.Tensor) -> None:
+        if not hasattr(self, "_assignment_failed_pair_memory_remaining"):
+            return
+        if self._assignment_failed_pair_memory_enabled():
+            active = self._assignment_failed_pair_memory_remaining > 0
+            if bool(active.any()):
+                self._assignment_failed_pair_memory_remaining = torch.clamp(
+                    self._assignment_failed_pair_memory_remaining - active.to(dtype=torch.long),
+                    min=0,
+                )
+        self._assignment_failed_pair_memory_trigger_step = torch.where(
+            self._assignment_failed_pair_memory_remaining > 0,
+            self._assignment_failed_pair_memory_trigger_step,
+            torch.full_like(self._assignment_failed_pair_memory_trigger_step, -1),
+        )
+        if bool(self._assignment_failed_pair_memory_config["clear_on_coverage"]):
+            self._clear_assignment_failed_pair_memory_for_covered_targets(covered)
+
+    def _activate_assignment_failed_pair_memory_for_budget_triggers(
+        self,
+        *,
+        budget_trigger: torch.Tensor,
+        assignment: torch.Tensor,
+    ) -> None:
+        if not self._assignment_failed_pair_memory_enabled():
+            return
+        if self._assignment_failed_pair_memory_config["source"] != "budget_trigger":
+            return
+        duration_steps = int(self._assignment_failed_pair_memory_config["duration_steps"])
+        if duration_steps <= 0:
+            return
+        env_indices, agent_indices = torch.nonzero(budget_trigger, as_tuple=True)
+        if env_indices.numel() == 0:
+            return
+        triggered_targets = assignment[env_indices, agent_indices]
+        valid = (triggered_targets >= 0) & (triggered_targets < self._num_viewpoints)
+        if not bool(valid.any()):
+            return
+        env_indices = env_indices[valid]
+        agent_indices = agent_indices[valid]
+        triggered_targets = triggered_targets[valid]
+        self._assignment_failed_pair_memory_remaining[env_indices, agent_indices, triggered_targets] = duration_steps
+        trigger_steps = self._assignment_step[env_indices]
+        self._assignment_failed_pair_memory_trigger_step[env_indices, agent_indices, triggered_targets] = trigger_steps
+        for env_id, agent_id, target_id in zip(
+            env_indices.detach().cpu().tolist(),
+            agent_indices.detach().cpu().tolist(),
+            triggered_targets.detach().cpu().tolist(),
+        ):
+            self._last_failed_pair_memory_trigger_robot_ids[env_id].append(int(agent_id))
+            self._last_failed_pair_memory_trigger_target_ids[env_id].append(int(target_id))
+            self._last_failed_pair_memory_trigger_reasons[env_id].append("budget_trigger")
+
     def _cooldown_trigger_mode(self) -> str:
         return str(self._assignment_cooldown_config["trigger_mode"])
 
@@ -1131,6 +1340,21 @@ class AssignmentHarlWrapper:
                 (self._num_envs, self._num_agents), -1, dtype=torch.long, device=self._device
             )
             self._reset_assignment_redirect_guardrail_mask_diagnostics()
+            self._assignment_failed_pair_memory_remaining = torch.zeros(
+                self._num_envs,
+                self._num_agents,
+                self._num_viewpoints,
+                dtype=torch.long,
+                device=self._device,
+            )
+            self._assignment_failed_pair_memory_trigger_step = torch.full(
+                (self._num_envs, self._num_agents, self._num_viewpoints),
+                -1,
+                dtype=torch.long,
+                device=self._device,
+            )
+            self._reset_assignment_failed_pair_memory_mask_diagnostics()
+            self._reset_assignment_failed_pair_memory_step_diagnostics()
 
         self._assignment_step[env_ids] = 0
         self._per_viewpoint_attempted_count[env_ids] = 0.0
@@ -1163,6 +1387,10 @@ class AssignmentHarlWrapper:
         self._assignment_redirect_guardrail_triggered_target[env_ids] = -1
         self._reset_assignment_redirect_guardrail_mask_diagnostics(env_ids=env_ids)
         self._capture_pre_step_assignment_redirect_guardrail_diagnostics()
+        self._assignment_failed_pair_memory_remaining[env_ids] = 0
+        self._assignment_failed_pair_memory_trigger_step[env_ids] = -1
+        self._reset_assignment_failed_pair_memory_mask_diagnostics(env_ids=env_ids)
+        self._reset_assignment_failed_pair_memory_step_diagnostics(env_ids=env_ids)
         if problem is not None and "viewpoints_covered" in problem:
             self._last_covered_mask[env_ids] = problem["viewpoints_covered"][env_ids].to(dtype=torch.bool)
         else:
@@ -1251,6 +1479,7 @@ class AssignmentHarlWrapper:
         self._last_budget_expected_steps_for_selected_pair.zero_()
         self._last_budget_ratio_for_selected_pair.zero_()
         self._last_budget_triggered_by_budget.zero_()
+        self._reset_assignment_failed_pair_memory_step_diagnostics()
         self._advance_assignment_redirect_guardrail_window_after_action()
 
         cooldown_enabled = self._assignment_cooldown_enabled()
@@ -1286,6 +1515,12 @@ class AssignmentHarlWrapper:
         self._assignment_cooldown_selected_target_was_in_cooldown_count += selected_in_cooldown.to(
             dtype=torch.float32
         ).sum(dim=1)
+        self._capture_assignment_failed_pair_memory_selected_pairs(
+            assignment=assignment,
+            valid_viewpoint=valid_viewpoint,
+            safe_ids=safe_ids,
+        )
+        self._advance_assignment_failed_pair_memory_after_action(covered_after)
 
         if cooldown_enabled:
             self._per_robot_target_cooldown_remaining = torch.clamp(
@@ -1430,6 +1665,10 @@ class AssignmentHarlWrapper:
                 budget_trigger=budget_trigger,
                 assignment=assignment,
             )
+            self._activate_assignment_failed_pair_memory_for_budget_triggers(
+                budget_trigger=budget_trigger,
+                assignment=assignment,
+            )
         self._reset_budget_attempt_pairs(trigger_envs, trigger_agents)
 
         if bool(self._assignment_cooldown_config["clear_on_covered"]):
@@ -1450,6 +1689,21 @@ class AssignmentHarlWrapper:
             self._per_robot_target_cooldown_remaining,
         )
         self._clear_budget_attempts_for_covered_targets(covered.to(device=self._device, dtype=torch.bool))
+
+    def _clear_assignment_failed_pair_memory_for_covered_targets(self, covered: torch.Tensor) -> None:
+        covered_mask = covered.to(device=self._device, dtype=torch.bool).unsqueeze(1)
+        if not bool(covered_mask.any()):
+            return
+        self._assignment_failed_pair_memory_remaining = torch.where(
+            covered_mask,
+            torch.zeros_like(self._assignment_failed_pair_memory_remaining),
+            self._assignment_failed_pair_memory_remaining,
+        )
+        self._assignment_failed_pair_memory_trigger_step = torch.where(
+            covered_mask,
+            torch.full_like(self._assignment_failed_pair_memory_trigger_step, -1),
+            self._assignment_failed_pair_memory_trigger_step,
+        )
 
     def _compute_assignment_reward_decomposition(
         self,
@@ -1705,6 +1959,8 @@ class AssignmentHarlWrapper:
             augmented["assignment_cooldown"] = self._assignment_cooldown_info()
         if bool(self._assignment_redirect_guardrail_config["log_diagnostics"]):
             augmented["assignment_redirect_guardrail"] = self._assignment_redirect_guardrail_info()
+        if bool(self._assignment_failed_pair_memory_config["log_diagnostics"]):
+            augmented["assignment_failed_pair_memory"] = self._assignment_failed_pair_memory_info()
         return augmented
 
     def _assignment_cooldown_info(self) -> dict[str, Any]:
@@ -1864,6 +2120,69 @@ class AssignmentHarlWrapper:
             if enabled
             else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
             "threshold": threshold_mean if enabled else torch.zeros(self._num_envs, dtype=torch.float32, device=self._device),
+        }
+
+    def _assignment_failed_pair_memory_info(self) -> dict[str, Any]:
+        enabled = self._assignment_failed_pair_memory_enabled()
+        if enabled:
+            active_count = (self._assignment_failed_pair_memory_remaining > 0).to(dtype=torch.float32).sum(dim=(1, 2))
+            suppressed_count_per_robot = self._last_failed_pair_memory_suppressed_count.to(dtype=torch.float32)
+            fail_open_count_per_robot = self._last_failed_pair_memory_fail_open_count.to(dtype=torch.float32)
+            only_noop_remaining_per_robot = self._last_failed_pair_memory_only_noop_remaining.to(dtype=torch.float32)
+            suppressed_count = suppressed_count_per_robot.sum(dim=1)
+            fail_open_count = fail_open_count_per_robot.sum(dim=1)
+            only_noop_count = only_noop_remaining_per_robot.sum(dim=1)
+            selected_pair_active = self._last_failed_pair_memory_selected_pair_active.to(dtype=torch.float32)
+            selected_pair_ttl = self._last_failed_pair_memory_selected_pair_ttl_remaining.to(dtype=torch.float32)
+            trigger_count = torch.as_tensor(
+                [len(ids) for ids in self._last_failed_pair_memory_trigger_robot_ids],
+                dtype=torch.float32,
+                device=self._device,
+            )
+            last_trigger_robot_ids = [list(ids) for ids in self._last_failed_pair_memory_trigger_robot_ids]
+            last_trigger_target_ids = [list(ids) for ids in self._last_failed_pair_memory_trigger_target_ids]
+            last_trigger_reason = [list(reasons) for reasons in self._last_failed_pair_memory_trigger_reasons]
+        else:
+            active_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            suppressed_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            fail_open_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            only_noop_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            suppressed_count_per_robot = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.float32, device=self._device
+            )
+            fail_open_count_per_robot = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.float32, device=self._device
+            )
+            only_noop_remaining_per_robot = torch.zeros(
+                self._num_envs, self._num_agents, dtype=torch.float32, device=self._device
+            )
+            selected_pair_active = torch.zeros(self._num_envs, self._num_agents, dtype=torch.float32, device=self._device)
+            selected_pair_ttl = torch.zeros(self._num_envs, self._num_agents, dtype=torch.float32, device=self._device)
+            trigger_count = torch.zeros(self._num_envs, dtype=torch.float32, device=self._device)
+            last_trigger_robot_ids = [[] for _ in range(self._num_envs)]
+            last_trigger_target_ids = [[] for _ in range(self._num_envs)]
+            last_trigger_reason = [[] for _ in range(self._num_envs)]
+
+        return {
+            "enabled": float(enabled),
+            "source": str(self._assignment_failed_pair_memory_config["source"]),
+            "duration_steps": float(self._assignment_failed_pair_memory_config["duration_steps"]),
+            "apply_to_action_mask": float(self._assignment_failed_pair_memory_config["apply_to_action_mask"]),
+            "fail_open": float(self._assignment_failed_pair_memory_config["fail_open"]),
+            "clear_on_coverage": float(self._assignment_failed_pair_memory_config["clear_on_coverage"]),
+            "active_count": active_count,
+            "suppressed_count": suppressed_count,
+            "suppressed_count_per_robot": suppressed_count_per_robot,
+            "fail_open_count": fail_open_count,
+            "fail_open_count_per_robot": fail_open_count_per_robot,
+            "only_noop_remaining_count": only_noop_count,
+            "only_noop_remaining_per_robot": only_noop_remaining_per_robot,
+            "selected_pair_active": selected_pair_active,
+            "selected_pair_ttl_remaining": selected_pair_ttl,
+            "trigger_count": trigger_count,
+            "last_trigger_robot_ids": last_trigger_robot_ids,
+            "last_trigger_target_ids": last_trigger_target_ids,
+            "last_trigger_reason": last_trigger_reason,
         }
 
 

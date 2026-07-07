@@ -173,6 +173,15 @@ PER_EPISODE_FIELDS = [
     "budget_ratio_max",
     "budget_triggered_pair_count",
     "budget_over_budget_selected_count",
+    "failed_pair_memory_enabled",
+    "failed_pair_memory_trigger_count",
+    "failed_pair_memory_active_count",
+    "failed_pair_memory_suppressed_count",
+    "failed_pair_memory_fail_open_count",
+    "failed_pair_memory_only_noop_remaining_count",
+    "failed_pair_memory_selected_pair_active_count",
+    "failed_pair_memory_selected_pair_ttl_mean",
+    "failed_pair_memory_selected_pair_ttl_max",
 ]
 
 SUMMARY_FIELDS = [
@@ -214,6 +223,15 @@ SUMMARY_FIELDS = [
     "budget_ratio_max",
     "budget_triggered_pair_count_mean",
     "budget_over_budget_selected_count_mean",
+    "failed_pair_memory_enabled",
+    "failed_pair_memory_trigger_count_mean",
+    "failed_pair_memory_active_count_mean",
+    "failed_pair_memory_suppressed_count_mean",
+    "failed_pair_memory_fail_open_count_mean",
+    "failed_pair_memory_only_noop_remaining_count_mean",
+    "failed_pair_memory_selected_pair_active_count_mean",
+    "failed_pair_memory_selected_pair_ttl_mean",
+    "failed_pair_memory_selected_pair_ttl_max",
     "episode_steps_mean",
 ]
 
@@ -289,6 +307,20 @@ ASSIGNMENT_HISTORY_FIELDS = [
     "redirect_guardrail_threshold",
     "redirect_guardrail_claimed_target_robot_ids",
     "redirect_guardrail_nearby_target_robot_ids",
+    "assignment_failed_pair_memory_enabled",
+    "failed_pair_memory_active_count",
+    "failed_pair_memory_suppressed_count",
+    "failed_pair_memory_suppressed_count_for_robot",
+    "failed_pair_memory_fail_open_count",
+    "failed_pair_memory_fail_open_count_for_robot",
+    "failed_pair_memory_only_noop_remaining_count",
+    "failed_pair_memory_only_noop_remaining_for_robot",
+    "failed_pair_memory_selected_pair_active",
+    "failed_pair_memory_selected_pair_ttl_remaining",
+    "failed_pair_memory_trigger_count",
+    "failed_pair_memory_last_trigger_robot_ids",
+    "failed_pair_memory_last_trigger_target_ids",
+    "failed_pair_memory_last_trigger_reason",
 ]
 
 
@@ -801,6 +833,16 @@ def _init_buffers(num_envs: int, num_agents: int, num_viewpoints: int, device: t
         "cooldown_budget_ratio_max": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "cooldown_budget_triggered_pair_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
         "cooldown_budget_over_budget_selected_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_trigger_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_active_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_suppressed_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_fail_open_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_only_noop_remaining_count_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_selected_pair_active_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_selected_pair_ttl_sum": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_selected_pair_ttl_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_selected_pair_ttl_max": torch.zeros(num_envs, dtype=torch.float32, device=device),
+        "failed_pair_memory_step_count": torch.zeros(num_envs, dtype=torch.float32, device=device),
     }
 
 
@@ -985,6 +1027,71 @@ def _update_cooldown_buffers(buffers: dict[str, torch.Tensor], info: Any, *, num
     buffers["cooldown_step_count"] += 1.0
 
 
+def _update_failed_pair_memory_buffers(
+    buffers: dict[str, torch.Tensor],
+    info: Any,
+    *,
+    num_envs: int,
+    device: torch.device,
+) -> None:
+    if not isinstance(info, dict):
+        return
+    memory_info = info.get("assignment_failed_pair_memory")
+    if not isinstance(memory_info, dict):
+        return
+    buffers["failed_pair_memory_trigger_count"] += _info_tensor(
+        memory_info,
+        "trigger_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    buffers["failed_pair_memory_active_count_sum"] += _info_tensor(
+        memory_info,
+        "active_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    buffers["failed_pair_memory_suppressed_count_sum"] += _info_tensor(
+        memory_info,
+        "suppressed_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    buffers["failed_pair_memory_fail_open_count_sum"] += _info_tensor(
+        memory_info,
+        "fail_open_count",
+        num_envs=num_envs,
+        device=device,
+    )
+    buffers["failed_pair_memory_only_noop_remaining_count_sum"] += _info_tensor(
+        memory_info,
+        "only_noop_remaining_count",
+        num_envs=num_envs,
+        device=device,
+    )
+
+    selected_active = memory_info.get("selected_pair_active")
+    if isinstance(selected_active, torch.Tensor):
+        selected_active_count = selected_active.detach().to(device=device, dtype=torch.float32).reshape(num_envs, -1).sum(dim=1)
+    else:
+        selected_active_count = torch.zeros(num_envs, dtype=torch.float32, device=device)
+    buffers["failed_pair_memory_selected_pair_active_count"] += selected_active_count
+
+    selected_ttl = memory_info.get("selected_pair_ttl_remaining")
+    if isinstance(selected_ttl, torch.Tensor):
+        ttl = selected_ttl.detach().to(device=device, dtype=torch.float32).reshape(num_envs, -1)
+        active_mask = ttl > 0.0
+        buffers["failed_pair_memory_selected_pair_ttl_sum"] += torch.where(active_mask, ttl, torch.zeros_like(ttl)).sum(dim=1)
+        buffers["failed_pair_memory_selected_pair_ttl_count"] += active_mask.to(dtype=torch.float32).sum(dim=1)
+        ttl_max = torch.where(active_mask, ttl, torch.zeros_like(ttl)).max(dim=1).values
+        buffers["failed_pair_memory_selected_pair_ttl_max"] = torch.maximum(
+            buffers["failed_pair_memory_selected_pair_ttl_max"],
+            ttl_max,
+        )
+
+    buffers["failed_pair_memory_step_count"] += 1.0
+
+
 def _nanmin(current: torch.Tensor, candidate: torch.Tensor) -> torch.Tensor:
     current_filled = torch.nan_to_num(current, nan=float("inf"))
     candidate_filled = torch.nan_to_num(candidate, nan=float("inf"))
@@ -1022,6 +1129,18 @@ def _tensor_float_at(value: Any, *indices: int, default: float = 0.0) -> float:
 def _nested_list_at(value: Any, env_id: int, robot_id: int) -> list[Any]:
     try:
         row = value[env_id][robot_id]
+    except (IndexError, TypeError):
+        return []
+    if isinstance(row, list):
+        return row
+    if isinstance(row, tuple):
+        return list(row)
+    return []
+
+
+def _nested_env_list_at(value: Any, env_id: int) -> list[Any]:
+    try:
+        row = value[env_id]
     except (IndexError, TypeError):
         return []
     if isinstance(row, list):
@@ -1281,6 +1400,7 @@ def _append_assignment_history(
     selected_target_conflict: dict[str, Any],
     inter_robot_conflict: dict[str, Any],
     actual_base_motion: dict[str, Any],
+    info: Any,
     buffers: dict[str, torch.Tensor],
     previous_base_pos: torch.Tensor,
     current_base_pos: torch.Tensor,
@@ -1345,6 +1465,23 @@ def _append_assignment_history(
         "_last_pre_step_redirect_guardrail_nearby_target_robot_ids",
         None,
     )
+    failed_pair_memory_info = info.get("assignment_failed_pair_memory") if isinstance(info, dict) else {}
+    if not isinstance(failed_pair_memory_info, dict):
+        failed_pair_memory_info = {}
+    failed_pair_memory_enabled = bool(float(failed_pair_memory_info.get("enabled", 0.0)))
+    failed_pair_memory_active_count = failed_pair_memory_info.get("active_count")
+    failed_pair_memory_suppressed_count = failed_pair_memory_info.get("suppressed_count")
+    failed_pair_memory_suppressed_per_robot = failed_pair_memory_info.get("suppressed_count_per_robot")
+    failed_pair_memory_fail_open_count = failed_pair_memory_info.get("fail_open_count")
+    failed_pair_memory_fail_open_per_robot = failed_pair_memory_info.get("fail_open_count_per_robot")
+    failed_pair_memory_only_noop_count = failed_pair_memory_info.get("only_noop_remaining_count")
+    failed_pair_memory_only_noop_per_robot = failed_pair_memory_info.get("only_noop_remaining_per_robot")
+    failed_pair_memory_selected_pair_active = failed_pair_memory_info.get("selected_pair_active")
+    failed_pair_memory_selected_pair_ttl = failed_pair_memory_info.get("selected_pair_ttl_remaining")
+    failed_pair_memory_trigger_count = failed_pair_memory_info.get("trigger_count")
+    failed_pair_memory_last_trigger_robot_ids = failed_pair_memory_info.get("last_trigger_robot_ids")
+    failed_pair_memory_last_trigger_target_ids = failed_pair_memory_info.get("last_trigger_target_ids")
+    failed_pair_memory_last_trigger_reason = failed_pair_memory_info.get("last_trigger_reason")
     selected_target_threshold = float(selected_target_conflict.get("selected_target_conflict_threshold", 0.85))
     if not math.isfinite(selected_target_threshold):
         selected_target_threshold = 0.85
@@ -1548,6 +1685,64 @@ def _append_assignment_history(
                         env_id,
                         robot_id,
                     ),
+                    "assignment_failed_pair_memory_enabled": failed_pair_memory_enabled,
+                    "failed_pair_memory_active_count": _tensor_int_at(
+                        failed_pair_memory_active_count,
+                        env_id,
+                    ),
+                    "failed_pair_memory_suppressed_count": _tensor_int_at(
+                        failed_pair_memory_suppressed_count,
+                        env_id,
+                    ),
+                    "failed_pair_memory_suppressed_count_for_robot": _tensor_int_at(
+                        failed_pair_memory_suppressed_per_robot,
+                        env_id,
+                        robot_id,
+                    ),
+                    "failed_pair_memory_fail_open_count": _tensor_int_at(
+                        failed_pair_memory_fail_open_count,
+                        env_id,
+                    ),
+                    "failed_pair_memory_fail_open_count_for_robot": _tensor_int_at(
+                        failed_pair_memory_fail_open_per_robot,
+                        env_id,
+                        robot_id,
+                    ),
+                    "failed_pair_memory_only_noop_remaining_count": _tensor_int_at(
+                        failed_pair_memory_only_noop_count,
+                        env_id,
+                    ),
+                    "failed_pair_memory_only_noop_remaining_for_robot": _tensor_bool_at(
+                        failed_pair_memory_only_noop_per_robot,
+                        env_id,
+                        robot_id,
+                    ),
+                    "failed_pair_memory_selected_pair_active": _tensor_bool_at(
+                        failed_pair_memory_selected_pair_active,
+                        env_id,
+                        robot_id,
+                    ),
+                    "failed_pair_memory_selected_pair_ttl_remaining": _tensor_int_at(
+                        failed_pair_memory_selected_pair_ttl,
+                        env_id,
+                        robot_id,
+                    ),
+                    "failed_pair_memory_trigger_count": _tensor_int_at(
+                        failed_pair_memory_trigger_count,
+                        env_id,
+                    ),
+                    "failed_pair_memory_last_trigger_robot_ids": _nested_env_list_at(
+                        failed_pair_memory_last_trigger_robot_ids,
+                        env_id,
+                    ),
+                    "failed_pair_memory_last_trigger_target_ids": _nested_env_list_at(
+                        failed_pair_memory_last_trigger_target_ids,
+                        env_id,
+                    ),
+                    "failed_pair_memory_last_trigger_reason": _nested_env_list_at(
+                        failed_pair_memory_last_trigger_reason,
+                        env_id,
+                    ),
                 }
             )
 
@@ -1581,6 +1776,17 @@ def _make_episode_record(
     cooldown_config = getattr(wrapper, "assignment_cooldown_config", {})
     cooldown_enabled = bool(cooldown_config.get("enabled", False)) if isinstance(cooldown_config, dict) else False
     cooldown_trigger_mode = str(cooldown_config.get("trigger_mode", "unknown")) if isinstance(cooldown_config, dict) else "unknown"
+    failed_pair_memory_steps = max(1.0, float(buffers["failed_pair_memory_step_count"][env_id].item()))
+    failed_pair_memory_config = getattr(wrapper, "assignment_failed_pair_memory_config", {})
+    failed_pair_memory_enabled = (
+        bool(failed_pair_memory_config.get("enabled", False))
+        if isinstance(failed_pair_memory_config, dict)
+        else False
+    )
+    failed_pair_memory_ttl_count = max(
+        1.0,
+        float(buffers["failed_pair_memory_selected_pair_ttl_count"][env_id].item()),
+    )
     budget_attempt_steps_count = max(1.0, float(buffers["cooldown_budget_attempt_steps_count"][env_id].item()))
     budget_steps_count = max(1.0, float(buffers["cooldown_budget_steps_count"][env_id].item()))
     budget_ratio_count = max(1.0, float(buffers["cooldown_budget_ratio_count"][env_id].item()))
@@ -1648,6 +1854,29 @@ def _make_episode_record(
         "budget_over_budget_selected_count": float(
             buffers["cooldown_budget_over_budget_selected_count"][env_id].item()
         ),
+        "failed_pair_memory_enabled": bool(failed_pair_memory_enabled),
+        "failed_pair_memory_trigger_count": float(buffers["failed_pair_memory_trigger_count"][env_id].item()),
+        "failed_pair_memory_active_count": float(
+            buffers["failed_pair_memory_active_count_sum"][env_id].item() / failed_pair_memory_steps
+        ),
+        "failed_pair_memory_suppressed_count": float(
+            buffers["failed_pair_memory_suppressed_count_sum"][env_id].item() / failed_pair_memory_steps
+        ),
+        "failed_pair_memory_fail_open_count": float(
+            buffers["failed_pair_memory_fail_open_count_sum"][env_id].item() / failed_pair_memory_steps
+        ),
+        "failed_pair_memory_only_noop_remaining_count": float(
+            buffers["failed_pair_memory_only_noop_remaining_count_sum"][env_id].item() / failed_pair_memory_steps
+        ),
+        "failed_pair_memory_selected_pair_active_count": float(
+            buffers["failed_pair_memory_selected_pair_active_count"][env_id].item()
+        ),
+        "failed_pair_memory_selected_pair_ttl_mean": float(
+            buffers["failed_pair_memory_selected_pair_ttl_sum"][env_id].item() / failed_pair_memory_ttl_count
+        ),
+        "failed_pair_memory_selected_pair_ttl_max": float(
+            buffers["failed_pair_memory_selected_pair_ttl_max"][env_id].item()
+        ),
     }
 
 
@@ -1699,6 +1928,25 @@ def _summarize(records: list[dict[str, Any]], *, checkpoint_dir: str, checkpoint
             "budget_ratio_max": max(col("budget_ratio_max")) if col("budget_ratio_max") else 0.0,
             "budget_triggered_pair_count_mean": _mean(col("budget_triggered_pair_count")),
             "budget_over_budget_selected_count_mean": _mean(col("budget_over_budget_selected_count")),
+            "failed_pair_memory_enabled": bool(
+                any(record.get("failed_pair_memory_enabled", False) for record in records)
+            ),
+            "failed_pair_memory_trigger_count_mean": _mean(col("failed_pair_memory_trigger_count")),
+            "failed_pair_memory_active_count_mean": _mean(col("failed_pair_memory_active_count")),
+            "failed_pair_memory_suppressed_count_mean": _mean(col("failed_pair_memory_suppressed_count")),
+            "failed_pair_memory_fail_open_count_mean": _mean(col("failed_pair_memory_fail_open_count")),
+            "failed_pair_memory_only_noop_remaining_count_mean": _mean(
+                col("failed_pair_memory_only_noop_remaining_count")
+            ),
+            "failed_pair_memory_selected_pair_active_count_mean": _mean(
+                col("failed_pair_memory_selected_pair_active_count")
+            ),
+            "failed_pair_memory_selected_pair_ttl_mean": _mean(
+                col("failed_pair_memory_selected_pair_ttl_mean")
+            ),
+            "failed_pair_memory_selected_pair_ttl_max": max(col("failed_pair_memory_selected_pair_ttl_max"))
+            if col("failed_pair_memory_selected_pair_ttl_max")
+            else 0.0,
             "episode_steps_mean": _mean(col("steps")),
         }
     ]
@@ -1875,6 +2123,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     num_envs=wrapper.num_envs,
                     device=wrapper.device,
                 )
+                _update_failed_pair_memory_buffers(
+                    buffers,
+                    info,
+                    num_envs=wrapper.num_envs,
+                    device=wrapper.device,
+                )
                 _append_assignment_history(
                     assignment_history_rows,
                     method="rl_checkpoint",
@@ -1890,6 +2144,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     selected_target_conflict=selected_target_conflict,
                     inter_robot_conflict=inter_robot_conflict,
                     actual_base_motion=actual_base_motion,
+                    info=info,
                     buffers=buffers,
                     previous_base_pos=previous_base_pos,
                     current_base_pos=current_base_pos,
@@ -1968,6 +2223,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 "observation_layout": wrapper.assignment_observation_layout,
                 "assignment_cooldown_config": wrapper.assignment_cooldown_config,
                 "assignment_redirect_guardrail_config": wrapper.assignment_redirect_guardrail_config,
+                "assignment_failed_pair_memory_config": wrapper.assignment_failed_pair_memory_config,
             },
             "static_diagnostics": static_diagnostics or {},
             "summary": summary_rows,
