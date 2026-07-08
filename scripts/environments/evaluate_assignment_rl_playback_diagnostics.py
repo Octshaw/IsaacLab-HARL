@@ -79,6 +79,24 @@ parser.add_argument(
     default=None,
     help="Optional output directory for passive lifecycle JSONL/summary diagnostics.",
 )
+parser.add_argument(
+    "--assignment_lifecycle_resolver_enabled",
+    action="store_true",
+    default=False,
+    help="Enable shared effective-assignment resolver behavior through the wrapper-owned adapter. Disabled by default.",
+)
+parser.add_argument(
+    "--log_assignment_lifecycle_resolver",
+    action="store_true",
+    default=False,
+    help="Write resolver proposal/effective diagnostics from the wrapper-owned adapter. Disabled by default.",
+)
+parser.add_argument(
+    "--assignment_lifecycle_resolver_output_dir",
+    type=str,
+    default=None,
+    help="Optional output directory for resolver JSONL/summary/row diagnostics.",
+)
 parser.add_argument("--stop_on_done", action="store_true", help="End each episode when any env reports done.")
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
@@ -121,6 +139,9 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_diagnost
     AssignmentLifecycleDiagnosticsAdapter,
     build_assignment_lifecycle_external_diagnostics,
     make_assignment_lifecycle_post_problem,
+)
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_resolver_runtime import (  # noqa: E402
+    select_assignment_lifecycle_passive_input,
 )
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_rl_interface import (  # noqa: E402
     compute_assignment_duplicate_count,
@@ -2028,6 +2049,19 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if args_cli.scenario_config is not None:
         apply_scenario_config_to_env_cfg(env_cfg, args_cli)
         print(f"[INFO]: Assignment RL playback scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
+    setattr(env_cfg, "assignment_lifecycle_resolver_enabled", bool(args_cli.assignment_lifecycle_resolver_enabled))
+    setattr(env_cfg, "assignment_lifecycle_resolver_strict_proposals", True)
+    setattr(env_cfg, "assignment_lifecycle_resolver_log_diagnostics", bool(args_cli.log_assignment_lifecycle_resolver))
+    resolver_output_dir = (
+        Path(args_cli.assignment_lifecycle_resolver_output_dir).expanduser().resolve()
+        if args_cli.assignment_lifecycle_resolver_output_dir is not None
+        else output_dir / "assignment_lifecycle_resolver"
+    )
+    setattr(
+        env_cfg,
+        "assignment_lifecycle_resolver_output_dir",
+        str(resolver_output_dir) if bool(args_cli.log_assignment_lifecycle_resolver) else None,
+    )
 
     wrapper = None
     capture_state: dict[str, Any] | None = None
@@ -2132,18 +2166,50 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     assignment,
                     torch.arange(wrapper.num_viewpoints, device=wrapper.device, dtype=torch.long),
                 )
-                lifecycle_adapter.observe_pre_step(
-                    problem=pre_problem,
-                    assignment_proposal=assignment,
-                    episode_ids=lifecycle_episode_ids,
-                    method_metadata={
-                        "method_name": "rl_checkpoint",
-                        "proposal_type": "decoded_rl_assignment",
-                    },
-                )
+                if not bool(args_cli.assignment_lifecycle_resolver_enabled):
+                    lifecycle_adapter.observe_pre_step(
+                        problem=pre_problem,
+                        assignment_proposal=assignment,
+                        episode_ids=lifecycle_episode_ids,
+                        method_metadata={
+                            "method_name": "rl_checkpoint",
+                            "proposal_type": "decoded_rl_assignment",
+                        },
+                    )
 
                 obs, _, rewards, dones, info, available_actions = wrapper.step(actions)
                 _assert_available_actions(wrapper, available_actions)
+                lifecycle_resolution = wrapper.get_last_assignment_lifecycle_resolution() or {}
+                effective_assignment = lifecycle_resolution.get("effective_assignment", assignment)
+                if not isinstance(effective_assignment, torch.Tensor):
+                    effective_assignment = assignment
+                effective_assignment = effective_assignment.to(device=wrapper.device, dtype=torch.long)
+                if bool(args_cli.assignment_lifecycle_resolver_enabled):
+                    lifecycle_assignment, lifecycle_proposal_type = select_assignment_lifecycle_passive_input(
+                        resolver_enabled=True,
+                        assignment_proposal=assignment,
+                        effective_assignment=effective_assignment,
+                    )
+                    lifecycle_adapter.observe_pre_step(
+                        problem=pre_problem,
+                        assignment_proposal=lifecycle_assignment,
+                        episode_ids=lifecycle_episode_ids,
+                        method_metadata={
+                            "method_name": "rl_checkpoint",
+                            "proposal_type": lifecycle_proposal_type,
+                        },
+                    )
+                    executed_reporting = _assignment_reporting_step(buffers, pre_problem, effective_assignment)
+                    executed_selected_target_conflict = _selected_target_conflict_diagnostics(
+                        pre_problem,
+                        effective_assignment,
+                        torch.arange(wrapper.num_viewpoints, device=wrapper.device, dtype=torch.long),
+                    )
+                else:
+                    lifecycle_assignment = assignment
+                    lifecycle_proposal_type = "decoded_rl_assignment"
+                    executed_reporting = reporting
+                    executed_selected_target_conflict = selected_target_conflict
                 done_envs = torch.all(dones, dim=1)
                 current_base_pos = wrapper.unwrapped.base_pos.detach().clone()
                 covered_after = _coverage_from_env(wrapper.unwrapped, done_envs, capture_state)
@@ -2152,19 +2218,19 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     covered_after=covered_after,
                 )
                 lifecycle_external = build_assignment_lifecycle_external_diagnostics(
-                    assignment_proposal=assignment,
+                    assignment_proposal=lifecycle_assignment,
                     info=info if isinstance(info, dict) else None,
                 )
                 lifecycle_adapter.observe_post_step(
                     pre_step_problem=pre_problem,
-                    assignment_proposal=assignment,
+                    assignment_proposal=lifecycle_assignment,
                     post_step_problem=post_problem,
                     external_diagnostics=lifecycle_external,
                     done_env_ids=torch.nonzero(done_envs, as_tuple=False).flatten(),
                     episode_ids=lifecycle_episode_ids,
                     method_metadata={
                         "method_name": "rl_checkpoint",
-                        "proposal_type": "decoded_rl_assignment",
+                        "proposal_type": lifecycle_proposal_type,
                     },
                 )
                 inter_robot_conflict = wrapper.unwrapped.get_inter_robot_conflict_diagnostics()
@@ -2172,18 +2238,18 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     wrapper.unwrapped,
                     previous_base_pos=previous_base_pos,
                     current_base_pos=current_base_pos,
-                    assignment=assignment,
+                    assignment=effective_assignment,
                 )
 
                 _update_buffers(
                     buffers,
                     rewards=rewards,
-                    assignment=assignment,
+                    assignment=effective_assignment,
                     pre_problem=pre_problem,
                     covered_before=covered_before,
                     covered_after=covered_after,
-                    reporting=reporting,
-                    selected_target_conflict=selected_target_conflict,
+                    reporting=executed_reporting,
+                    selected_target_conflict=executed_selected_target_conflict,
                     inter_robot_conflict=inter_robot_conflict,
                     actual_base_motion=actual_base_motion,
                 )
@@ -2271,6 +2337,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
         summary_rows = _summarize(all_episode_records, checkpoint_dir=str(model_dir), checkpoint_kind=checkpoint_kind, wrapper=wrapper)
         lifecycle_summary = lifecycle_adapter.finalize()
+        resolver_lifecycle_summary = wrapper.finalize_assignment_lifecycle_resolver()
         diagnostics = {
             "metadata": {
                 "method": "rl_checkpoint",
@@ -2295,6 +2362,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 "assignment_cooldown_config": wrapper.assignment_cooldown_config,
                 "assignment_redirect_guardrail_config": wrapper.assignment_redirect_guardrail_config,
                 "assignment_failed_pair_memory_config": wrapper.assignment_failed_pair_memory_config,
+                "assignment_lifecycle_resolver_config": wrapper.assignment_lifecycle_resolver_config,
             },
             "static_diagnostics": static_diagnostics or {},
             "summary": summary_rows,
@@ -2313,6 +2381,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         }
         if bool(args_cli.log_assignment_lifecycle):
             diagnostics["assignment_lifecycle"] = lifecycle_summary
+        if bool(args_cli.assignment_lifecycle_resolver_enabled) or bool(args_cli.log_assignment_lifecycle_resolver):
+            diagnostics["assignment_lifecycle_resolver"] = resolver_lifecycle_summary
         if last_covered_final is not None:
             diagnostics["final_uncovered_viewpoint_ids_by_env"] = _ids_from_mask(~last_covered_final)
 

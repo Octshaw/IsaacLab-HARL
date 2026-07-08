@@ -308,12 +308,13 @@ class AssignmentLifecycleDiagnosticsAdapter:
         ).to(device=self.device)
         self._pending_assignment_proposal = proposal.clone()
         self._pending_pre_problem_tensors = self._clone_core_problem_tensors(problem)
+        metadata = self._merged_metadata(method_metadata)
         self.logger.observe_pre_step(
             problem=problem,
             assignment_proposal=proposal,
-            method_metadata=self._merged_metadata(method_metadata),
+            method_metadata=metadata,
         )
-        self._drain_events()
+        self._drain_events(method_metadata=metadata)
         return self.snapshot()
 
     def observe_post_step(
@@ -343,16 +344,17 @@ class AssignmentLifecycleDiagnosticsAdapter:
         external = dict(external_diagnostics or {})
         if completed_by_robot_ids is not None:
             external["completed_by_robot_ids"] = completed_by_robot_ids.clone()
+        metadata = self._merged_metadata(method_metadata)
         self.logger.observe_post_step(
             pre_step_problem=self._pending_pre_problem_tensors,
             assignment_proposal=proposal,
             post_step_problem=post_step_problem,
             external_diagnostics=external,
-            method_metadata=self._merged_metadata(method_metadata),
+            method_metadata=metadata,
         )
         self._total_steps_observed += self.num_envs
         self._update_attempt_age_summary()
-        self._drain_events()
+        self._drain_events(method_metadata=metadata)
         self._pending_pre_problem_tensors = None
         self._pending_assignment_proposal = None
 
@@ -438,28 +440,38 @@ class AssignmentLifecycleDiagnosticsAdapter:
                     f"observe_post_step pre_step_problem tensor {key!r} shape changed since observe_pre_step"
                 )
 
-    def _drain_events(self) -> None:
+    def _drain_events(self, method_metadata: Mapping[str, Any] | None = None) -> None:
         if not self.enabled or self.logger is None:
             return
         events = self.logger.pop_events()
         if not events:
             return
+        metadata = self._merged_metadata(method_metadata)
         assert self.events_path is not None
         with self.events_path.open("a", encoding="utf-8") as file:
             for event in events:
-                row = self._normalize_event_row(event)
+                row = self._normalize_event_row(event, method_metadata=metadata)
                 self._update_summary_for_event(row)
                 file.write(json.dumps(row, sort_keys=True) + "\n")
 
-    def _normalize_event_row(self, event: Mapping[str, Any]) -> dict[str, Any]:
+    def _normalize_event_row(
+        self,
+        event: Mapping[str, Any],
+        *,
+        method_metadata: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
         env_id = int(event.get("env_id", 0))
-        method_name = event.get("method_name") or self.method_name
+        metadata = self._merged_metadata(method_metadata)
+        method_name = event.get("method_name") or metadata.get("method_name") or self.method_name
+        proposal_type = event.get("proposal_type")
+        if proposal_type is None:
+            proposal_type = metadata.get("proposal_type", self.default_proposal_type)
         row = {field: None for field in EVENT_SCHEMA_FIELDS}
         row.update(
             {
                 "schema_version": ASSIGNMENT_LIFECYCLE_DIAGNOSTICS_SCHEMA_VERSION,
                 "method_name": str(method_name),
-                "proposal_type": event.get("proposal_type", self.default_proposal_type),
+                "proposal_type": proposal_type,
                 "episode_id": int(self._episode_ids[env_id].item()) if 0 <= env_id < self.num_envs else None,
                 "env_id": env_id,
                 "step": int(event.get("step", 0)),

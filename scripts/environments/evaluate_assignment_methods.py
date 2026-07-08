@@ -229,6 +229,24 @@ parser.add_argument(
     help="Optional output directory for passive lifecycle JSONL/summary diagnostics.",
 )
 parser.add_argument(
+    "--assignment_lifecycle_resolver_enabled",
+    action="store_true",
+    default=False,
+    help="Enable shared effective-assignment resolver behavior. Disabled by default.",
+)
+parser.add_argument(
+    "--log_assignment_lifecycle_resolver",
+    action="store_true",
+    default=False,
+    help="Write resolver proposal/effective diagnostics. Disabled by default.",
+)
+parser.add_argument(
+    "--assignment_lifecycle_resolver_output_dir",
+    type=str,
+    default=None,
+    help="Optional output directory for resolver JSONL/summary diagnostics.",
+)
+parser.add_argument(
     "--controller_trace_pairs",
     nargs="*",
     default=[],
@@ -318,6 +336,11 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper impor
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_diagnostics import (
     AssignmentLifecycleDiagnosticsAdapter,
     make_assignment_lifecycle_post_problem,
+)
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_resolver_runtime import (
+    AssignmentLifecycleResolverRuntimeAdapter,
+    build_resolver_budget_failure_diagnostics,
+    select_assignment_lifecycle_passive_input,
 )
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_rl_interface import compute_assignment_duplicate_count
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_state import status_counts
@@ -5206,6 +5229,17 @@ def _assignment_lifecycle_output_root() -> Path:
     return Path("results/assignment_evaluation/assignment_lifecycle_diagnostics").resolve()
 
 
+def _assignment_lifecycle_resolver_output_root() -> Path:
+    if args_cli.assignment_lifecycle_resolver_output_dir is not None:
+        return Path(args_cli.assignment_lifecycle_resolver_output_dir).expanduser().resolve()
+    if args_cli.output_dir is not None:
+        base = Path(args_cli.output_dir).expanduser()
+        if args_cli.output_name is not None:
+            base = base / _assignment_lifecycle_safe_name(args_cli.output_name)
+        return (base / "assignment_lifecycle_resolver").resolve()
+    return Path("results/assignment_evaluation/assignment_lifecycle_resolver_diagnostics").resolve()
+
+
 def _make_assignment_lifecycle_adapter(
     *,
     method: str,
@@ -5221,6 +5255,25 @@ def _make_assignment_lifecycle_adapter(
         method_name=str(method),
         output_dir=_assignment_lifecycle_output_root() / _assignment_lifecycle_safe_name(str(method)),
         proposal_type="standardized_assignment",
+    )
+
+
+def _make_assignment_lifecycle_resolver_adapter(
+    *,
+    method: str,
+    problem: dict,
+    device: torch.device,
+) -> AssignmentLifecycleResolverRuntimeAdapter:
+    return AssignmentLifecycleResolverRuntimeAdapter(
+        enabled=bool(args_cli.assignment_lifecycle_resolver_enabled),
+        num_envs=int(problem["num_envs"]),
+        num_robots=int(problem["num_agents"]),
+        num_tasks=int(problem["num_viewpoints"]),
+        device=device,
+        method_name=str(method),
+        output_dir=_assignment_lifecycle_resolver_output_root() / _assignment_lifecycle_safe_name(str(method)),
+        log_diagnostics=bool(args_cli.log_assignment_lifecycle_resolver),
+        strict_proposals=True,
     )
 
 
@@ -5351,6 +5404,8 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
     retry_fallback_stats = _init_retry_fallback_stats()
     lifecycle_summaries: list[dict] = []
     lifecycle_adapters: list[AssignmentLifecycleDiagnosticsAdapter] = []
+    resolver_lifecycle_summaries: list[dict] = []
+    resolver_lifecycle_adapters: list[AssignmentLifecycleResolverRuntimeAdapter] = []
     diagnostics: dict | None = None
     agent_names = _agent_names_from_unwrapped(unwrapped)
     controller_trace_pairs = _controller_trace_pairs(agent_names, viewpoint_ids)
@@ -5375,6 +5430,13 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
             lifecycle_adapter = _make_assignment_lifecycle_adapter(method=method, problem=problem, device=device)
             lifecycle_adapters.append(lifecycle_adapter)
             lifecycle_adapter.reset_envs(env_ids=None, episode_ids=episode_index_by_env.clone())
+            resolver_lifecycle_adapter = _make_assignment_lifecycle_resolver_adapter(
+                method=method,
+                problem=problem,
+                device=device,
+            )
+            resolver_lifecycle_adapters.append(resolver_lifecycle_adapter)
+            resolver_lifecycle_adapter.reset_envs(env_ids=None, episode_ids=episode_index_by_env.clone())
             if diagnostics is None:
                 diagnostics = _collect_evaluation_diagnostics(unwrapped, problem, methods)
                 diagnostics["controller_state_trace"] = {
@@ -5423,9 +5485,21 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                 while simulation_app.is_running() and len(records) < args_cli.num_episodes:
                     problem = _prepare_baseline_assignment_problem(unwrapped.get_assignment_problem(), retry_state, method=method)
                     assignment = solver.solve(problem)
+                    assignment_proposal = assignment
                     solver_diagnostics = getattr(solver, "latest_diagnostics", None)
-                    _validate_assignment(problem, assignment)
-                    valid_decisions = _valid_assignment_decisions(problem, assignment)
+                    _validate_assignment(problem, assignment_proposal)
+                    valid_decisions = _valid_assignment_decisions(problem, assignment_proposal)
+                    resolver_pre_result = resolver_lifecycle_adapter.resolve_pre_step(
+                        problem=problem,
+                        assignment_proposal=assignment_proposal,
+                        episode_ids=episode_index_by_env.clone(),
+                        method_metadata={
+                            "method_name": str(method),
+                            "proposal_type": "standardized_assignment",
+                        },
+                    )
+                    effective_assignment = resolver_pre_result.effective_assignment.to(device=device, dtype=torch.long)
+                    effective_valid_decisions = _valid_assignment_decisions(problem, effective_assignment)
                     step_before = buffers["length"].clone()
                     conflict_aware_solver_row = _conflict_aware_solver_step_row(
                         method=method,
@@ -5444,8 +5518,8 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                         num_envs=num_envs,
                         device=device,
                     )
-                    selected_target_conflict = _selected_target_conflict_diagnostics(problem, assignment, viewpoint_ids)
-                    _set_selected_assignment_debug_visualization(unwrapped, assignment, problem)
+                    selected_target_conflict = _selected_target_conflict_diagnostics(problem, assignment_proposal, viewpoint_ids)
+                    _set_selected_assignment_debug_visualization(unwrapped, assignment_proposal, problem)
                     _update_selected_assignment_debug_runtime_diagnostics(
                         diagnostics,
                         unwrapped,
@@ -5453,34 +5527,39 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                         step=step_before,
                     )
                     covered_before = unwrapped.viewpoints_covered.to(dtype=torch.bool).clone()
-                    reporting_step = _assignment_reporting_step_diagnostics(buffers, problem, assignment)
+                    reporting_step = _assignment_reporting_step_diagnostics(buffers, problem, assignment_proposal)
+                    passive_assignment, passive_proposal_type = select_assignment_lifecycle_passive_input(
+                        resolver_enabled=bool(args_cli.assignment_lifecycle_resolver_enabled),
+                        assignment_proposal=assignment_proposal,
+                        effective_assignment=effective_assignment,
+                    )
                     lifecycle_adapter.observe_pre_step(
                         problem=problem,
-                        assignment_proposal=assignment,
+                        assignment_proposal=passive_assignment,
                         episode_ids=episode_index_by_env.clone(),
                         method_metadata={
                             "method_name": str(method),
-                            "proposal_type": "standardized_assignment",
+                            "proposal_type": passive_proposal_type,
                         },
                     )
                     if args_cli.compare_obstacle_aware_candidates:
                         obstacle_candidate_comparison_rows.append(
                             _compare_obstacle_aware_candidate_step(
                                 method=method,
-                                step=step_before,
-                                episode_index=episode_index_by_env.clone(),
-                                problem=problem,
-                                baseline_assignment=assignment,
-                                agents=agent_names,
-                                viewpoint_ids=viewpoint_ids,
-                            )
+                            step=step_before,
+                            episode_index=episode_index_by_env.clone(),
+                            problem=problem,
+                            baseline_assignment=assignment_proposal,
+                            agents=agent_names,
+                            viewpoint_ids=viewpoint_ids,
+                        )
                         )
                     target_conflict_candidate_comparison = _compare_target_conflict_candidate_step(
                         method=method,
                         step=step_before,
                         episode_index=episode_index_by_env.clone(),
                         problem=problem,
-                        baseline_assignment=assignment,
+                        baseline_assignment=assignment_proposal,
                         agents=agent_names,
                         viewpoint_ids=viewpoint_ids,
                     )
@@ -5492,10 +5571,10 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                         device=device,
                     )
                     assignment_transition_info = _update_controller_trace_assignment_state(
-                        trace_state, assignment, viewpoint_ids
+                        trace_state, effective_assignment, viewpoint_ids
                     )
 
-                    actions = viewpoint_assignment_to_actions(unwrapped, assignment)
+                    actions = viewpoint_assignment_to_actions(unwrapped, effective_assignment)
                     previous_base_pos = unwrapped.base_pos.detach().clone()
                     _, rewards, terminated, truncated, _ = env.step(actions)
                     current_base_pos = unwrapped.base_pos.detach().clone()
@@ -5508,7 +5587,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                         method=method,
                         step=step_before,
                         episode_index=episode_index_by_env.clone(),
-                        assignment=assignment,
+                        assignment=effective_assignment,
                         previous_base_pos=previous_base_pos,
                         current_base_pos=current_base_pos,
                         env_done=env_done,
@@ -5544,7 +5623,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                         retry_state,
                         method=method,
                         step=step_before,
-                        assignment=assignment,
+                        assignment=effective_assignment,
                         covered_before=covered_before,
                         covered_after=covered_mask,
                         viewpoint_ids=viewpoint_ids,
@@ -5557,7 +5636,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                             trace_state=trace_state,
                             method=method,
                             step=step_before,
-                            assignment=assignment,
+                            assignment=effective_assignment,
                             covered_before=covered_before,
                             covered_after=covered_mask,
                             viewpoint_ids=viewpoint_ids,
@@ -5569,7 +5648,7 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                             pending_history_by_env,
                             method=method,
                             step=step_before,
-                            assignment=assignment,
+                            assignment=assignment_proposal,
                             valid_decisions=valid_decisions,
                             reporting_step=reporting_step,
                             covered_before=covered_before,
@@ -5582,8 +5661,8 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     _update_buffers(
                         buffers,
                         reward_sum=reward_sum,
-                        assignment=assignment,
-                        valid_decisions=valid_decisions,
+                        assignment=effective_assignment,
+                        valid_decisions=effective_valid_decisions,
                         covered_before=covered_before,
                         covered_mask=covered_mask,
                         new_viewpoints=new_viewpoints,
@@ -5599,9 +5678,25 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     )
                     lifecycle_adapter.observe_post_step(
                         pre_step_problem=problem,
-                        assignment_proposal=assignment,
+                        assignment_proposal=passive_assignment,
                         post_step_problem=lifecycle_post_problem,
                         external_diagnostics=None,
+                        done_env_ids=done_ids,
+                        episode_ids=episode_index_by_env.clone(),
+                        method_metadata={
+                            "method_name": str(method),
+                            "proposal_type": passive_proposal_type,
+                        },
+                    )
+                    resolver_lifecycle_adapter.observe_post_step(
+                        pre_step_problem=problem,
+                        assignment_proposal=assignment_proposal,
+                        effective_assignment=effective_assignment,
+                        post_step_problem=lifecycle_post_problem,
+                        external_diagnostics=build_resolver_budget_failure_diagnostics(
+                            effective_assignment=effective_assignment,
+                            info=None,
+                        ),
                         done_env_ids=done_ids,
                         episode_ids=episode_index_by_env.clone(),
                         method_metadata={
@@ -5663,12 +5758,15 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
                     solver.reset()
             all_records.extend(records)
             lifecycle_summaries.append(lifecycle_adapter.finalize())
+            resolver_lifecycle_summaries.append(resolver_lifecycle_adapter.finalize())
             if diagnostics is not None and args_cli.write_controller_state_trace:
                 unavailable = diagnostics.setdefault("controller_state_trace", {}).setdefault("unavailable_fields", [])
                 unavailable.extend(str(value) for value in sorted(trace_state["unavailable_fields"]) if str(value) not in unavailable)
     finally:
         for lifecycle_adapter in lifecycle_adapters:
             lifecycle_adapter.finalize()
+        for resolver_lifecycle_adapter in resolver_lifecycle_adapters:
+            resolver_lifecycle_adapter.finalize()
         unwrapped._reset_idx = original_reset_idx
         env.close()
     if diagnostics is None:
@@ -5701,6 +5799,14 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
             "output_root": str(_assignment_lifecycle_output_root()),
             "summaries": lifecycle_summaries,
             "behavior_changed": False,
+        }
+    if bool(args_cli.assignment_lifecycle_resolver_enabled) or bool(args_cli.log_assignment_lifecycle_resolver):
+        diagnostics["assignment_lifecycle_resolver"] = {
+            "enabled": bool(args_cli.assignment_lifecycle_resolver_enabled),
+            "output_root": str(_assignment_lifecycle_resolver_output_root())
+            if bool(args_cli.log_assignment_lifecycle_resolver)
+            else None,
+            "summaries": resolver_lifecycle_summaries,
         }
     return all_records, diagnostics, assignment_history, retry_fallback_events, controller_state_trace
 

@@ -25,6 +25,7 @@ try:
         compute_assignment_duplicate_count,
         make_assignment_action_mask,
     )
+    from .assignment_lifecycle_resolver_runtime import AssignmentLifecycleResolverRuntimeAdapter
 except ImportError:  # Allows direct file-based smoke tests after adding this directory to sys.path.
     from assignment_harl_adapter import (  # type: ignore
         AssignmentHarlAdapter,
@@ -37,6 +38,7 @@ except ImportError:  # Allows direct file-based smoke tests after adding this di
         compute_assignment_duplicate_count,
         make_assignment_action_mask,
     )
+    from assignment_lifecycle_resolver_runtime import AssignmentLifecycleResolverRuntimeAdapter  # type: ignore
 
 
 class AssignmentHarlWrapper:
@@ -65,6 +67,7 @@ class AssignmentHarlWrapper:
         self._assignment_cooldown_config = self._build_assignment_cooldown_config()
         self._assignment_redirect_guardrail_config = self._build_assignment_redirect_guardrail_config()
         self._assignment_failed_pair_memory_config = self._build_assignment_failed_pair_memory_config()
+        self._assignment_lifecycle_resolver_config = self._build_assignment_lifecycle_resolver_config()
         self._max_base_xy_step_by_agent = self._infer_max_base_xy_step_by_agent()
 
         self._adapter = AssignmentHarlAdapter(
@@ -77,6 +80,8 @@ class AssignmentHarlWrapper:
         self._max_scalar_action_dim = max(get_harl_scalar_action_dim(space) for space in self._action_space.values())
 
         self.last_assignment: torch.Tensor | None = None
+        self.last_assignment_proposal: torch.Tensor | None = None
+        self.last_effective_assignment: torch.Tensor | None = None
         self.last_env_actions: dict[str, torch.Tensor] | None = None
         self.last_pre_step_available_actions: torch.Tensor | None = None
         self.last_available_actions: torch.Tensor | None = None
@@ -85,6 +90,18 @@ class AssignmentHarlWrapper:
         self.last_valid_action_count: torch.Tensor | None = None
         self.last_selected_available_mask: torch.Tensor | None = None
         self.last_assignment_reward_terms: dict[str, Any] | None = None
+        self._last_assignment_lifecycle_resolution: dict[str, Any] | None = None
+        self._assignment_lifecycle_resolver_runtime = AssignmentLifecycleResolverRuntimeAdapter(
+            enabled=bool(self._assignment_lifecycle_resolver_config["enabled"]),
+            num_envs=self._num_envs,
+            num_robots=self._num_agents,
+            num_tasks=self._num_viewpoints,
+            device=self._device,
+            method_name="assignment_harl_wrapper",
+            output_dir=self._assignment_lifecycle_resolver_config["output_dir"],
+            log_diagnostics=bool(self._assignment_lifecycle_resolver_config["log_diagnostics"]),
+            strict_proposals=bool(self._assignment_lifecycle_resolver_config["strict_proposals"]),
+        )
 
         self._viewpoint_row_fields = (
             "relative_viewpoint_position_x",
@@ -255,10 +272,19 @@ class AssignmentHarlWrapper:
     def assignment_failed_pair_memory_config(self) -> dict[str, bool | int | str]:
         return dict(self._assignment_failed_pair_memory_config)
 
+    @property
+    def assignment_lifecycle_resolver_config(self) -> dict[str, bool | str | None]:
+        return dict(self._assignment_lifecycle_resolver_config)
+
+    def get_last_assignment_lifecycle_resolution(self) -> dict[str, Any] | None:
+        return self._clone_lifecycle_resolution_payload(self._last_assignment_lifecycle_resolution)
+
     def reset(self, *args, **kwargs) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
         obs, _ = self._env.reset(*args, **kwargs)
         problem = self._unwrapped.get_assignment_problem()
         self._reset_assignment_diagnostics(problem=problem)
+        self._assignment_lifecycle_resolver_runtime.reset_envs(env_ids=None)
+        self._last_assignment_lifecycle_resolution = None
         self.last_assignment_reward_terms = None
         obs = self._augment_assignment_observations(obs, problem=problem)
         self._sync_agents(obs)
@@ -275,16 +301,25 @@ class AssignmentHarlWrapper:
         pre_step_problem = self._unwrapped.get_assignment_problem()
         pre_step_available_actions = self._build_available_actions(problem=pre_step_problem)
         self._capture_pre_step_assignment_redirect_guardrail_diagnostics()
-        assignment = self.decode_actions(discrete_actions, layout=layout)
-        env_actions = self.assignment_to_env_actions(assignment)
-        selected_available_mask = self._selected_available_mask(assignment, pre_step_available_actions)
+        assignment_proposal = self.decode_actions(discrete_actions, layout=layout)
+        lifecycle_pre_result = self._assignment_lifecycle_resolver_runtime.resolve_pre_step(
+            problem=pre_step_problem,
+            assignment_proposal=assignment_proposal,
+            method_metadata={
+                "method_name": "assignment_harl_wrapper",
+                "proposal_type": "decoded_rl_assignment",
+            },
+        )
+        effective_assignment = lifecycle_pre_result.effective_assignment.to(device=self._device, dtype=torch.long)
+        env_actions = self.assignment_to_env_actions(effective_assignment)
+        selected_available_mask = self._selected_available_mask(effective_assignment, pre_step_available_actions)
 
         obs, rewards, terminated, truncated, info = self._env.step(env_actions)
         post_step_problem = self._unwrapped.get_assignment_problem()
         dones = self._stack_dones(terminated, truncated)
         done_env_ids = torch.nonzero(torch.all(dones, dim=1), as_tuple=False).flatten()
         self._update_assignment_diagnostics(
-            assignment=assignment,
+            assignment=effective_assignment,
             pre_step_problem=pre_step_problem,
             post_step_problem=post_step_problem,
             selected_available_mask=selected_available_mask,
@@ -293,16 +328,18 @@ class AssignmentHarlWrapper:
         reward_tensor = self._stack_rewards(rewards)
         reward_decomposition = self._compute_assignment_reward_decomposition(
             base_reward_tensor=reward_tensor,
-            assignment=assignment,
+            assignment=effective_assignment,
             pre_step_problem=pre_step_problem,
             post_step_problem=post_step_problem,
         )
         reward_tensor = reward_decomposition["final_reward"]
-        duplicate_count = compute_assignment_duplicate_count(assignment)
-        noop_count = (assignment < 0).sum(dim=1).to(dtype=torch.float32)
-        valid_action_count = (assignment >= 0).sum(dim=1).to(dtype=torch.float32)
+        duplicate_count = compute_assignment_duplicate_count(effective_assignment)
+        noop_count = (effective_assignment < 0).sum(dim=1).to(dtype=torch.float32)
+        valid_action_count = (effective_assignment >= 0).sum(dim=1).to(dtype=torch.float32)
 
-        self.last_assignment = assignment
+        self.last_assignment = effective_assignment
+        self.last_assignment_proposal = assignment_proposal
+        self.last_effective_assignment = effective_assignment
         self.last_env_actions = env_actions
         self.last_pre_step_available_actions = pre_step_available_actions
         self.last_duplicate_count = duplicate_count
@@ -320,6 +357,31 @@ class AssignmentHarlWrapper:
             reward_decomposition=reward_decomposition,
         )
 
+        lifecycle_external = self._assignment_lifecycle_resolver_runtime.budget_failure_diagnostics(
+            effective_assignment=effective_assignment,
+            info=info if isinstance(info, Mapping) else None,
+        )
+        lifecycle_post_result = self._assignment_lifecycle_resolver_runtime.observe_post_step(
+            pre_step_problem=pre_step_problem,
+            assignment_proposal=assignment_proposal,
+            effective_assignment=effective_assignment,
+            post_step_problem=post_step_problem,
+            external_diagnostics=lifecycle_external,
+            done_env_ids=done_env_ids,
+            method_metadata={
+                "method_name": "assignment_harl_wrapper",
+                "proposal_type": "decoded_rl_assignment",
+            },
+        )
+        lifecycle_events = self._assignment_lifecycle_resolver_runtime.pop_events()
+        self._last_assignment_lifecycle_resolution = self._make_lifecycle_resolution_payload(
+            assignment_proposal=assignment_proposal,
+            effective_assignment=effective_assignment,
+            pre_result=lifecycle_pre_result,
+            post_result=lifecycle_post_result,
+            events=lifecycle_events,
+        )
+
         if done_env_ids.numel() > 0:
             self._reset_assignment_diagnostics(env_ids=done_env_ids, problem=post_step_problem)
 
@@ -331,7 +393,11 @@ class AssignmentHarlWrapper:
         return obs, shared_obs, reward_tensor, dones, info, available_actions
 
     def close(self) -> None:
+        self.finalize_assignment_lifecycle_resolver()
         self._env.close()
+
+    def finalize_assignment_lifecycle_resolver(self) -> dict[str, Any]:
+        return self._assignment_lifecycle_resolver_runtime.finalize()
 
     def make_action_tensor(self, dtype: torch.dtype = torch.float32) -> torch.Tensor:
         return make_harl_action_tensor(self._num_envs, self._action_space, device=self._device, dtype=dtype)
@@ -517,6 +583,22 @@ class AssignmentHarlWrapper:
             "fail_open": _bool_attr("assignment_failed_pair_memory_fail_open", True),
             "clear_on_coverage": _bool_attr("assignment_failed_pair_memory_clear_on_coverage", True),
             "log_diagnostics": _bool_attr("assignment_failed_pair_memory_log_diagnostics", True),
+        }
+
+    def _build_assignment_lifecycle_resolver_config(self) -> dict[str, bool | str | None]:
+        cfg = getattr(self._unwrapped, "cfg", None)
+
+        def _bool_attr(name: str, default: bool) -> bool:
+            return bool(getattr(cfg, name, default))
+
+        output_dir = getattr(cfg, "assignment_lifecycle_resolver_output_dir", None)
+        if output_dir is not None:
+            output_dir = str(output_dir)
+        return {
+            "enabled": _bool_attr("assignment_lifecycle_resolver_enabled", False),
+            "strict_proposals": _bool_attr("assignment_lifecycle_resolver_strict_proposals", True),
+            "log_diagnostics": _bool_attr("assignment_lifecycle_resolver_log_diagnostics", False),
+            "output_dir": output_dir,
         }
 
     def _infer_max_base_xy_step_by_agent(self) -> torch.Tensor:
@@ -1933,6 +2015,57 @@ class AssignmentHarlWrapper:
         safe_ids = assignment.clamp(min=0).unsqueeze(-1)
         selected_available = torch.gather(viewpoint_mask, dim=2, index=safe_ids).squeeze(-1)
         return selected_available & non_noop
+
+    def _make_lifecycle_resolution_payload(
+        self,
+        *,
+        assignment_proposal: torch.Tensor,
+        effective_assignment: torch.Tensor,
+        pre_result: Any,
+        post_result: Any,
+        events: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        return {
+            "enabled": bool(self._assignment_lifecycle_resolver_config["enabled"]),
+            "assignment_proposal": assignment_proposal.detach().clone(),
+            "effective_assignment": effective_assignment.detach().clone(),
+            "proposal_effective_changed": (
+                assignment_proposal.to(device=effective_assignment.device) != effective_assignment
+            ).detach().clone(),
+            "proposal_accepted": pre_result.proposal_accepted.detach().clone(),
+            "proposal_rejected_reason": pre_result.proposal_rejected_reason.detach().clone(),
+            "continued_from_active_target": pre_result.continued_from_active_target.detach().clone(),
+            "new_claim_started": pre_result.new_claim_started.detach().clone(),
+            "switch_requested": pre_result.switch_requested.detach().clone(),
+            "switch_rejected": pre_result.switch_rejected.detach().clone(),
+            "claim_conflict": pre_result.claim_conflict.detach().clone(),
+            "claim_winner": pre_result.claim_winner.detach().clone(),
+            "claim_loser": pre_result.claim_loser.detach().clone(),
+            "pre_behavior_changed": bool(pre_result.behavior_changed),
+            "post_completed": post_result.completed.detach().clone(),
+            "post_released": post_result.released.detach().clone(),
+            "post_release_reason": post_result.release_reason.detach().clone(),
+            "post_failure_reason": post_result.failure_reason.detach().clone(),
+            "post_reset_env_ids": list(post_result.reset_env_ids),
+            "post_behavior_changed": bool(post_result.behavior_changed),
+            "resolver_snapshot": self._clone_lifecycle_resolution_payload(
+                self._assignment_lifecycle_resolver_runtime.snapshot()
+            ),
+            "resolver_events": [dict(event) for event in events],
+        }
+
+    def _clone_lifecycle_resolution_payload(self, payload: Any) -> Any:
+        if payload is None:
+            return None
+        if isinstance(payload, torch.Tensor):
+            return payload.detach().clone()
+        if isinstance(payload, dict):
+            return {str(key): self._clone_lifecycle_resolution_payload(value) for key, value in payload.items()}
+        if isinstance(payload, list):
+            return [self._clone_lifecycle_resolution_payload(value) for value in payload]
+        if isinstance(payload, tuple):
+            return tuple(self._clone_lifecycle_resolution_payload(value) for value in payload)
+        return payload
 
     def _augment_info(
         self,

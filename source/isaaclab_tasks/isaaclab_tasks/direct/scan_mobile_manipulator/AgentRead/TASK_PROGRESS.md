@@ -4,7 +4,7 @@ Compact handoff for the assignment-based scan-mobile-manipulator work.
 
 ## Current Status
 
-Phase 9G-6E commit-readiness review for the complete Phase 9G-6 block is complete.
+Phase 9G-7F is complete.
 
 Classification:
 
@@ -12,164 +12,247 @@ Classification:
 COMMIT-READY
 ```
 
-No commit was made. The user will manually stage and commit.
-
-No training was run. No short training smoke was run. No new playback or comparison-method evaluation episode was run in Phase 9G-6E.
-
-## Phase 9G-6 Scope Summary
-
-Phase 9G-6A:
+Phase 9G-7F reviewed the complete Phase 9G-7 block:
 
 ```text
-active-task / release lifecycle transition interface audit
-documentation/design only
+Phase 9G-7A:
+  effective-assignment resolver / active-target latch design audit
+
+Phase 9G-7B:
+  standalone shared resolver prototype and fake-sequence smoke tests
+
+Phase 9G-7C:
+  default-off runtime integration design/readiness audit
+
+Phase 9G-7D:
+  shared resolver runtime adapter and default-off integration smoke
+
+Phase 9G-7E:
+  bounded disabled identity and enabled semantic runtime validation
 ```
 
-Phase 9G-6B:
+No training was run.
+
+No short training smoke was run.
+
+No playback or comparison-method episode was rerun during 9G-7F.
+
+No performance conclusion was made.
+
+No commit was made.
+
+## Commit-Readiness Decision
+
+Phase 9G-7 is ready for user manual staging and commit.
+
+Readiness report:
 
 ```text
-passive shared lifecycle transition logger
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle.py
-scripts/environments/test_assignment_lifecycle_transition_logger_smoke.py
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260708/PHASE9G7F_COMMIT_READINESS_REVIEW.md
 ```
 
-Phase 9G-6C:
+TASK_PROGRESS archive created before this update:
 
 ```text
-default-off passive lifecycle diagnostics integration for:
-  RL playback diagnostics
-  generic comparison-method evaluation
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_diagnostics.py
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260708/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G7F_COMMIT_READINESS_REVIEW_20260708.md
 ```
 
-Phase 9G-6D:
+## Default-Off Identity Status
+
+Default-off guarantees were reviewed and remain intact:
 
 ```text
-bounded runtime validation
-PASS
-RL enabled/disabled identity: exact SHA matches
-nearest enabled/disabled identity: exact SHA matches
-RL, nearest, random, greedy lifecycle outputs populated and schema-consistent
+AssignmentLifecycleResolver defaults enabled=False.
+AssignmentLifecycleResolverRuntimeAdapter defaults enabled=False.
+AssignmentHARLWrapper resolver config defaults disabled.
+RL playback CLI resolver flags default disabled.
+comparison-method CLI resolver flags default disabled.
+resolver diagnostics logging defaults disabled.
 ```
 
-Phase 9G-6E:
+Resolver-disabled exact identity remains valid from Phase 9G-7E:
 
 ```text
-commit-readiness review
-COMMIT-READY
-offline analyzer schema comparator tightened to exact event and summary field-set equality
+RL:
+  assignment_history.csv exact SHA match
+  per_episode.csv exact SHA match
+  summary.csv exact SHA match
+
+nearest:
+  assignment_history.csv exact SHA match
+  per_episode.csv exact SHA match
+  summary.csv exact SHA match
 ```
 
-## Active Architecture / Implementation Path
-
-Current diagnostics path:
+Resolver-disabled invariant:
 
 ```text
-method-specific output
-  -> method adapter / decoder
-  -> standardized assignment_proposal [E, M]
-  -> shared AssignmentLifecycleDiagnosticsAdapter
-  -> passive AssignmentLifecycleTransitionLogger
-  -> assignment_lifecycle_events.jsonl + assignment_lifecycle_summary.json
+effective_assignment == assignment_proposal
+no resolver state accumulates
+no resolver events are emitted
+behavior_changed = false
+no resolver files are created when logging is disabled
 ```
 
-Runtime diagnostics remain default-off:
+## Enabled Semantic Validation Status
+
+Phase 9G-7E enabled semantic validation remains PASS for:
 
 ```text
---log_assignment_lifecycle
---assignment_lifecycle_output_dir
+RL
+nearest
+random
+greedy
 ```
 
-The lifecycle state is proxy-only and diagnostics-only.
+Proposal/effective explanation status:
 
-## Behavior-Neutral Status
+```text
+RL changed rows: 179; unexplained: 0
+nearest changed rows: 432; unexplained: 0
+random changed rows: 874; unexplained: 0
+greedy changed rows: 432; unexplained: 0
+```
 
-No assignment behavior changed.
+Controller/effective consistency:
 
-No action, mask, observation, reward, controller command, env action, env dynamic, task-completion, HARL, solver, scenario YAML, cooldown, redirect guardrail, failed-pair memory, or checkpoint behavior changed.
+```text
+passed where logged
+controller conversion receives effective_assignment
+raw assignment_proposal remains available for diagnostics
+```
 
-No effective assignment resolver, ownership enforcement, hypothetical arbitration application, Contract C behavior, or action latching was implemented.
+Ownership/completion/budget/reset status:
+
+```text
+one active target per robot: passed
+one owner per task: passed
+completion consistency: passed
+budget/release effective-pair consistency: passed
+reset ordering: passed
+passive logger coexistence: passed
+schema consistency: passed
+output isolation: passed
+```
+
+Completion counts:
+
+```text
+RL: 25 env coverage transitions / 25 resolver completion events
+nearest: 44 / 44
+random: 4 / 4
+greedy: 44 / 44
+```
+
+Budget/release counts:
+
+```text
+RL budget_failure: 2
+RL release_budget_failure: 2
+effective robot-target identity: passed
+```
+
+## Limitations Preserved
+
+Failed-pair behavior:
+
+```text
+same-robot failed-pair rejection is episode-persistent
+state clears on target completion or reset
+teammates may still claim the target
+the rule can potentially strand a task
+this is not a final retry policy
+```
+
+Active-target infeasibility:
+
+```text
+monitoring only
+no automatic release
+no ownership change
+no effective-assignment change
+bounded 9G-7E runs observed zero infeasible streak
+```
+
+Training gate:
+
+```text
+resolver-enabled training remains prohibited
+until behavior-driving lifecycle state is represented in observations
+Phase 9G-7 does not claim training readiness
+```
+
+Future SOTA scope:
+
+```text
+current RL and heuristic runtime paths were validated
+future SOTA methods still require validation of their method-specific proposal adapters
+```
+
+## Generated Artifact Decision
+
+Generated runtime artifacts should not be committed:
+
+```text
+results/assignment_diagnostics/phase9g7e_resolver_runtime_validation/
+results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation/
+results/assignment_diagnostics/
+```
+
+Repository ignore behavior was checked:
+
+```text
+results/assignment_diagnostics/phase9g7e_resolver_runtime_validation/ is ignored by .gitignore rule **/results/*
+git ls-files reported no tracked files under the Phase 9G-7E result root
+```
 
 ## Validation Results
 
-Phase 9G-6E reran:
+Syntax checks passed:
 
 ```powershell
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_resolver.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_resolver_runtime.py
 conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_diagnostics.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_transition_logger_smoke.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_runtime_integration_smoke.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_wrapper.py
 conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_rl_playback_diagnostics.py
 conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_methods.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/analyze_phase9g6d_lifecycle_runtime_validation.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_resolver_smoke.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_resolver_runtime_smoke.py
+conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/analyze_phase9g7e_resolver_runtime_validation.py
+```
+
+Pure smokes passed:
+
+```powershell
+conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_resolver_smoke.py --json
+conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_resolver_runtime_smoke.py --json
 conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_transition_logger_smoke.py
 conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_runtime_integration_smoke.py
-conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/analyze_phase9g6d_lifecycle_runtime_validation.py --root results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation --output_dir results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation/comparison
-git diff --check
-git status --short --untracked-files=all
 ```
 
-Result:
+Offline analyzer passed:
+
+```powershell
+conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/analyze_phase9g7e_resolver_runtime_validation.py --root results/assignment_diagnostics/phase9g7e_resolver_runtime_validation --baseline_root results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation --output_dir results/assignment_diagnostics/phase9g7e_resolver_runtime_validation/comparison
+```
+
+Repository checks:
 
 ```text
-all py_compile checks: PASS
-transition logger smoke: PASS
-runtime integration smoke: PASS
-offline Phase 9G-6D analyzer: PASS
-git diff --check: PASS with LF-to-CRLF warnings only
-git status --short --untracked-files=all: completed
+git diff --check: passed, with LF-to-CRLF warnings only
+git status --short --untracked-files=all: expected Phase 9G-7 files plus Phase 9G-7F report/archive
 ```
 
-## Generated Result Artifacts
+## Exact Next Action
 
-Generated runtime results are ignored and should not be committed:
+The user should manually stage the exact files listed in:
 
 ```text
-results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation/
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260708/PHASE9G7F_COMMIT_READINESS_REVIEW.md
 ```
 
-Evidence is preserved in:
-
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6D_PASSIVE_LIFECYCLE_BOUNDED_RUNTIME_VALIDATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6E_COMMIT_READINESS_REVIEW.md
-```
-
-## Known Issues / Blockers
-
-No commit-readiness blockers remain.
-
-The only Phase 9G-6E code change was a diagnostic-only offline analyzer tightening:
-
-```text
-scripts/environments/analyze_phase9g6d_lifecycle_runtime_validation.py
-```
-
-It requires exact event and summary schema field-set equality and does not affect runtime behavior.
-
-## Do Not Do
-
-Do not use `git add .`.
-
-Do not commit generated runtime results.
-
-Do not train.
-
-Do not rerun playback or comparison-method evaluation for the readiness review unless the user explicitly asks.
-
-Do not implement action latching, Contract C behavior, effective assignment resolution, ownership enforcement, mask changes, observation changes, reward changes, controller/env changes, HARL changes, baseline behavior changes, scenario YAML changes, cooldown tuning, redirect tuning, or failed-pair memory tuning without a separate explicit phase.
-
-## Next Action
-
-User manual staging and commit.
-
-Use the exact file list and staging commands in:
-
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6E_COMMIT_READINESS_REVIEW.md
-```
-
-Recommended final staged-diff checks after manual staging:
+Then verify:
 
 ```powershell
 git diff --cached --stat
@@ -181,20 +264,19 @@ git status --short
 Recommended commit message:
 
 ```text
-Add passive lifecycle diagnostics integration
+feat(assignment): add default-off lifecycle resolver
 ```
 
-## Detailed Reports / Archives
+## Do Not Do
 
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6E_COMMIT_READINESS_REVIEW.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6E_COMMIT_READINESS_REVIEW_20260707.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6D_PASSIVE_LIFECYCLE_BOUNDED_RUNTIME_VALIDATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6D_PASSIVE_LIFECYCLE_BOUNDED_RUNTIME_VALIDATION_20260707.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6C_PASSIVE_LIFECYCLE_RUNTIME_INTEGRATION_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6C_PASSIVE_LIFECYCLE_RUNTIME_INTEGRATION_20260707.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6B_PASSIVE_SHARED_LIFECYCLE_TRANSITION_LOGGER_REPORT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6B_PASSIVE_SHARED_LIFECYCLE_TRANSITION_LOGGER_20260707.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/PHASE9G6A_ACTIVE_TASK_LIFECYCLE_TRANSITION_INTERFACE_AUDIT.md
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G6A_ACTIVE_TASK_LIFECYCLE_TRANSITION_INTERFACE_AUDIT_20260707.md
-```
+Do not stage generated runtime artifacts under `results/`.
+
+Do not run training or short training smoke.
+
+Do not make performance claims from the enabled resolver validation runs.
+
+Do not describe the resolver as training-ready.
+
+Do not claim future SOTA runtime validation beyond the shared method-agnostic proposal boundary.
+
+Do not commit unless explicitly asked.
