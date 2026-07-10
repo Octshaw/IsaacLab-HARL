@@ -50,6 +50,7 @@ try:
     from .assignment_harl_adapter import get_harl_scalar_action_dim
     from .assignment_harl_wrapper import AssignmentHarlWrapper
     from .assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence
+    from .assignment_value_normalizer_checkpoint import export_value_normalizer_checkpoint_state
 except ImportError:  # Allows direct file-based smoke tests after adding this directory to sys.path.
     from assignment_checkpoint_contract import CompatibilityPurpose  # type: ignore
     from assignment_checkpoint_load import load_assignment_checkpoint  # type: ignore
@@ -63,6 +64,7 @@ except ImportError:  # Allows direct file-based smoke tests after adding this di
     from assignment_harl_adapter import get_harl_scalar_action_dim  # type: ignore
     from assignment_harl_wrapper import AssignmentHarlWrapper  # type: ignore
     from assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence  # type: ignore
+    from assignment_value_normalizer_checkpoint import export_value_normalizer_checkpoint_state  # type: ignore
 
 
 SUPPORTED_ASSIGNMENT_ALGORITHMS = ("happo", "hatrpo", "haa2c")
@@ -631,7 +633,7 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
             or bool(self.share_param)
         ):
             # Preserve legacy full-model and non-native legacy configurations without
-            # claiming assignment_checkpoint_contract_v1 compatibility.
+            # claiming assignment_checkpoint_contract_v2 compatibility.
             return super().save(directory)
         if profile not in {"legacy", "lifecycle_contract_c"}:
             raise AssignmentCheckpointSaveError(
@@ -659,7 +661,7 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
         value_normalizer_state_dict = (
             None
             if self.value_normalizer is None
-            else self.value_normalizer.state_dict()
+            else export_value_normalizer_checkpoint_state(self.value_normalizer)
         )
         result = self._assignment_checkpoint_coordinator.save_checkpoint(
             checkpoint_directory=directory,

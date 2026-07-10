@@ -30,6 +30,7 @@ from assignment_checkpoint_contract import (  # noqa: E402
     CompatibilityPurpose,
     CompatibilityRequest,
     ContractValidationError,
+    MANIFEST_FORMAT_VERSION,
     NAMED_LIFECYCLE_ABLATION,
     StateDictTensorInventoryEntry,
     canonical_decimal,
@@ -162,7 +163,7 @@ def _manifest_mapping(
         critic_budget_version = "lifecycle_critic_budget_v1"
         sequence_version = "lifecycle_feed_forward_v1"
     return {
-        "manifest_format_version": "assignment_checkpoint_contract_v1",
+        "manifest_format_version": MANIFEST_FORMAT_VERSION,
         "identity": {
             "profile_name": profile,
             "training_time_profile": profile,
@@ -254,6 +255,23 @@ def _manifest_mapping(
             "gamma": 0.99,
             "gae_lambda": 0.95,
             "value_norm_enabled": True,
+            "value_normalizer_contract": {
+                "enabled": True,
+                "adapter_contract_version": "harl_valuenorm_runtime_state_v1",
+                "artifact_state_format": "harl_runtime_attribute_tensor_mapping_v1",
+                "implementation_id": "harl.common.valuenorm.ValueNorm",
+                "input_shape": [1],
+                "norm_axes": 1,
+                "beta": 0.99999,
+                "epsilon": 0.00001,
+                "per_element_update": False,
+                "tensor_dtype": "float32",
+                "canonical_state_keys": [
+                    "running_mean",
+                    "running_mean_sq",
+                    "debiasing_term",
+                ],
+            },
             "proper_time_limits": True,
             "episode_length": 1000,
             "rollout_thread_count": 20,
@@ -456,6 +474,65 @@ def test_fingerprint_integrity_and_strict_format() -> None:
     changed = _changed(manifest, "model_structure.action_gain", "0.02")
     _assert(not verify_manifest_sha256(changed, fingerprint), "changed field fails integrity")
     _expect_raises(lambda: verify_manifest_sha256(manifest, fingerprint.upper()), "lowercase")
+
+
+def test_valuenorm_v2_contract_fingerprint_and_exact_validation() -> None:
+    manifest = _manifest()
+    _assert(manifest.manifest_format_version == MANIFEST_FORMAT_VERSION, "v2 manifest format")
+    value_contract = manifest.training_contract["value_normalizer_contract"]
+    _assert(value_contract["enabled"] is True, "ValueNorm enabled contract")
+    _assert(value_contract["tensor_dtype"] == "float32", "canonical ValueNorm dtype")
+    _assert(
+        tuple(value_contract["canonical_state_keys"])
+        == ("running_mean", "running_mean_sq", "debiasing_term"),
+        "ValueNorm state key order",
+    )
+    fingerprint = compute_manifest_sha256(manifest)
+    for path, value in (
+        ("training_contract.value_normalizer_contract.beta", "0.99"),
+        ("training_contract.value_normalizer_contract.epsilon", "0.00002"),
+        ("training_contract.value_normalizer_contract.input_shape", [2]),
+        ("training_contract.value_normalizer_contract.per_element_update", True),
+        ("training_contract.value_normalizer_contract.tensor_dtype", "float64"),
+    ):
+        changed = _changed(manifest, path, value)
+        _assert(compute_manifest_sha256(changed) != fingerprint, f"fingerprint binds {path}")
+    changed_norm_axes = _changed(
+        _changed(manifest, "training_contract.value_normalizer_contract.input_shape", [2, 2]),
+        "training_contract.value_normalizer_contract.norm_axes",
+        2,
+    )
+    _assert(
+        compute_manifest_sha256(changed_norm_axes) != fingerprint,
+        "fingerprint binds ValueNorm norm_axes",
+    )
+    mapping = manifest.to_mapping()
+    mapping["training_contract"]["value_normalizer_contract"]["canonical_state_keys"] = [
+        "running_mean_sq",
+        "running_mean",
+        "debiasing_term",
+    ]
+    _expect_raises(
+        lambda: AssignmentCheckpointContractManifest.from_mapping(mapping),
+        "canonical state-key order",
+    )
+    for field, value, expected in (
+        ("adapter_contract_version", "other_adapter", "adapter contract version"),
+        ("artifact_state_format", "other_format", "artifact state format"),
+        ("implementation_id", "other.ValueNorm", "implementation identity"),
+        ("tensor_dtype", "torch.float32", "canonical representation"),
+    ):
+        mapping = manifest.to_mapping()
+        mapping["training_contract"]["value_normalizer_contract"][field] = value
+        _expect_raises(
+            lambda mapping=mapping: AssignmentCheckpointContractManifest.from_mapping(mapping),
+            expected,
+        )
+    disabled = manifest.to_mapping()
+    disabled["training_contract"]["value_norm_enabled"] = False
+    disabled["training_contract"]["value_normalizer_contract"] = {"enabled": False}
+    parsed_disabled = AssignmentCheckpointContractManifest.from_mapping(disabled)
+    _assert(parsed_disabled.training_contract["value_normalizer_contract"] == {"enabled": False}, "disabled exact object")
 
 
 def test_json_mapping_round_trip_and_structured_invalid_fingerprint() -> None:
@@ -665,7 +742,6 @@ def test_validated_continuation_rejects_training_changes() -> None:
         ("training_contract.optimizer_epsilon", "0.0001"),
         ("training_contract.gamma", "0.9"),
         ("training_contract.gae_lambda", "0.8"),
-        ("training_contract.value_norm_enabled", False),
     )
     state = _training_state(checkpoint)
     for path, value in paths:
@@ -680,6 +756,20 @@ def test_validated_continuation_rejects_training_changes() -> None:
             )
         )
         _assert(not decision.allowed and decision.first_mismatch is not None, f"continuation rejects {path}")
+    mapping = checkpoint.to_mapping()
+    mapping["training_contract"]["value_norm_enabled"] = False
+    mapping["training_contract"]["value_normalizer_contract"] = {"enabled": False}
+    current = AssignmentCheckpointContractManifest.from_mapping(mapping)
+    decision = evaluate_compatibility(
+        _request(
+            CompatibilityPurpose.VALIDATED_WEIGHT_CONTINUATION,
+            checkpoint=checkpoint,
+            current=current,
+            training_state=state,
+            acknowledged=True,
+        )
+    )
+    _assert(not decision.allowed and decision.first_mismatch is not None, "continuation rejects ValueNorm")
 
 
 def test_validated_continuation_requires_critic_and_value_norm() -> None:
@@ -884,6 +974,7 @@ TESTS = (
     test_contract_machine_specific_values_rejected,
     test_number_canonicalization,
     test_fingerprint_integrity_and_strict_format,
+    test_valuenorm_v2_contract_fingerprint_and_exact_validation,
     test_json_mapping_round_trip_and_structured_invalid_fingerprint,
     test_structural_compatibility_matching,
     test_structural_compatibility_mismatches,

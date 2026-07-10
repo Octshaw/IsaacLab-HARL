@@ -56,7 +56,11 @@ from assignment_checkpoint_save import (  # noqa: E402
     build_tensor_inventory_from_state_dict,
     compute_file_sha256,
 )
+from assignment_value_normalizer_checkpoint import (  # noqa: E402
+    export_value_normalizer_checkpoint_state,
+)
 from harl.algorithms.actors.happo import HAPPO  # noqa: E402
+from harl.common.valuenorm import ValueNorm  # noqa: E402
 from test_assignment_actor_critic_buffer_forward_backward_readiness import (  # noqa: E402
     ACTION_DIM,
     DEVICE,
@@ -169,11 +173,14 @@ def _actor_modules(components: Any) -> tuple[tuple[str, torch.nn.Module], ...]:
     )
 
 
+def _checkpoint_state(module: torch.nn.Module) -> dict[str, torch.Tensor]:
+    if isinstance(module, ValueNorm):
+        return dict(export_value_normalizer_checkpoint_state(module))
+    return {key: value.detach().cpu().clone() for key, value in module.state_dict().items()}
+
+
 def _module_states(modules: Sequence[torch.nn.Module]) -> tuple[dict[str, torch.Tensor], ...]:
-    return tuple(
-        {key: value.detach().cpu().clone() for key, value in module.state_dict().items()}
-        for module in modules
-    )
+    return tuple(_checkpoint_state(module) for module in modules)
 
 
 def _assert_states_equal(
@@ -184,7 +191,7 @@ def _assert_states_equal(
     exact = 0
     _assert(len(expected) == len(modules), "state module count")
     for expected_state, module in zip(expected, modules, strict=True):
-        actual_state = module.state_dict()
+        actual_state = _checkpoint_state(module)
         _assert(tuple(expected_state) == tuple(actual_state), "state_dict key order/equality")
         for key, expected_value in expected_state.items():
             compared += 1
@@ -350,7 +357,9 @@ def _save(
             for name, actor in zip(ACTOR_NAMES, components.actors, strict=True)
         ),
         critic_state_dict=components.critic.critic.state_dict(),
-        value_normalizer_state_dict=components.value_normalizer.state_dict(),
+        value_normalizer_state_dict=export_value_normalizer_checkpoint_state(
+            components.value_normalizer
+        ),
     )
     _assert(events and events[-1] == "training_state_manifest_committed", "completion marker committed last")
     return result
@@ -432,7 +441,9 @@ def _verify_native_checkpoint(
         for name, actor in zip(ACTOR_NAMES, components.actors, strict=True)
     }
     state_by_role[("critic", None)] = components.critic.critic.state_dict()
-    state_by_role[("value_normalizer", None)] = components.value_normalizer.state_dict()
+    state_by_role[("value_normalizer", None)] = export_value_normalizer_checkpoint_state(
+        components.value_normalizer
+    )
     entries = (
         *training_state.actor_artifacts,
         training_state.critic_artifact,
@@ -475,6 +486,79 @@ def _construct_wrong_actor() -> HAPPO:
     )
 
 
+def _runtime_style_value_normalizer(device: torch.device) -> ValueNorm:
+    """Construct the unregistered-Tensor ValueNorm form seen in runtime use."""
+
+    original_dtype = torch.get_default_dtype()
+    torch.set_default_dtype(torch.float64)
+    try:
+        value_normalizer = ValueNorm(1, device=device)
+    finally:
+        torch.set_default_dtype(original_dtype)
+    _assert(not tuple(value_normalizer.state_dict()), "runtime-style ValueNorm is unregistered")
+    return value_normalizer
+
+
+def _assert_runtime_style_value_normalizer_round_trip(device: torch.device) -> None:
+    with tempfile.TemporaryDirectory() as temp:
+        manifest = _manifest("lifecycle_contract_c")
+        with _isolated_seed(9700):
+            source = _construct_components("lifecycle_contract_c")
+        with _isolated_seed(9701):
+            target = _construct_components("lifecycle_contract_c")
+        source.value_normalizer = _runtime_style_value_normalizer(device)
+        target.value_normalizer = _runtime_style_value_normalizer(device)
+        source.value_normalizer.update(
+            torch.tensor([[-2.0], [0.5], [3.0]], dtype=torch.float32, device=device)
+        )
+        source_state = export_value_normalizer_checkpoint_state(source.value_normalizer)
+        _assert(tuple(source_state) == ("running_mean", "running_mean_sq", "debiasing_term"), "adapter key order")
+        _assert(source_state, "adapter export is nonempty")
+
+        run_root = Path(temp) / "runtime_style"
+        events: list[str] = []
+        _save(
+            AssignmentCheckpointSaveCoordinator(run_root, event_recorder=events.append),
+            run_root / "models",
+            manifest,
+            source,
+            generation=0,
+            events=events,
+        )
+        result = _load(
+            run_root / "models",
+            manifest,
+            target,
+            purpose=CompatibilityPurpose.VALIDATED_WEIGHT_CONTINUATION,
+            acknowledgement=True,
+        )
+        _assert(result.value_normalizer_loaded, "runtime-style ValueNorm restored")
+        target_state = export_value_normalizer_checkpoint_state(target.value_normalizer)
+        for name, source_value in source_state.items():
+            _assert(torch.equal(target_state[name], source_value), f"runtime-style field {name}")
+        probe = torch.tensor([[-1.0], [0.0], [1.0]], dtype=torch.float32, device=device)
+        _assert(
+            torch.equal(
+                source.value_normalizer.normalize(probe),
+                target.value_normalizer.normalize(probe),
+            ),
+            "runtime-style normalize equivalence",
+        )
+        _assert(
+            torch.equal(
+                source.value_normalizer.denormalize(probe),
+                target.value_normalizer.denormalize(probe),
+            ),
+            "runtime-style denormalize equivalence",
+        )
+
+
+def test_runtime_style_valuenorm_checkpoint_round_trip_cpu_and_cuda() -> None:
+    _assert_runtime_style_value_normalizer_round_trip(torch.device("cpu"))
+    if torch.cuda.is_available():
+        _assert_runtime_style_value_normalizer_round_trip(torch.device("cuda"))
+
+
 def _corruption_smokes(
     temp_root: Path,
     manifest: AssignmentCheckpointContractManifest,
@@ -497,7 +581,9 @@ def _corruption_smokes(
                 for identity, actor in zip(ACTOR_NAMES, source.actors, strict=True)
             ),
             critic_state_dict=source.critic.critic.state_dict(),
-            value_normalizer_state_dict=source.value_normalizer.state_dict(),
+            value_normalizer_state_dict=export_value_normalizer_checkpoint_state(
+                source.value_normalizer
+            ),
         )
         return run_root, directory
 
@@ -1094,6 +1180,7 @@ def test_resave_after_continuation_and_generation_advance() -> None:
 
 
 TESTS = (
+    test_runtime_style_valuenorm_checkpoint_round_trip_cpu_and_cuda,
     test_lifecycle_source_real_harl_preparation_update,
     test_lifecycle_native_save_through_project_coordinator,
     test_native_metadata_completion_and_artifact_inventory,

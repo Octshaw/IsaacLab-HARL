@@ -46,6 +46,14 @@ try:
     from .assignment_lifecycle_training_contract import (
         resolve_installed_harl_actor_buffer_generator,
     )
+    from .assignment_value_normalizer_checkpoint import (
+        build_value_normalizer_contract,
+        export_value_normalizer_checkpoint_state,
+        inspect_value_normalizer_target,
+        restore_value_normalizer_checkpoint_state,
+        validate_value_normalizer_checkpoint_state,
+        validate_value_normalizer_target_contract,
+    )
 except ImportError:  # Allows direct lightweight tests with this directory on sys.path.
     from assignment_checkpoint_contract import (  # type: ignore
         NAMED_LIFECYCLE_ABLATION,
@@ -75,6 +83,14 @@ except ImportError:  # Allows direct lightweight tests with this directory on sy
     )
     from assignment_lifecycle_training_contract import (  # type: ignore
         resolve_installed_harl_actor_buffer_generator,
+    )
+    from assignment_value_normalizer_checkpoint import (  # type: ignore
+        build_value_normalizer_contract,
+        export_value_normalizer_checkpoint_state,
+        inspect_value_normalizer_target,
+        restore_value_normalizer_checkpoint_state,
+        validate_value_normalizer_checkpoint_state,
+        validate_value_normalizer_target_contract,
     )
 
 
@@ -135,6 +151,7 @@ class _InspectedArtifact:
     entry: ArtifactFileInventoryEntry
     state_dict: Mapping[str, torch.Tensor]
     target_module: Any | None
+    is_value_normalizer: bool
 
 
 def _context(directory: Path, purpose: CompatibilityPurpose, message: str) -> str:
@@ -409,7 +426,33 @@ def _load_and_inspect_artifact(
             f"checkpoint={checkpoint.directory}: artifact={path.name} tensor inventory digest "
             f"expected={entry.tensor_inventory_sha256} actual={actual_digest}"
         )
-    if target_module is not None:
+    is_value_normalizer = entry.artifact_role == "value_normalizer"
+    if is_value_normalizer:
+        try:
+            validate_value_normalizer_checkpoint_state(
+                state_dict,
+                value_normalizer_contract=checkpoint.manifest.training_contract["value_normalizer_contract"],
+            )
+        except Exception as exc:
+            raise AssignmentCheckpointInventoryError(
+                f"checkpoint={checkpoint.directory}: invalid ValueNorm mapping for {path.name}: {exc}"
+            ) from exc
+        if target_module is not None:
+            try:
+                target_inventory = inspect_value_normalizer_target(target_module)
+                validate_value_normalizer_target_contract(
+                    target_inventory,
+                    checkpoint.manifest.training_contract["value_normalizer_contract"],
+                )
+                validate_value_normalizer_checkpoint_state(
+                    state_dict,
+                    target_inventory=target_inventory,
+                )
+            except Exception as exc:
+                raise AssignmentCheckpointInventoryError(
+                    f"checkpoint={checkpoint.directory}: incompatible live ValueNorm target for {path.name}: {exc}"
+                ) from exc
+    elif target_module is not None:
         try:
             live_inventory = build_tensor_inventory_from_state_dict(
                 target_module.state_dict(),
@@ -428,7 +471,12 @@ def _load_and_inspect_artifact(
                 f"expected={None if mismatch is None else mismatch.expected_value} "
                 f"actual={None if mismatch is None else mismatch.actual_value}"
             )
-    return _InspectedArtifact(entry=entry, state_dict=state_dict, target_module=target_module)
+    return _InspectedArtifact(
+        entry=entry,
+        state_dict=state_dict,
+        target_module=target_module,
+        is_value_normalizer=is_value_normalizer,
+    )
 
 
 def _clone_module_state(module: Any) -> dict[str, torch.Tensor]:
@@ -442,18 +490,40 @@ def _strict_mutate_all(
     purpose: CompatibilityPurpose,
 ) -> None:
     targets = tuple(item for item in inspected if item.target_module is not None)
-    backups = {id(item.target_module): _clone_module_state(item.target_module) for item in targets}
+    backups: dict[int, Mapping[str, torch.Tensor]] = {}
     try:
         for item in targets:
-            item.target_module.load_state_dict(item.state_dict, strict=True)
+            if item.is_value_normalizer:
+                backups[id(item.target_module)] = export_value_normalizer_checkpoint_state(item.target_module)
+            else:
+                backups[id(item.target_module)] = _clone_module_state(item.target_module)
+    except Exception as exc:
+        raise AssignmentCheckpointLoadError(
+            _context(directory, purpose, f"cannot snapshot live target before mutation: {exc}")
+        ) from exc
+    current_item: _InspectedArtifact | None = None
+    try:
+        for item in targets:
+            current_item = item
+            if item.is_value_normalizer:
+                restore_value_normalizer_checkpoint_state(item.target_module, item.state_dict, strict=True)
+            else:
+                item.target_module.load_state_dict(item.state_dict, strict=True)
     except Exception as exc:
         rollback_errors: list[str] = []
         for item in targets:
             try:
-                item.target_module.load_state_dict(
-                    backups[id(item.target_module)],
-                    strict=True,
-                )
+                if item.is_value_normalizer:
+                    restore_value_normalizer_checkpoint_state(
+                        item.target_module,
+                        backups[id(item.target_module)],
+                        strict=True,
+                    )
+                else:
+                    item.target_module.load_state_dict(
+                        backups[id(item.target_module)],
+                        strict=True,
+                    )
             except Exception as rollback_exc:
                 rollback_errors.append(
                     f"{item.entry.relative_file_name}: {rollback_exc}"
@@ -462,7 +532,8 @@ def _strict_mutate_all(
             _context(
                 directory,
                 purpose,
-                f"strict live load failed for {item.entry.relative_file_name}: {exc}; "
+                f"strict live load failed for "
+                f"{None if current_item is None else current_item.entry.relative_file_name}: {exc}; "
                 f"rollback_errors={rollback_errors}",
             )
         ) from exc
@@ -730,6 +801,7 @@ def _legacy_load(
                 ),
                 state_dict=state_dict,
                 target_module=actor_map[identity],
+                is_value_normalizer=False,
             )
         )
     if purpose != CompatibilityPurpose.STRUCTURAL_INSPECTION:
@@ -876,6 +948,16 @@ def build_assignment_evaluation_contract_manifest(
     model_args = algo_args["model"]
     policy_args = algo_args["algo"]
     train_args = algo_args["train"]
+    value_norm_enabled = bool(train_args["use_valuenorm"])
+    if value_norm_enabled:
+        from harl.common.valuenorm import ValueNorm
+
+        value_normalizer_contract = build_value_normalizer_contract(
+            ValueNorm(1),
+            enabled=True,
+        )
+    else:
+        value_normalizer_contract = build_value_normalizer_contract(None, enabled=False)
     optimizer_class = str(
         uniform(
             [actor.actor_optimizer.__class__.__name__ for actor in actors],
@@ -937,7 +1019,8 @@ def build_assignment_evaluation_contract_manifest(
         ),
         gamma=float(policy_args["gamma"]),
         gae_lambda=float(policy_args["gae_lambda"]),
-        value_norm_enabled=bool(train_args["use_valuenorm"]),
+        value_norm_enabled=value_norm_enabled,
+        value_normalizer_contract=value_normalizer_contract,
         proper_time_limits=bool(train_args["use_proper_time_limits"]),
         episode_length=int(train_args["episode_length"]),
         rollout_thread_count=int(train_args["n_rollout_threads"]),

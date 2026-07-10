@@ -25,6 +25,7 @@ try:
         AssignmentCheckpointContractManifest,
         AssignmentTrainingStateManifest,
         ContractValidationError,
+        MANIFEST_FORMAT_VERSION,
         StateDictTensorInventoryEntry,
         VALIDATED_WEIGHT_CONTINUATION_CANDIDATE,
         canonical_manifest_bytes,
@@ -36,12 +37,17 @@ try:
         FEED_FORWARD_GENERATOR,
         resolve_installed_harl_actor_buffer_generator,
     )
+    from .assignment_value_normalizer_checkpoint import (
+        build_value_normalizer_contract,
+        validate_value_normalizer_checkpoint_state,
+    )
 except ImportError:  # Allows direct lightweight tests with this directory on sys.path.
     from assignment_checkpoint_contract import (  # type: ignore
         ArtifactFileInventoryEntry,
         AssignmentCheckpointContractManifest,
         AssignmentTrainingStateManifest,
         ContractValidationError,
+        MANIFEST_FORMAT_VERSION,
         StateDictTensorInventoryEntry,
         VALIDATED_WEIGHT_CONTINUATION_CANDIDATE,
         canonical_manifest_bytes,
@@ -52,6 +58,10 @@ except ImportError:  # Allows direct lightweight tests with this directory on sy
     from assignment_lifecycle_training_contract import (  # type: ignore
         FEED_FORWARD_GENERATOR,
         resolve_installed_harl_actor_buffer_generator,
+    )
+    from assignment_value_normalizer_checkpoint import (  # type: ignore
+        build_value_normalizer_contract,
+        validate_value_normalizer_checkpoint_state,
     )
 
 
@@ -123,6 +133,7 @@ class AssignmentCheckpointRuntimeState:
     gamma: float
     gae_lambda: float
     value_norm_enabled: bool
+    value_normalizer_contract: Mapping[str, Any]
     proper_time_limits: bool
     episode_length: int
     rollout_thread_count: int
@@ -370,7 +381,7 @@ def build_assignment_checkpoint_contract_manifest(
         )
 
     mapping = {
-        "manifest_format_version": "assignment_checkpoint_contract_v1",
+        "manifest_format_version": MANIFEST_FORMAT_VERSION,
         "identity": {
             "profile_name": profile,
             "training_time_profile": profile,
@@ -462,6 +473,7 @@ def build_assignment_checkpoint_contract_manifest(
             "gamma": runtime.gamma,
             "gae_lambda": runtime.gae_lambda,
             "value_norm_enabled": runtime.value_norm_enabled,
+            "value_normalizer_contract": dict(runtime.value_normalizer_contract),
             "proper_time_limits": runtime.proper_time_limits,
             "episode_length": runtime.episode_length,
             "rollout_thread_count": runtime.rollout_thread_count,
@@ -843,6 +855,16 @@ class AssignmentCheckpointSaveCoordinator:
             raise AssignmentCheckpointSaveError(
                 "ValueNorm runtime state presence does not match the immutable training contract"
             )
+        if value_normalizer_state_dict is not None:
+            try:
+                validate_value_normalizer_checkpoint_state(
+                    value_normalizer_state_dict,
+                    value_normalizer_contract=manifest.training_contract["value_normalizer_contract"],
+                )
+            except Exception as exc:
+                raise AssignmentCheckpointSaveError(
+                    f"invalid ValueNorm checkpoint tensor mapping: {exc}"
+                ) from exc
         value_inventory = (
             None
             if value_normalizer_state_dict is None
@@ -1089,6 +1111,15 @@ def capture_assignment_checkpoint_runtime_state(runner: Any) -> AssignmentCheckp
         raise AssignmentCheckpointSaveError(
             "constructed ValueNorm presence differs from resolved training configuration"
         )
+    try:
+        value_normalizer_contract = build_value_normalizer_contract(
+            runner.value_normalizer,
+            enabled=actual_value_norm_enabled,
+        )
+    except Exception as exc:
+        raise AssignmentCheckpointSaveError(
+            f"constructed ValueNorm does not satisfy the native adapter contract: {exc}"
+        ) from exc
 
     return AssignmentCheckpointRuntimeState(
         wrapper_schema_manifest=schema,
@@ -1161,6 +1192,7 @@ def capture_assignment_checkpoint_runtime_state(runner: Any) -> AssignmentCheckp
         gamma=float(critic_buffer.gamma),
         gae_lambda=float(critic_buffer.gae_lambda),
         value_norm_enabled=actual_value_norm_enabled,
+        value_normalizer_contract=value_normalizer_contract,
         proper_time_limits=bool(critic_buffer.use_proper_time_limits),
         episode_length=int(critic_buffer.episode_length),
         rollout_thread_count=int(critic_buffer.n_rollout_threads),

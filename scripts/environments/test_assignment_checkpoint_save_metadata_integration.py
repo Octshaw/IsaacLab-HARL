@@ -54,6 +54,7 @@ from assignment_checkpoint_save import (  # noqa: E402
     infer_assignment_checkpoint_kind,
 )
 from assignment_harl_training import AssignmentOnPolicyHARunner  # noqa: E402
+from harl.common.valuenorm import ValueNorm  # noqa: E402
 from harl.runners.on_policy_ha_runner import OnPolicyHARunner  # noqa: E402
 
 
@@ -194,6 +195,27 @@ def _runtime_state(
 ) -> AssignmentCheckpointRuntimeState:
     schema, layout = _wrapper_contract(profile)
     names = tuple(schema["actor_dimension_by_agent"])
+    value_normalizer_contract = (
+        {
+            "enabled": True,
+            "adapter_contract_version": "harl_valuenorm_runtime_state_v1",
+            "artifact_state_format": "harl_runtime_attribute_tensor_mapping_v1",
+            "implementation_id": "harl.common.valuenorm.ValueNorm",
+            "input_shape": [1],
+            "norm_axes": 1,
+            "beta": 0.99999,
+            "epsilon": 0.00001,
+            "per_element_update": False,
+            "tensor_dtype": "float32",
+            "canonical_state_keys": [
+                "running_mean",
+                "running_mean_sq",
+                "debiasing_term",
+            ],
+        }
+        if value_norm
+        else {"enabled": False}
+    )
     return AssignmentCheckpointRuntimeState(
         wrapper_schema_manifest=schema,
         wrapper_observation_layout=layout,
@@ -237,6 +259,7 @@ def _runtime_state(
         gamma=0.99,
         gae_lambda=0.95,
         value_norm_enabled=value_norm,
+        value_normalizer_contract=value_normalizer_contract,
         proper_time_limits=True,
         episode_length=1000,
         rollout_thread_count=20,
@@ -275,7 +298,15 @@ def _artifacts(
         for index, name in enumerate(manifest.scale["ordered_agent_names"])
     )
     critic = _state_dict(20)
-    normalizer = _state_dict(30) if value_norm else None
+    normalizer = (
+        {
+            "running_mean": torch.tensor([30.0], dtype=torch.float32),
+            "running_mean_sq": torch.tensor([31.0], dtype=torch.float32),
+            "debiasing_term": torch.tensor(32.0, dtype=torch.float32),
+        }
+        if value_norm
+        else None
+    )
     return actors, critic, normalizer
 
 
@@ -439,7 +470,7 @@ def test_capture_effective_constructed_runtime_values() -> None:
             episode_length=1000,
             n_rollout_threads=20,
         ),
-        value_normalizer=SimpleNamespace(),
+        value_normalizer=ValueNorm(1),
         algo_args={
             "model": {"hidden_sizes_critic": [512, 256]},
             "train": {"use_valuenorm": True},
@@ -532,11 +563,15 @@ def test_native_save_artifacts_digests_inventory_and_marker_order() -> None:
                 "file digest",
             )
             _assert(not Path(artifact.relative_file_name).is_absolute(), "relative artifact name")
-            _assert(tuple(entry.key for entry in artifact.tensor_inventory) == (
-                "base.bias",
-                "base.weight",
-                "counter",
-            ), "sorted tensor inventory")
+            expected_keys = (
+                ("debiasing_term", "running_mean", "running_mean_sq")
+                if artifact.artifact_role == "value_normalizer"
+                else ("base.bias", "base.weight", "counter")
+            )
+            _assert(
+                tuple(entry.key for entry in artifact.tensor_inventory) == expected_keys,
+                "sorted tensor inventory",
+            )
         _assert(not list(directory.glob(".*.assignment-tmp-*")), "temporary files cleaned")
 
 
@@ -788,7 +823,7 @@ def _routing_runner(root: Path, manifest: AssignmentCheckpointContractManifest) 
         SimpleNamespace(actor=_StateProvider(3)),
     ]
     runner.critic = SimpleNamespace(critic=_StateProvider(20))
-    runner.value_normalizer = _StateProvider(30)
+    runner.value_normalizer = ValueNorm(1)
     runner._test_runtime_state = _runtime_state()
     runner._test_manifest = manifest
     return runner

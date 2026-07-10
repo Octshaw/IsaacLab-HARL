@@ -19,8 +19,24 @@ from enum import Enum
 from pathlib import PurePosixPath
 from typing import Any
 
+try:
+    from .assignment_value_normalizer_checkpoint import (
+        VALUE_NORMALIZER_ADAPTER_CONTRACT_VERSION,
+        VALUE_NORMALIZER_ARTIFACT_STATE_FORMAT,
+        VALUE_NORMALIZER_IMPLEMENTATION_ID,
+        VALUE_NORMALIZER_STATE_KEYS,
+        normalize_value_normalizer_dtype,
+    )
+except ImportError:  # pragma: no cover - direct script imports use the source directory.
+    from assignment_value_normalizer_checkpoint import (  # type: ignore
+        VALUE_NORMALIZER_ADAPTER_CONTRACT_VERSION,
+        VALUE_NORMALIZER_ARTIFACT_STATE_FORMAT,
+        VALUE_NORMALIZER_IMPLEMENTATION_ID,
+        VALUE_NORMALIZER_STATE_KEYS,
+        normalize_value_normalizer_dtype,
+    )
 
-MANIFEST_FORMAT_VERSION = "assignment_checkpoint_contract_v1"
+MANIFEST_FORMAT_VERSION = "assignment_checkpoint_contract_v2"
 TRAINING_STATE_FORMAT_VERSION = "assignment_training_state_v1"
 NAMED_LIFECYCLE_ABLATION = "lifecycle_contract_c_checkpoint_to_lifecycle_ablation_evaluation_v1"
 VALIDATED_WEIGHT_CONTINUATION_CANDIDATE = "validated_weight_continuation_candidate"
@@ -145,6 +161,7 @@ _SECTION_KEYS = {
         "gamma",
         "gae_lambda",
         "value_norm_enabled",
+        "value_normalizer_contract",
         "proper_time_limits",
         "episode_length",
         "rollout_thread_count",
@@ -173,6 +190,8 @@ _DECIMAL_PATHS = {
     "training_contract.max_gradient_norm",
     "training_contract.gamma",
     "training_contract.gae_lambda",
+    "training_contract.value_normalizer_contract.beta",
+    "training_contract.value_normalizer_contract.epsilon",
 }
 
 _STRUCTURAL_PATHS = (
@@ -423,9 +442,75 @@ def _validate_contract_strings(value: Any, *, path: str = "") -> None:
 def _normalize_manifest_mapping(mapping: Mapping[str, Any]) -> dict[str, Any]:
     output = _deep_thaw(_deep_freeze(mapping))
     for path in _DECIMAL_PATHS:
-        section, field = path.split(".", 1)
-        output[section][field] = canonical_decimal(output[section][field])
+        parts = path.split(".")
+        target: Any = output
+        try:
+            for part in parts[:-1]:
+                target = target[part]
+            target[parts[-1]] = canonical_decimal(target[parts[-1]])
+        except KeyError:
+            continue
     return output
+
+
+def _validate_value_normalizer_contract(training: Mapping[str, Any]) -> None:
+    value_contract = training["value_normalizer_contract"]
+    if not isinstance(value_contract, Mapping):
+        raise ContractValidationError("training_contract.value_normalizer_contract must be an object")
+    enabled = value_contract.get("enabled")
+    if enabled is False:
+        _require_exact_keys("value_normalizer_contract", value_contract, {"enabled"})
+        if training["value_norm_enabled"] is not False:
+            raise ContractValidationError("ValueNorm enabled flag and disabled contract disagree")
+        return
+    required = {
+        "enabled",
+        "adapter_contract_version",
+        "artifact_state_format",
+        "implementation_id",
+        "input_shape",
+        "norm_axes",
+        "beta",
+        "epsilon",
+        "per_element_update",
+        "tensor_dtype",
+        "canonical_state_keys",
+    }
+    _require_exact_keys("value_normalizer_contract", value_contract, required)
+    if enabled is not True or training["value_norm_enabled"] is not True:
+        raise ContractValidationError("ValueNorm enabled flag and enabled contract disagree")
+    if value_contract["adapter_contract_version"] != VALUE_NORMALIZER_ADAPTER_CONTRACT_VERSION:
+        raise ContractValidationError("unsupported ValueNorm adapter contract version")
+    if value_contract["artifact_state_format"] != VALUE_NORMALIZER_ARTIFACT_STATE_FORMAT:
+        raise ContractValidationError("unsupported ValueNorm artifact state format")
+    if value_contract["implementation_id"] != VALUE_NORMALIZER_IMPLEMENTATION_ID:
+        raise ContractValidationError("unsupported ValueNorm implementation identity")
+    input_shape = _validate_shape(
+        value_contract["input_shape"],
+        field="value_normalizer_contract.input_shape",
+    )
+    norm_axes = value_contract["norm_axes"]
+    if isinstance(norm_axes, bool) or not isinstance(norm_axes, int) or not 1 <= norm_axes <= len(input_shape):
+        raise ContractValidationError("ValueNorm norm_axes is incompatible with input_shape")
+    for field in ("beta", "epsilon"):
+        try:
+            numeric = float(value_contract[field])
+        except (TypeError, ValueError) as exc:
+            raise ContractValidationError(f"ValueNorm {field} must be numeric") from exc
+        if not math.isfinite(numeric):
+            raise ContractValidationError(f"ValueNorm {field} must be finite")
+        if canonical_decimal(value_contract[field]) != value_contract[field]:
+            raise ContractValidationError(f"ValueNorm {field} must use canonical decimal text")
+    if not isinstance(value_contract["per_element_update"], bool):
+        raise ContractValidationError("ValueNorm per_element_update must be boolean")
+    try:
+        normalized_dtype = normalize_value_normalizer_dtype(value_contract["tensor_dtype"])
+    except Exception as exc:
+        raise ContractValidationError(f"invalid ValueNorm tensor dtype: {exc}") from exc
+    if normalized_dtype != value_contract["tensor_dtype"]:
+        raise ContractValidationError("ValueNorm tensor_dtype must use canonical representation")
+    if tuple(value_contract["canonical_state_keys"]) != VALUE_NORMALIZER_STATE_KEYS:
+        raise ContractValidationError("ValueNorm canonical state-key order is invalid")
 
 
 @dataclass(frozen=True)
@@ -487,9 +572,9 @@ class AssignmentCheckpointContractManifest:
         training = mapping["training_contract"]
 
         if identity["serialization_mode"] != "state_dict":
-            raise ContractValidationError("checkpoint contract v1 supports serialization_mode='state_dict' only")
+            raise ContractValidationError("checkpoint contract v2 supports serialization_mode='state_dict' only")
         if str(identity["algorithm_name"]).lower() != "happo":
-            raise ContractValidationError("checkpoint contract v1 official algorithm is HAPPO")
+            raise ContractValidationError("checkpoint contract v2 official algorithm is HAPPO")
         if identity["harl_state_type"] not in {"EP", "FP"}:
             raise ContractValidationError("harl_state_type must be 'EP' or 'FP'")
 
@@ -589,6 +674,7 @@ class AssignmentCheckpointContractManifest:
             for field in int_fields
         ):
             raise ContractValidationError("training count fields must be positive JSON integers")
+        _validate_value_normalizer_contract(training)
 
 
 def canonical_manifest_bytes(manifest: AssignmentCheckpointContractManifest | Mapping[str, Any]) -> bytes:
@@ -688,7 +774,7 @@ class ArtifactFileInventoryEntry:
             raise ContractValidationError("artifact file_size must be a non-negative integer")
         object.__setattr__(self, "file_sha256", _validate_sha256(self.file_sha256, field="file_sha256"))
         if self.serialization_mode != "state_dict":
-            raise ContractValidationError("checkpoint v1 artifact serialization must be state_dict")
+            raise ContractValidationError("checkpoint artifact serialization must be state_dict")
         if role == "actor" and not self.actor_identity:
             raise ContractValidationError("actor artifact requires actor_identity")
         if role != "actor" and self.actor_identity is not None:

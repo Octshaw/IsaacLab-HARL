@@ -50,7 +50,11 @@ from assignment_checkpoint_save import (  # noqa: E402
     TRAINING_STATE_MANIFEST_FILE,
     AssignmentCheckpointSaveCoordinator,
 )
+from assignment_value_normalizer_checkpoint import (  # noqa: E402
+    export_value_normalizer_checkpoint_state,
+)
 from assignment_harl_training import AssignmentOnPolicyHARunner  # noqa: E402
+from harl.common.valuenorm import ValueNorm  # noqa: E402
 from harl.runners.on_policy_ha_runner import OnPolicyHARunner  # noqa: E402
 from test_assignment_checkpoint_contract_core import _changed  # noqa: E402
 from test_assignment_checkpoint_save_metadata_integration import (  # noqa: E402
@@ -98,25 +102,29 @@ def _modules(seed_offset: int = 0):
         for index in range(3)
     )
     critic = TrackingModule(seed_offset + 20)
-    value = TrackingModule(seed_offset + 30)
+    value = ValueNorm(1)
+    value.update(torch.full((8, 1), float(seed_offset + 30)))
     return actors, critic, value
+
+
+def _checkpoint_state(module: Any) -> dict[str, torch.Tensor]:
+    if isinstance(module, ValueNorm):
+        return dict(export_value_normalizer_checkpoint_state(module))
+    return {
+        key: value.detach().clone()
+        for key, value in module.state_dict().items()
+    }
 
 
 def _snapshot(modules) -> dict[int, dict[str, torch.Tensor]]:
     values = [module for _, module in modules[0]] + [modules[1], modules[2]]
-    return {
-        id(module): {
-            key: value.detach().clone()
-            for key, value in module.state_dict().items()
-        }
-        for module in values
-    }
+    return {id(module): _checkpoint_state(module) for module in values}
 
 
 def _assert_snapshot(modules, snapshot, message: str) -> None:
     values = [module for _, module in modules[0]] + [modules[1], modules[2]]
     for module in values:
-        for key, value in module.state_dict().items():
+        for key, value in _checkpoint_state(module).items():
             _assert(torch.equal(value, snapshot[id(module)][key]), f"{message}: {key}")
 
 
@@ -126,7 +134,7 @@ def _save_native(
     manifest: AssignmentCheckpointContractManifest | None = None,
     kind: str = "regular",
     directory: Path | None = None,
-) -> tuple[Path, AssignmentCheckpointContractManifest, tuple, TrackingModule, TrackingModule]:
+) -> tuple[Path, AssignmentCheckpointContractManifest, tuple, TrackingModule, ValueNorm]:
     manifest = manifest or _manifest()
     source_actors, source_critic, source_value = _modules()
     directory = directory or root / "models"
@@ -140,7 +148,7 @@ def _save_native(
         ),
         critic_state_dict=source_critic.state_dict(),
         value_normalizer_state_dict=(
-            source_value.state_dict()
+            export_value_normalizer_checkpoint_state(source_value)
             if bool(manifest.training_contract["value_norm_enabled"])
             else None
         ),
@@ -233,7 +241,7 @@ def test_valid_native_evaluation_actor_only_and_weights_only_cpu() -> None:
             for key, value in source.state_dict().items():
                 _assert(torch.equal(target.state_dict()[key], value), f"actor value {key}")
             _assert(target.load_calls == [True], "strict actor load")
-        _assert(targets[1].load_calls == [] and targets[2].load_calls == [], "critic/ValueNorm untouched")
+        _assert(targets[1].load_calls == [], "critic untouched")
 
 
 def test_actor_only_evaluation_contract_builder() -> None:
@@ -308,13 +316,16 @@ def test_valid_continuation_and_acknowledgement() -> None:
         for (_, target), (_, source) in zip(targets[0], source_actors, strict=True):
             _assert(target.load_calls == [True], "actor strict continuation")
             _assert(all(torch.equal(target.state_dict()[k], v) for k, v in source.state_dict().items()), "actor")
-        _assert(targets[1].load_calls == [True] and targets[2].load_calls == [True], "global strict")
+        _assert(targets[1].load_calls == [True], "critic strict")
         _assert(
             all(torch.equal(targets[1].state_dict()[k], v) for k, v in source_critic.state_dict().items()),
             "critic loaded",
         )
         _assert(
-            all(torch.equal(targets[2].state_dict()[k], v) for k, v in source_value.state_dict().items()),
+            all(
+                torch.equal(_checkpoint_state(targets[2])[k], v)
+                for k, v in _checkpoint_state(source_value).items()
+            ),
             "ValueNorm loaded",
         )
 
@@ -535,6 +546,65 @@ def test_no_partial_mutation_on_third_actor_or_global_failure() -> None:
             _assert(all(module.load_calls == [] for _, module in targets[0]), "actors remain untouched")
 
 
+def test_valuenorm_target_prevalidation_and_global_rollback() -> None:
+    for label, value_target, expected in (
+        ("shape", ValueNorm(2), "input_shape"),
+        ("dtype", ValueNorm(1).double(), "tensor_dtype"),
+        ("config", ValueNorm(1, beta=0.9), "beta"),
+    ):
+        with tempfile.TemporaryDirectory() as temp:
+            directory, manifest, _, _, _ = _save_native(Path(temp) / "run")
+            actors, critic, _ = _modules(100)
+            targets = (actors, critic, value_target)
+            before = _snapshot(targets)
+            _expect_raises(
+                lambda: _load(
+                    directory,
+                    manifest,
+                    targets,
+                    purpose=CompatibilityPurpose.VALIDATED_WEIGHT_CONTINUATION,
+                    acknowledgement=True,
+                ),
+                "incompatible live ValueNorm target",
+                expected,
+            )
+            _assert_snapshot(targets, before, f"ValueNorm {label} prevalidation")
+            _assert(all(module.load_calls == [] for _, module in actors), "prevalidation precedes actor mutation")
+
+    with tempfile.TemporaryDirectory() as temp:
+        directory, manifest, _, _, _ = _save_native(Path(temp) / "run")
+        targets = _modules(100)
+        before = _snapshot(targets)
+        original_restore = load_module.restore_value_normalizer_checkpoint_state
+        calls = 0
+
+        def fail_first_value_restore(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise RuntimeError("injected global ValueNorm restore failure")
+            return original_restore(*args, **kwargs)
+
+        load_module.restore_value_normalizer_checkpoint_state = fail_first_value_restore
+        try:
+            _expect_raises(
+                lambda: _load(
+                    directory,
+                    manifest,
+                    targets,
+                    purpose=CompatibilityPurpose.VALIDATED_WEIGHT_CONTINUATION,
+                    acknowledgement=True,
+                ),
+                "strict live load failed",
+                "injected global ValueNorm restore failure",
+                "rollback_errors=[]",
+            )
+        finally:
+            load_module.restore_value_normalizer_checkpoint_state = original_restore
+        _assert(calls == 2, "ValueNorm restore retried during global rollback")
+        _assert_snapshot(targets, before, "global ValueNorm rollback")
+
+
 def test_structural_inspection_is_read_only() -> None:
     with tempfile.TemporaryDirectory() as temp:
         directory, manifest, _, _, _ = _save_native(Path(temp) / "run")
@@ -708,7 +778,7 @@ def test_assignment_runner_restore_uses_shared_loader_only() -> None:
         SimpleNamespace(actor=TrackingModule(3)),
     ]
     runner.critic = SimpleNamespace(critic=TrackingModule(20))
-    runner.value_normalizer = TrackingModule(30)
+    runner.value_normalizer = ValueNorm(1)
     runtime = SimpleNamespace(ordered_agent_names=("robot_0", "robot_1", "robot_2"))
     manifest = _manifest()
     calls: list[dict[str, Any]] = []
@@ -775,6 +845,7 @@ TESTS = (
     test_declared_file_integrity_and_full_model_conflicts,
     test_tensor_inventory_mismatches,
     test_no_partial_mutation_on_third_actor_or_global_failure,
+    test_valuenorm_target_prevalidation_and_global_rollback,
     test_structural_inspection_is_read_only,
     test_named_lifecycle_ablation_exact_and_evaluation_only,
     test_explicit_unversioned_legacy_fallback,
