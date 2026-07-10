@@ -286,6 +286,9 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     no_progress_penalty_cap = 0.05
     selected_path_cost_penalty_scale = 0.0
 
+    # Assignment lifecycle observation profile. The default preserves legacy actor/shared observation tensors.
+    assignment_lifecycle_profile = "legacy"
+
     # Assignment-wrapper cooldown mask diagnostics. These are consumed by AssignmentHarlWrapper only. Defaults keep the
     # existing assignment RL action mask unchanged unless an explicit scenario/config enables cooldown.
     assignment_cooldown_enabled = False

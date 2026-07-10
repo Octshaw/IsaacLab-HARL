@@ -47,6 +47,17 @@ AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
 args_cli, hydra_args = parser.parse_known_args()
 
+
+def _is_assignment_checkpoint_task(task_name):
+    return "scan-mobile-manipulator" in str(task_name or "").lower()
+
+
+if _is_assignment_checkpoint_task(args_cli.task):
+    raise RuntimeError(
+        "Generic HARL play.py does not permit assignment checkpoints because installed HARL restore "
+        "bypasses the assignment contract validator. Use play_assignment.py."
+    )
+
 # clear out sys.argv for Hydra
 sys.argv = [sys.argv[0]] + hydra_args
 

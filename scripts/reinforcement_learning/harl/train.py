@@ -62,6 +62,14 @@ parser.add_argument(
     default=None,
     help="Override HARL train.episode_length for assignment RL only, e.g. 300 for the N=50 smoke scenario.",
 )
+parser.add_argument(
+    "--acknowledge-weight-continuation-reset",
+    action="store_true",
+    help=(
+        "Required with assignment --dir. Acknowledge that actor/critic optimizers, counters, "
+        "best-reward state, RNG, environment/resolver state, and rollout buffers reset."
+    ),
+)
 
 parser.add_argument(
     "--algorithm",
@@ -86,6 +94,17 @@ if args_cli.scenario_config is not None and not args_cli.assignment_rl:
     raise ValueError("--scenario_config is currently supported only with --assignment_rl in train.py")
 if args_cli.assignment_episode_length is not None and not args_cli.assignment_rl:
     raise ValueError("--assignment_episode_length is supported only with --assignment_rl")
+if args_cli.acknowledge_weight_continuation_reset and (
+    not args_cli.assignment_rl or args_cli.dir is None
+):
+    raise ValueError(
+        "--acknowledge-weight-continuation-reset requires --assignment_rl and --dir"
+    )
+if args_cli.assignment_rl and args_cli.dir is not None and not args_cli.acknowledge_weight_continuation_reset:
+    raise ValueError(
+        "Assignment --dir uses validated weight continuation and requires "
+        "--acknowledge-weight-continuation-reset."
+    )
 if args_cli.assignment_rl and args_cli.scenario_config is not None:
     validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
 # always enable cameras to record video
@@ -153,6 +172,7 @@ import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_training import (
     apply_assignment_episode_length_override,
     register_assignment_harl_runner,
+    validate_assignment_lifecycle_policy_sequence,
 )
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
@@ -210,6 +230,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     env_args["task"] = args["task"]
     env_args["config"] = env_cfg
     env_args["assignment_rl"] = args["assignment_rl"]
+    env_args["algorithm"] = args["algo"]
+    env_args["acknowledge_weight_continuation_reset"] = bool(
+        args.get("acknowledge_weight_continuation_reset", False)
+    )
     hms_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     env_args["video_settings"] = {
         "video": args_cli.video,
@@ -226,6 +250,18 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         ),
     }
 
+    if args["assignment_rl"]:
+        sequence_contract = validate_assignment_lifecycle_policy_sequence(
+            algo_args=algo_args,
+            env_args=env_args,
+        )
+        if sequence_contract["policy_sequence_mode"] == "feed_forward":
+            print(
+                "[INFO]: Assignment lifecycle policy sequence contract: "
+                f"{sequence_contract['policy_sequence_contract_version']} "
+                f"generator={sequence_contract['supported_actor_buffer_generator']}"
+            )
+
     # create runner
 
     runner = RUNNER_REGISTRY[args["algo"]](args, algo_args, env_args)
@@ -238,7 +274,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     try:
         runner.run()
         if hasattr(runner, "save") and save_dir is not None:
-            runner.save(save_dir)
+            if args["assignment_rl"]:
+                runner.save(save_dir, checkpoint_kind="final")
+            else:
+                runner.save(save_dir)
             print(f"[INFO]: Saved final HARL model to: {save_dir}")
     finally:
         _finalize_record_video_wrappers(runner)

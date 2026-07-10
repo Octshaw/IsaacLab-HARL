@@ -4,279 +4,207 @@ Compact handoff for the assignment-based scan-mobile-manipulator work.
 
 ## Current Status
 
-Phase 9G-7F is complete.
+Phase 9G-8F-6R narrowly activated the reviewed `lifecycle_contract_c` training gate and closed the readiness review.
 
-Classification:
+Technical classification:
+
+```text
+CONTROLLED-TRAINING-SMOKE-READY
+```
+
+Commit classification:
 
 ```text
 COMMIT-READY
 ```
 
-Phase 9G-7F reviewed the complete Phase 9G-7 block:
+The reviewed Phase 9G-8 work should be committed before running the first controlled smoke.
+
+## Active Training Boundary
+
+`lifecycle_contract_c` is now training-allowed only under the existing official support guards:
 
 ```text
-Phase 9G-7A:
-  effective-assignment resolver / active-target latch design audit
-
-Phase 9G-7B:
-  standalone shared resolver prototype and fake-sequence smoke tests
-
-Phase 9G-7C:
-  default-off runtime integration design/readiness audit
-
-Phase 9G-7D:
-  shared resolver runtime adapter and default-off integration smoke
-
-Phase 9G-7E:
-  bounded disabled identity and enabled semantic runtime validation
+HAPPO
+EP
+feed-forward
+share_param=false
+state_dict checkpoint
+save_entire_model=false
+M=3,N=50 current official scale
 ```
 
-No training was run.
+Evaluation-only `lifecycle_ablation` and diagnostics profiles remain training-prohibited.
 
-No short training smoke was run.
+General or long resolver-enabled training remains prohibited until the first controlled smoke is reviewed.
 
-No playback or comparison-method episode was rerun during 9G-7F.
+## Latest Verification
 
-No performance conclusion was made.
-
-No commit was made.
-
-## Commit-Readiness Decision
-
-Phase 9G-7 is ready for user manual staging and commit.
-
-Readiness report:
+Environment:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260708/PHASE9G7F_COMMIT_READINESS_REVIEW.md
+C:\isaacenvs\isaac45_harl\python.exe
 ```
 
-TASK_PROGRESS archive created before this update:
+Regression suites:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260708/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G7F_COMMIT_READINESS_REVIEW_20260708.md
+Phase 9G-8F-1 contract core:       PASS, 27/27
+Phase 9G-8F-2 save integration:    PASS, 15/15
+Phase 9G-8F-3 loader integration:  PASS, 15/15
+Phase 9G-8F-4 model readiness:     PASS, 15/15
+Phase 9G-8F-5 continuation smoke:  PASS, 22/22
+Phase 9G-8E mask/HARL replay:      PASS, 11/11
+Phase 9G-8E-R feed-forward guard:  PASS, 9/9
+
+Existing total: PASS, 114/114
 ```
 
-## Default-Off Identity Status
-
-Default-off guarantees were reviewed and remain intact:
+New Phase 9G-8F-6R gate tests:
 
 ```text
-AssignmentLifecycleResolver defaults enabled=False.
-AssignmentLifecycleResolverRuntimeAdapter defaults enabled=False.
-AssignmentHARLWrapper resolver config defaults disabled.
-RL playback CLI resolver flags default disabled.
-comparison-method CLI resolver flags default disabled.
-resolver diagnostics logging defaults disabled.
+controlled lifecycle gate: PASS, 10/10
+
+Combined total: PASS, 124/124
 ```
 
-Resolver-disabled exact identity remains valid from Phase 9G-7E:
+Additional checks:
 
 ```text
-RL:
-  assignment_history.csv exact SHA match
-  per_episode.csv exact SHA match
-  summary.csv exact SHA match
-
-nearest:
-  assignment_history.csv exact SHA match
-  per_episode.csv exact SHA match
-  summary.csv exact SHA match
+py_compile changed/new Python files: PASS
+direct assignment load/save scan: PASS
+git diff --check: PASS with LF-to-CRLF warnings only
 ```
 
-Resolver-disabled invariant:
+No real assignment environment, Isaac Sim, AppLauncher, training, playback, evaluation, checkpoint development experiment, real checkpoint load, installed HARL modification, Conda modification, or commit occurred.
+
+## Files Changed By Latest Phase
+
+Created:
 
 ```text
-effective_assignment == assignment_proposal
-no resolver state accumulates
-no resolver events are emitted
-behavior_changed = false
-no resolver files are created when logging is disabled
+scripts/environments/test_assignment_lifecycle_controlled_training_gate.py
+AgentRead/20260710/PHASE9G8F6R_CONTROLLED_TRAINING_GATE_ACTIVATION_AND_REVIEW_CLOSURE.md
+AgentRead/20260710/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8F6R_GATE_ACTIVATION_20260710.md
 ```
 
-## Enabled Semantic Validation Status
-
-Phase 9G-7E enabled semantic validation remains PASS for:
+Modified:
 
 ```text
-RL
-nearest
-random
-greedy
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_wrapper.py
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_training_contract.py
+scripts/reinforcement_learning/harl/train.py
+AgentRead/TASK_PROGRESS.md
 ```
 
-Proposal/effective explanation status:
+No resolver behavior, Contract C semantics, observation/shared/action ordering, checkpoint schema/save/load behavior, reward/controller behavior, installed HARL files, Conda files, or YAML defaults changed.
+
+## Active Architecture
+
+Current supported implementation evidence:
 
 ```text
-RL changed rows: 179; unexplained: 0
-nearest changed rows: 432; unexplained: 0
-random changed rows: 874; unexplained: 0
-greedy changed rows: 432; unexplained: 0
+lifecycle actor dim: 1059 for M=3,N=50
+lifecycle shared dim: 3183 for M=3,N=50
+action dim: 51
+raw noop: 50
+decoded noop: -1
+policy sequence: feed-forward only
+algorithm/state: HAPPO + EP
+actor sharing: false
+checkpoint serialization: state_dict only
+validated weight continuation: supported
+exact resume: unsupported
+fine-tuning with changed contract: deferred
 ```
 
-Controller/effective consistency:
+The checkpoint path uses ordered manifests, canonical JSON, SHA-256 fingerprints, atomic native saves, a shared strict loader, and purpose-aware compatibility.
+
+## Controlled Smoke Boundary
+
+Exactly one future controlled smoke is authorized after commit:
 
 ```text
-passed where logged
-controller conversion receives effective_assignment
-raw assignment_proposal remains available for diagnostics
+fresh start
+no --dir
+new unique experiment directory
+lifecycle_contract_c explicitly selected
+HAPPO
+EP
+feed-forward
+share_param=false
+state_dict-only
+save_entire_model=false
+M=3,N=50
+minimal practical num_envs
+short bounded runtime integration validation only
 ```
 
-Ownership/completion/budget/reset status:
+The smoke is not a long training run, convergence experiment, performance comparison, or final experiment.
+
+## Remaining Unsupported
 
 ```text
-one active target per robot: passed
-one owner per task: passed
-completion consistency: passed
-budget/release effective-pair consistency: passed
-reset ordering: passed
-passive logger coexistence: passed
-schema consistency: passed
-output isolation: passed
-```
-
-Completion counts:
-
-```text
-RL: 25 env coverage transitions / 25 resolver completion events
-nearest: 44 / 44
-random: 4 / 4
-greedy: 44 / 44
-```
-
-Budget/release counts:
-
-```text
-RL budget_failure: 2
-RL release_budget_failure: 2
-effective robot-target identity: passed
-```
-
-## Limitations Preserved
-
-Failed-pair behavior:
-
-```text
-same-robot failed-pair rejection is episode-persistent
-state clears on target completion or reset
-teammates may still claim the target
-the rule can potentially strand a task
-this is not a final retry policy
-```
-
-Active-target infeasibility:
-
-```text
-monitoring only
-no automatic release
-no ownership change
-no effective-assignment change
-bounded 9G-7E runs observed zero infeasible streak
-```
-
-Training gate:
-
-```text
-resolver-enabled training remains prohibited
-until behavior-driving lifecycle state is represented in observations
-Phase 9G-7 does not claim training readiness
-```
-
-Future SOTA scope:
-
-```text
-current RL and heuristic runtime paths were validated
-future SOTA methods still require validation of their method-specific proposal adapters
-```
-
-## Generated Artifact Decision
-
-Generated runtime artifacts should not be committed:
-
-```text
-results/assignment_diagnostics/phase9g7e_resolver_runtime_validation/
-results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation/
-results/assignment_diagnostics/
-```
-
-Repository ignore behavior was checked:
-
-```text
-results/assignment_diagnostics/phase9g7e_resolver_runtime_validation/ is ignored by .gitignore rule **/results/*
-git ls-files reported no tracked files under the Phase 9G-7E result root
-```
-
-## Validation Results
-
-Syntax checks passed:
-
-```powershell
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_resolver.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_resolver_runtime.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_diagnostics.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_wrapper.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_rl_playback_diagnostics.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/evaluate_assignment_methods.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_resolver_smoke.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/test_assignment_lifecycle_resolver_runtime_smoke.py
-conda run -p C:\isaacenvs\isaac45_harl python -m py_compile scripts/environments/analyze_phase9g7e_resolver_runtime_validation.py
-```
-
-Pure smokes passed:
-
-```powershell
-conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_resolver_smoke.py --json
-conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_resolver_runtime_smoke.py --json
-conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_transition_logger_smoke.py
-conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/test_assignment_lifecycle_runtime_integration_smoke.py
-```
-
-Offline analyzer passed:
-
-```powershell
-conda run -p C:\isaacenvs\isaac45_harl python scripts/environments/analyze_phase9g7e_resolver_runtime_validation.py --root results/assignment_diagnostics/phase9g7e_resolver_runtime_validation --baseline_root results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation --output_dir results/assignment_diagnostics/phase9g7e_resolver_runtime_validation/comparison
-```
-
-Repository checks:
-
-```text
-git diff --check: passed, with LF-to-CRLF warnings only
-git status --short --untracked-files=all: expected Phase 9G-7 files plus Phase 9G-7F report/archive
-```
-
-## Exact Next Action
-
-The user should manually stage the exact files listed in:
-
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/20260708/PHASE9G7F_COMMIT_READINESS_REVIEW.md
-```
-
-Then verify:
-
-```powershell
-git diff --cached --stat
-git diff --cached --name-status
-git diff --cached --check
-git status --short
-```
-
-Recommended commit message:
-
-```text
-feat(assignment): add default-off lifecycle resolver
+general/long lifecycle training
+exact training resume
+fine-tuning with changed contract
+lifecycle recurrent
+FP lifecycle critic
+share_param=true lifecycle
+HATRPO lifecycle
+HAA2C lifecycle
+unversioned legacy continuation
 ```
 
 ## Do Not Do
 
-Do not stage generated runtime artifacts under `results/`.
+Do not run the controlled smoke before committing the reviewed code.
 
-Do not run training or short training smoke.
+Do not run long/general resolver-enabled training until the controlled smoke is reviewed.
 
-Do not make performance claims from the enabled resolver validation runs.
+Do not describe validated weight continuation as exact resume.
 
-Do not describe the resolver as training-ready.
+Do not modify installed HARL or the Conda environment.
 
-Do not claim future SOTA runtime validation beyond the shared method-agnostic proposal boundary.
+Do not run playback/evaluation as part of the smoke authorization step.
 
-Do not commit unless explicitly asked.
+## Next Step
+
+Commit the reviewed Phase 9G-8 work.
+
+Recommended commit message:
+
+```text
+feat(assignment): complete lifecycle training checkpoint readiness
+
+- integrate lifecycle actor/shared observations and Contract C masks
+- enforce feed-forward-only lifecycle training support
+- activate the reviewed lifecycle_contract_c controlled-training gate
+- add immutable checkpoint manifests and SHA-256 fingerprints
+- add atomic native assignment checkpoint saving
+- add strict purpose-aware checkpoint loading
+- validate real HARL actor/critic/buffer update paths
+- validate end-to-end weight continuation and re-save
+- preserve legacy and evaluation-only profile isolation
+```
+
+After commit, the next phase may run exactly one fresh-start short bounded controlled training smoke under the boundary above.
+
+## Detailed Reports / Archives
+
+```text
+AgentRead/20260710/PHASE9G8F6R_CONTROLLED_TRAINING_GATE_ACTIVATION_AND_REVIEW_CLOSURE.md
+AgentRead/20260710/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8F6R_GATE_ACTIVATION_20260710.md
+AgentRead/20260709/PHASE9G8F6_CHECKPOINT_TRAINING_READINESS_AND_COMMIT_REVIEW.md
+AgentRead/20260709/PHASE9G8F5_CHECKPOINT_SAVE_LOAD_CONTINUATION_SMOKE_REPORT.md
+AgentRead/20260709/PHASE9G8F4_ACTOR_CRITIC_BUFFER_FORWARD_BACKWARD_READINESS_REPORT.md
+AgentRead/20260709/PHASE9G8F3_ALL_LOADER_COMPATIBILITY_INTEGRATION_REPORT.md
+AgentRead/20260709/PHASE9G8F2_CHECKPOINT_SAVE_METADATA_INTEGRATION_REPORT.md
+AgentRead/20260709/PHASE9G8F1_MANIFEST_CANONICAL_JSON_FINGERPRINT_COMPATIBILITY_CORE_REPORT.md
+AgentRead/20260709/PHASE9G8F0_CHECKPOINT_LOADER_MODEL_BUFFER_READINESS_DESIGN_AUDIT.md
+AgentRead/20260709/PHASE9G8E_R_FEED_FORWARD_SUPPORT_FREEZE_AND_RECURRENT_GUARDRAIL_CLOSURE_REPORT.md
+AgentRead/20260708/PHASE9G8E_LIFECYCLE_MASK_AND_PPO_HISTORICAL_MASK_REPLAY_INTEGRATION_REPORT.md
+AgentRead/20260708/PHASE9G8D_LIFECYCLE_ACTOR_SHARED_OBSERVATION_INTEGRATION_REPORT.md
+AgentRead/20260708/PHASE9G8C_PURE_LIFECYCLE_SNAPSHOT_AND_TENSOR_BUILDERS_REPORT.md
+AgentRead/20260708/PHASE9G8B_LIFECYCLE_OBSERVATION_MASK_CHECKPOINT_CONTRACT_REVISION_AND_FREEZE.md
+```

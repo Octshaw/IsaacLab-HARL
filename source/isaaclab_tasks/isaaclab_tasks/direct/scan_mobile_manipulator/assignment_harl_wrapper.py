@@ -26,6 +26,22 @@ try:
         make_assignment_action_mask,
     )
     from .assignment_lifecycle_resolver_runtime import AssignmentLifecycleResolverRuntimeAdapter
+    from .assignment_lifecycle_training_contract import policy_sequence_contract_for_profile
+    from .assignment_lifecycle_observation import (
+        ACTOR_LIFECYCLE_FEATURE_ORDER,
+        ACTOR_SCHEMA_VERSION,
+        CRITIC_BUDGET_FEATURE_ORDER,
+        CRITIC_BUDGET_SCHEMA_VERSION,
+        LIFECYCLE_ABLATION_MASK_VERSION,
+        LIFECYCLE_CONTRACT_C_MASK_VERSION,
+        SNAPSHOT_CONTRACT_VERSION,
+        build_actor_lifecycle_tensors,
+        build_critic_budget_tensors,
+        build_lifecycle_ablation_available_action_tensors,
+        build_lifecycle_contract_c_available_action_tensors,
+        capture_lifecycle_decision_snapshot,
+        critic_budget_addon_dim,
+    )
 except ImportError:  # Allows direct file-based smoke tests after adding this directory to sys.path.
     from assignment_harl_adapter import (  # type: ignore
         AssignmentHarlAdapter,
@@ -39,8 +55,40 @@ except ImportError:  # Allows direct file-based smoke tests after adding this di
         make_assignment_action_mask,
     )
     from assignment_lifecycle_resolver_runtime import AssignmentLifecycleResolverRuntimeAdapter  # type: ignore
+    from assignment_lifecycle_training_contract import policy_sequence_contract_for_profile  # type: ignore
+    from assignment_lifecycle_observation import (  # type: ignore
+        ACTOR_LIFECYCLE_FEATURE_ORDER,
+        ACTOR_SCHEMA_VERSION,
+        CRITIC_BUDGET_FEATURE_ORDER,
+        CRITIC_BUDGET_SCHEMA_VERSION,
+        LIFECYCLE_ABLATION_MASK_VERSION,
+        LIFECYCLE_CONTRACT_C_MASK_VERSION,
+        SNAPSHOT_CONTRACT_VERSION,
+        build_actor_lifecycle_tensors,
+        build_critic_budget_tensors,
+        build_lifecycle_ablation_available_action_tensors,
+        build_lifecycle_contract_c_available_action_tensors,
+        capture_lifecycle_decision_snapshot,
+        critic_budget_addon_dim,
+    )
 
 
+ASSIGNMENT_LIFECYCLE_PROFILES = {
+    "legacy",
+    "lifecycle_ablation",
+    "lifecycle_contract_c",
+    "diagnostics_hidden_state",
+}
+ASSIGNMENT_OBSERVATION_SCHEMA_LEGACY = "legacy_v1"
+ASSIGNMENT_SHARED_SCHEMA_LEGACY = "legacy_v1_shared_actor_concat"
+ASSIGNMENT_SHARED_SCHEMA_LIFECYCLE_OPTION_A = "lifecycle_v1_shared_option_a_budget2m"
+ASSIGNMENT_MASK_SCHEMA_LEGACY = "legacy_mask_v1"
+ASSIGNMENT_MASK_SCHEMA_DIAGNOSTICS = "diagnostics_mask_v1"
+ASSIGNMENT_BUDGET_RELEASE_DISABLED = "disabled"
+ASSIGNMENT_BUDGET_RELEASE_V1 = "budget_release_v1"
+ASSIGNMENT_GUARDRAIL_LEGACY = "legacy_guardrails_v1"
+ASSIGNMENT_GUARDRAIL_LIFECYCLE_NONE = "lifecycle_no_legacy_guardrails_v1"
+ASSIGNMENT_GUARDRAIL_DIAGNOSTICS = "diagnostics_guardrails_v1"
 class AssignmentHarlWrapper:
     """Repo-local HARL-facing wrapper for assignment-based scan actions.
 
@@ -67,6 +115,7 @@ class AssignmentHarlWrapper:
         self._assignment_cooldown_config = self._build_assignment_cooldown_config()
         self._assignment_redirect_guardrail_config = self._build_assignment_redirect_guardrail_config()
         self._assignment_failed_pair_memory_config = self._build_assignment_failed_pair_memory_config()
+        self._assignment_lifecycle_profile_config = self._build_assignment_lifecycle_profile_config()
         self._assignment_lifecycle_resolver_config = self._build_assignment_lifecycle_resolver_config()
         self._max_base_xy_step_by_agent = self._infer_max_base_xy_step_by_agent()
 
@@ -91,6 +140,15 @@ class AssignmentHarlWrapper:
         self.last_selected_available_mask: torch.Tensor | None = None
         self.last_assignment_reward_terms: dict[str, Any] | None = None
         self._last_assignment_lifecycle_resolution: dict[str, Any] | None = None
+        self._lifecycle_snapshot_generation = 0
+        self._lifecycle_episode_generation = torch.zeros(self._num_envs, dtype=torch.long, device=self._device)
+        self._last_lifecycle_decision_snapshot = None
+        self._last_actor_lifecycle_tensor_result = None
+        self._last_critic_budget_tensor_result = None
+        self._last_available_actions_lifecycle_result = None
+        self._last_actor_observation_generation: int | None = None
+        self._last_shared_observation_generation: int | None = None
+        self._last_available_actions_generation: int | None = None
         self._assignment_lifecycle_resolver_runtime = AssignmentLifecycleResolverRuntimeAdapter(
             enabled=bool(self._assignment_lifecycle_resolver_config["enabled"]),
             num_envs=self._num_envs,
@@ -103,7 +161,7 @@ class AssignmentHarlWrapper:
             strict_proposals=bool(self._assignment_lifecycle_resolver_config["strict_proposals"]),
         )
 
-        self._viewpoint_row_fields = (
+        self._legacy_viewpoint_row_fields = (
             "relative_viewpoint_position_x",
             "relative_viewpoint_position_y",
             "relative_viewpoint_position_z",
@@ -118,6 +176,12 @@ class AssignmentHarlWrapper:
             "normalized_selected_path_cost",
             "per_viewpoint_attempted_count_norm",
             "per_viewpoint_last_attempt_age_norm",
+        )
+        self._lifecycle_viewpoint_row_fields = self._legacy_viewpoint_row_fields + ACTOR_LIFECYCLE_FEATURE_ORDER
+        self._viewpoint_row_fields = (
+            self._lifecycle_viewpoint_row_fields
+            if self._lifecycle_observation_enabled()
+            else self._legacy_viewpoint_row_fields
         )
         self._noop_context_fields = (
             "agent_has_any_available_viewpoint",
@@ -232,11 +296,16 @@ class AssignmentHarlWrapper:
             "raw_observation_dim": raw_dim,
             "assignment_extension_dim": self._assignment_extension_dim,
             "actor_observation_dim_by_agent": {
-                agent: self._raw_observation_dims[agent] + self._assignment_extension_dim for agent in self._agents
+                agent: self._actor_observation_dim(agent) for agent in self._agents
             },
-            "shared_observation_dim": sum(
-                self._raw_observation_dims[agent] + self._assignment_extension_dim for agent in self._agents
-            ),
+            "shared_observation_dim": self._shared_observation_dim(),
+            "assignment_lifecycle_profile": self._assignment_lifecycle_profile_config["profile_name"],
+            "actor_schema_version": self._assignment_lifecycle_profile_config["actor_schema_version"],
+            "shared_schema_version": self._assignment_lifecycle_profile_config["shared_schema_version"],
+            "shared_construction_mode": self._assignment_lifecycle_profile_config["shared_construction_mode"],
+            "mask_contract_version": self._assignment_lifecycle_profile_config["mask_contract_version"],
+            "budget_release_contract": self._assignment_lifecycle_profile_config["budget_release_contract"],
+            "legacy_guardrail_profile": self._assignment_lifecycle_profile_config["legacy_guardrail_profile"],
             "num_agents": self._num_agents,
             "num_viewpoints": self._num_viewpoints,
             "noop_action_id": self.noop_action_id,
@@ -273,8 +342,37 @@ class AssignmentHarlWrapper:
         return dict(self._assignment_failed_pair_memory_config)
 
     @property
+    def assignment_lifecycle_profile_config(self) -> dict[str, Any]:
+        return dict(self._assignment_lifecycle_profile_config)
+
+    @property
     def assignment_lifecycle_resolver_config(self) -> dict[str, bool | str | None]:
         return dict(self._assignment_lifecycle_resolver_config)
+
+    @property
+    def assignment_observation_schema_manifest(self) -> dict[str, Any]:
+        return self._build_assignment_observation_schema_manifest()
+
+    @property
+    def last_lifecycle_snapshot_generation(self) -> int | None:
+        snapshot = self._last_lifecycle_decision_snapshot
+        return None if snapshot is None else int(snapshot.snapshot_generation)
+
+    @property
+    def last_lifecycle_episode_generation(self) -> torch.Tensor:
+        return self._lifecycle_episode_generation.detach().clone()
+
+    @property
+    def last_actor_observation_generation(self) -> int | None:
+        return self._last_actor_observation_generation
+
+    @property
+    def last_shared_observation_generation(self) -> int | None:
+        return self._last_shared_observation_generation
+
+    @property
+    def last_available_actions_generation(self) -> int | None:
+        return self._last_available_actions_generation
 
     def get_last_assignment_lifecycle_resolution(self) -> dict[str, Any] | None:
         return self._clone_lifecycle_resolution_payload(self._last_assignment_lifecycle_resolution)
@@ -284,8 +382,10 @@ class AssignmentHarlWrapper:
         problem = self._unwrapped.get_assignment_problem()
         self._reset_assignment_diagnostics(problem=problem)
         self._assignment_lifecycle_resolver_runtime.reset_envs(env_ids=None)
+        self._advance_lifecycle_episode_generation(env_ids=None)
         self._last_assignment_lifecycle_resolution = None
         self.last_assignment_reward_terms = None
+        self._capture_lifecycle_decision_snapshot(problem=problem)
         obs = self._augment_assignment_observations(obs, problem=problem)
         self._sync_agents(obs)
         shared_obs = self._build_shared_obs(obs)
@@ -384,7 +484,9 @@ class AssignmentHarlWrapper:
 
         if done_env_ids.numel() > 0:
             self._reset_assignment_diagnostics(env_ids=done_env_ids, problem=post_step_problem)
+            self._advance_lifecycle_episode_generation(env_ids=done_env_ids)
 
+        self._capture_lifecycle_decision_snapshot(problem=post_step_problem)
         obs = self._augment_assignment_observations(obs, problem=post_step_problem)
         self._sync_agents(obs)
         shared_obs = self._build_shared_obs(obs)
@@ -585,6 +687,145 @@ class AssignmentHarlWrapper:
             "log_diagnostics": _bool_attr("assignment_failed_pair_memory_log_diagnostics", True),
         }
 
+    def _build_assignment_lifecycle_profile_config(self) -> dict[str, Any]:
+        cfg = getattr(self._unwrapped, "cfg", None)
+        profile = str(getattr(cfg, "assignment_lifecycle_profile", "legacy")).strip().lower()
+        if profile not in ASSIGNMENT_LIFECYCLE_PROFILES:
+            raise ValueError(
+                "assignment_lifecycle_profile must be one of "
+                f"{sorted(ASSIGNMENT_LIFECYCLE_PROFILES)}, got {profile!r}"
+            )
+
+        cfg_resolver_enabled = bool(getattr(cfg, "assignment_lifecycle_resolver_enabled", False))
+        if profile == "legacy":
+            if cfg_resolver_enabled:
+                raise ValueError(
+                    "assignment_lifecycle_profile='legacy' requires "
+                    "assignment_lifecycle_resolver_enabled=False. Use a lifecycle profile instead."
+                )
+            return {
+                "profile_name": "legacy",
+                "actor_schema_version": ASSIGNMENT_OBSERVATION_SCHEMA_LEGACY,
+                "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LEGACY,
+                "shared_construction_mode": "actor_concat",
+                "mask_contract_version": ASSIGNMENT_MASK_SCHEMA_LEGACY,
+                "budget_release_contract": ASSIGNMENT_BUDGET_RELEASE_DISABLED,
+                "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_LEGACY,
+                "resolver_enabled": False,
+                "lifecycle_observation_enabled": False,
+                "lifecycle_mask_enabled": False,
+                "training_allowed": True,
+            }
+
+        if profile == "lifecycle_ablation":
+            if cfg_resolver_enabled:
+                raise ValueError(
+                    "assignment_lifecycle_profile='lifecycle_ablation' requires "
+                    "assignment_lifecycle_resolver_enabled=False."
+                )
+            self._validate_lifecycle_ablation_profile_config()
+            return {
+                "profile_name": "lifecycle_ablation",
+                "actor_schema_version": ACTOR_SCHEMA_VERSION,
+                "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LIFECYCLE_OPTION_A,
+                "shared_construction_mode": "actor_concat_plus_critic_budget_2m",
+                "mask_contract_version": LIFECYCLE_ABLATION_MASK_VERSION,
+                "budget_release_contract": ASSIGNMENT_BUDGET_RELEASE_DISABLED,
+                "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_LIFECYCLE_NONE,
+                "resolver_enabled": False,
+                "lifecycle_observation_enabled": True,
+                "lifecycle_mask_enabled": False,
+                "training_allowed": False,
+                "training_blocked_reason": (
+                    "assignment_lifecycle_profile='lifecycle_ablation' is an explicit "
+                    "observation/mask ablation profile and is not enabled for normal training."
+                ),
+            }
+
+        if profile == "lifecycle_contract_c":
+            self._validate_lifecycle_contract_c_profile_config()
+            return {
+                "profile_name": "lifecycle_contract_c",
+                "actor_schema_version": ACTOR_SCHEMA_VERSION,
+                "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LIFECYCLE_OPTION_A,
+                "shared_construction_mode": "actor_concat_plus_critic_budget_2m",
+                "mask_contract_version": LIFECYCLE_CONTRACT_C_MASK_VERSION,
+                "budget_release_contract": ASSIGNMENT_BUDGET_RELEASE_V1,
+                "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_LIFECYCLE_NONE,
+                "resolver_enabled": True,
+                "lifecycle_observation_enabled": True,
+                "lifecycle_mask_enabled": True,
+                "training_allowed": True,
+            }
+
+        if not cfg_resolver_enabled:
+            raise ValueError(
+                "assignment_lifecycle_profile='diagnostics_hidden_state' requires "
+                "assignment_lifecycle_resolver_enabled=True."
+            )
+        return {
+            "profile_name": "diagnostics_hidden_state",
+            "actor_schema_version": ASSIGNMENT_OBSERVATION_SCHEMA_LEGACY,
+            "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LEGACY,
+            "shared_construction_mode": "actor_concat",
+            "mask_contract_version": ASSIGNMENT_MASK_SCHEMA_DIAGNOSTICS,
+            "budget_release_contract": "diagnostics_only",
+            "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_DIAGNOSTICS,
+            "resolver_enabled": True,
+            "lifecycle_observation_enabled": False,
+            "lifecycle_mask_enabled": False,
+            "training_allowed": False,
+        }
+
+    def _validate_lifecycle_ablation_profile_config(self) -> None:
+        if bool(self._assignment_cooldown_config["enabled"]):
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_ablation' requires assignment_cooldown_enabled=False "
+                "so the wrapper budget tracker and budget trigger remain disabled."
+            )
+        if bool(self._assignment_redirect_guardrail_config["enabled"]):
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_ablation' requires "
+                "assignment_redirect_guardrail_enabled=False."
+            )
+        if bool(self._assignment_failed_pair_memory_config["enabled"]):
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_ablation' requires "
+                "assignment_failed_pair_memory_enabled=False."
+            )
+
+    def _validate_lifecycle_contract_c_profile_config(self) -> None:
+        if not bool(self._assignment_cooldown_config["enabled"]):
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_contract_c' requires assignment_cooldown_enabled=True "
+                "as the budget-release source for resolver failed-pair release."
+            )
+        if self._cooldown_trigger_mode() not in {"budget", "budget_and_streak"}:
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_contract_c' requires "
+                "assignment_cooldown_trigger_mode='budget' or 'budget_and_streak'."
+            )
+        if int(self._assignment_cooldown_config["duration_steps"]) <= 0:
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_contract_c' requires "
+                "assignment_cooldown_duration_steps > 0 so budget triggers can be emitted."
+            )
+        if bool(self._assignment_cooldown_config["apply_to_action_mask"]):
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_contract_c' requires "
+                "assignment_cooldown_apply_to_action_mask=False; lifecycle mask owns policy support."
+            )
+        if bool(self._assignment_redirect_guardrail_config["enabled"]):
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_contract_c' requires "
+                "assignment_redirect_guardrail_enabled=False."
+            )
+        if bool(self._assignment_failed_pair_memory_config["enabled"]):
+            raise ValueError(
+                "assignment_lifecycle_profile='lifecycle_contract_c' requires "
+                "assignment_failed_pair_memory_enabled=False; resolver pair_state is the failed-pair owner."
+            )
+
     def _build_assignment_lifecycle_resolver_config(self) -> dict[str, bool | str | None]:
         cfg = getattr(self._unwrapped, "cfg", None)
 
@@ -595,7 +836,7 @@ class AssignmentHarlWrapper:
         if output_dir is not None:
             output_dir = str(output_dir)
         return {
-            "enabled": _bool_attr("assignment_lifecycle_resolver_enabled", False),
+            "enabled": bool(self._assignment_lifecycle_profile_config["resolver_enabled"]),
             "strict_proposals": _bool_attr("assignment_lifecycle_resolver_strict_proposals", True),
             "log_diagnostics": _bool_attr("assignment_lifecycle_resolver_log_diagnostics", False),
             "output_dir": output_dir,
@@ -635,19 +876,49 @@ class AssignmentHarlWrapper:
                 dims[agent] = 0
         return dims
 
+    def _lifecycle_observation_enabled(self) -> bool:
+        return bool(self._assignment_lifecycle_profile_config["lifecycle_observation_enabled"])
+
+    def _lifecycle_mask_enabled(self) -> bool:
+        return bool(self._assignment_lifecycle_profile_config["lifecycle_mask_enabled"])
+
+    def _lifecycle_available_actions_from_snapshot(self) -> torch.Tensor:
+        snapshot = self._require_lifecycle_decision_snapshot()
+        profile_name = str(self._assignment_lifecycle_profile_config["profile_name"])
+        if profile_name == "lifecycle_contract_c":
+            result = build_lifecycle_contract_c_available_action_tensors(snapshot)
+        elif profile_name == "lifecycle_ablation":
+            result = build_lifecycle_ablation_available_action_tensors(snapshot)
+        else:
+            raise RuntimeError(f"lifecycle available-actions are not defined for profile {profile_name!r}")
+        self._last_available_actions_lifecycle_result = result
+        if result.snapshot_generation != snapshot.snapshot_generation:
+            raise RuntimeError("available-actions generation does not match lifecycle snapshot generation")
+        self._last_available_actions_generation = int(snapshot.snapshot_generation)
+        return result.available_actions.to(device=self._device, dtype=torch.float32)
+
+    def _actor_observation_dim(self, agent: str) -> int:
+        return self._raw_observation_dims[agent] + self._assignment_extension_dim
+
+    def _shared_observation_dim(self) -> int:
+        shared_dim = sum(self._actor_observation_dim(agent) for agent in self._agents)
+        if self._lifecycle_observation_enabled():
+            shared_dim += critic_budget_addon_dim(self._num_agents)
+        return int(shared_dim)
+
     def _make_observation_space(self) -> dict[int, gymnasium.Space]:
         return {
             self._agent_map[agent]: gymnasium.spaces.Box(
                 -np.inf,
                 np.inf,
-                shape=(self._raw_observation_dims[agent] + self._assignment_extension_dim,),
+                shape=(self._actor_observation_dim(agent),),
                 dtype=np.float32,
             )
             for agent in self._agents
         }
 
     def _make_share_observation_space(self) -> dict[int, gymnasium.Space]:
-        shape = sum(self._raw_observation_dims[agent] + self._assignment_extension_dim for agent in self._agents)
+        shape = self._shared_observation_dim()
         state_space = gymnasium.spaces.Box(-np.inf, np.inf, shape=(shape,), dtype=np.float32)
         return {agent_id: state_space for agent_id in range(self._num_agents)}
 
@@ -659,55 +930,193 @@ class AssignmentHarlWrapper:
                 observation = observation.reshape(observation.shape[0], -1)
             observations.append(observation)
         shared = torch.cat(observations, dim=-1)
+        if self._lifecycle_observation_enabled():
+            snapshot = self._require_lifecycle_decision_snapshot()
+            critic_budget = build_critic_budget_tensors(snapshot)
+            self._last_critic_budget_tensor_result = critic_budget
+            if critic_budget.snapshot_generation != snapshot.snapshot_generation:
+                raise RuntimeError("critic budget tensor generation does not match lifecycle snapshot generation")
+            shared = torch.cat((shared, critic_budget.critic_budget_flat.to(device=shared.device, dtype=shared.dtype)), dim=-1)
+            self._last_shared_observation_generation = int(snapshot.snapshot_generation)
+        else:
+            self._last_shared_observation_generation = None
+        expected_shape = (self._num_envs, self._shared_observation_dim())
+        if tuple(shared.shape) != expected_shape:
+            raise RuntimeError(f"shared observation must have shape {expected_shape}, got {tuple(shared.shape)}")
         return torch.stack([shared for _ in range(self._num_agents)], dim=1)
+
+    def _advance_lifecycle_episode_generation(self, env_ids: torch.Tensor | None) -> None:
+        if env_ids is None:
+            self._lifecycle_episode_generation += 1
+            return
+        ids = env_ids.to(device=self._device, dtype=torch.long).flatten()
+        if ids.numel() == 0:
+            return
+        if bool(((ids < 0) | (ids >= self._num_envs)).any()):
+            raise ValueError(f"lifecycle episode generation env_ids out of range: {ids.detach().cpu().tolist()}")
+        self._lifecycle_episode_generation[ids] += 1
+
+    def _capture_lifecycle_decision_snapshot(self, *, problem: Mapping[str, Any]) -> None:
+        if not self._lifecycle_observation_enabled():
+            self._last_lifecycle_decision_snapshot = None
+            self._last_actor_lifecycle_tensor_result = None
+            self._last_critic_budget_tensor_result = None
+            self._last_available_actions_lifecycle_result = None
+            self._last_actor_observation_generation = None
+            self._last_shared_observation_generation = None
+            self._last_available_actions_generation = None
+            return
+
+        self._lifecycle_snapshot_generation += 1
+        resolver_snapshot = self._assignment_lifecycle_resolver_runtime.snapshot()
+        task_valid = torch.ones(self._num_envs, self._num_viewpoints, dtype=torch.bool, device=self._device)
+        self._last_lifecycle_decision_snapshot = capture_lifecycle_decision_snapshot(
+            snapshot_generation=self._lifecycle_snapshot_generation,
+            episode_generation=self._lifecycle_episode_generation,
+            active_target_id=resolver_snapshot["active_target_id"],
+            task_owner_robot_id=resolver_snapshot["task_owner_robot_id"],
+            pair_state=resolver_snapshot["pair_state"],
+            budget_attempt_target=self._budget_attempt_target,
+            budget_attempt_steps=self._budget_attempt_steps,
+            budget_attempt_budget_steps=self._budget_attempt_budget_steps,
+            budget_attempt_expected_steps=self._budget_attempt_expected_steps,
+            budget_attempt_initial_cost=self._budget_attempt_initial_cost,
+            viewpoints_covered=problem["viewpoints_covered"],
+            available_mask=problem["available_mask"],
+            feasible_mask=problem["feasible_mask"],
+            task_valid=task_valid,
+        )
+        self._last_actor_lifecycle_tensor_result = None
+        self._last_critic_budget_tensor_result = None
+        self._last_available_actions_lifecycle_result = None
+        self._last_actor_observation_generation = None
+        self._last_shared_observation_generation = None
+        self._last_available_actions_generation = None
+
+    def _require_lifecycle_decision_snapshot(self):
+        snapshot = self._last_lifecycle_decision_snapshot
+        if snapshot is None:
+            raise RuntimeError("lifecycle observation schema requires a captured lifecycle decision snapshot")
+        return snapshot
+
+    def _build_assignment_observation_schema_manifest(self) -> dict[str, Any]:
+        profile_name = str(self._assignment_lifecycle_profile_config["profile_name"])
+        policy_sequence_contract = policy_sequence_contract_for_profile(profile_name)
+        actor_dims = {agent: self._actor_observation_dim(agent) for agent in self._agents}
+        actor_dim_values = tuple(actor_dims.values())
+        actor_dimension = actor_dim_values[0] if len(set(actor_dim_values)) == 1 else None
+        shared_blocks: list[dict[str, Any]] = [
+            {
+                "name": f"actor_obs_robot_{agent_index}",
+                "agent": agent,
+                "shape": [actor_dims[agent]],
+            }
+            for agent_index, agent in enumerate(self._agents)
+        ]
+        if self._lifecycle_observation_enabled():
+            for robot_id, feature_name in (
+                (robot_id, feature_name)
+                for robot_id in range(self._num_agents)
+                for feature_name in CRITIC_BUDGET_FEATURE_ORDER
+            ):
+                shared_blocks.append(
+                    {
+                        "name": f"{feature_name}_robot_{robot_id}",
+                        "robot_id": robot_id,
+                        "shape": [1],
+                    }
+                )
+
+        return {
+            "profile_name": profile_name,
+            "actor_schema_version": self._assignment_lifecycle_profile_config["actor_schema_version"],
+            "actor_task_row_order": list(self._viewpoint_row_fields),
+            "actor_tail_field_order": (
+                list(self._noop_context_fields)
+                + [f"previous_assignment_one_hot_{index}" for index in range(self._previous_assignment_one_hot_dim)]
+                + list(self._dynamic_scalar_fields)
+                + [f"covered_vector_{index}" for index in range(self._num_viewpoints)]
+            ),
+            "actor_dimension": actor_dimension,
+            "actor_dimension_by_agent": actor_dims,
+            "shared_schema_version": self._assignment_lifecycle_profile_config["shared_schema_version"],
+            "critic_budget_schema_version": CRITIC_BUDGET_SCHEMA_VERSION if self._lifecycle_observation_enabled() else None,
+            "shared_construction_mode": self._assignment_lifecycle_profile_config["shared_construction_mode"],
+            "shared_ordered_blocks": shared_blocks,
+            "shared_dimension": self._shared_observation_dim(),
+            "mask_contract_version": self._assignment_lifecycle_profile_config["mask_contract_version"],
+            "available_actions_shape": [self._num_envs, self._num_agents, self._num_viewpoints + 1],
+            "available_actions_dtype": "torch.float32",
+            "noop_always_available": True,
+            "resolver_final_safety_boundary": bool(self._assignment_lifecycle_profile_config["resolver_enabled"]),
+            "historical_mask_replay_contract": "sampling_mask_t_equals_buffer_mask_t_equals_evaluate_actions_mask_t",
+            "budget_release_contract": self._assignment_lifecycle_profile_config["budget_release_contract"],
+            "legacy_guardrail_profile": self._assignment_lifecycle_profile_config["legacy_guardrail_profile"],
+            "M": self._num_agents,
+            "N": self._num_viewpoints,
+            "action_dimension": self._num_viewpoints + 1,
+            "noop_raw_id": self.noop_action_id,
+            "noop_decoded_value": -1,
+            "snapshot_contract_version": SNAPSHOT_CONTRACT_VERSION,
+            **policy_sequence_contract,
+        }
 
     def _build_available_actions(self, problem: dict | None = None) -> torch.Tensor:
         if problem is None:
             problem = self._unwrapped.get_assignment_problem()
-        cooldown_mask_enabled = self._assignment_cooldown_mask_enabled()
-        redirect_guardrail_enabled = self._assignment_redirect_guardrail_enabled()
-        failed_pair_memory_mask_enabled = self._assignment_failed_pair_memory_mask_enabled()
-        if not cooldown_mask_enabled and not redirect_guardrail_enabled and not failed_pair_memory_mask_enabled:
+        if self._lifecycle_observation_enabled():
+            if not self.include_noop:
+                raise RuntimeError("lifecycle available-actions require the frozen noop action column")
             self._reset_assignment_redirect_guardrail_mask_diagnostics()
             self._reset_assignment_failed_pair_memory_mask_diagnostics()
-            available_actions = make_assignment_action_mask(problem, include_noop=self.include_noop)
+            available_actions = self._lifecycle_available_actions_from_snapshot()
         else:
-            available_mask = problem["available_mask"]
-            if not isinstance(available_mask, torch.Tensor):
-                raise TypeError(
-                    "problem['available_mask'] must be a torch.Tensor, "
-                    f"got {type(available_mask).__name__}"
-                )
-            if tuple(available_mask.shape) != (self._num_envs, self._num_agents, self._num_viewpoints):
-                raise RuntimeError(
-                    "problem['available_mask'] must have shape "
-                    f"{(self._num_envs, self._num_agents, self._num_viewpoints)}, "
-                    f"got {tuple(available_mask.shape)}"
-                )
-            filtered_mask = available_mask.to(device=self._device, dtype=torch.bool).clone()
-            if cooldown_mask_enabled:
-                filtered_mask = self._apply_assignment_cooldown_to_available_mask(filtered_mask)
-            if redirect_guardrail_enabled:
-                filtered_mask = self._apply_assignment_redirect_guardrail_to_available_mask(
-                    filtered_mask,
-                    problem=problem,
-                )
-            else:
+            self._last_available_actions_lifecycle_result = None
+            self._last_available_actions_generation = None
+            cooldown_mask_enabled = self._assignment_cooldown_mask_enabled()
+            redirect_guardrail_enabled = self._assignment_redirect_guardrail_enabled()
+            failed_pair_memory_mask_enabled = self._assignment_failed_pair_memory_mask_enabled()
+            if not cooldown_mask_enabled and not redirect_guardrail_enabled and not failed_pair_memory_mask_enabled:
                 self._reset_assignment_redirect_guardrail_mask_diagnostics()
-            if failed_pair_memory_mask_enabled:
-                filtered_mask = self._apply_assignment_failed_pair_memory_to_available_mask(filtered_mask)
-            else:
                 self._reset_assignment_failed_pair_memory_mask_diagnostics()
-            available_actions = filtered_mask.to(dtype=torch.float32)
-            if self.include_noop:
-                noop_mask = torch.ones(
-                    self._num_envs,
-                    self._num_agents,
-                    1,
-                    dtype=torch.float32,
-                    device=available_actions.device,
-                )
-                available_actions = torch.cat((available_actions, noop_mask), dim=-1)
+                available_actions = make_assignment_action_mask(problem, include_noop=self.include_noop)
+            else:
+                available_mask = problem["available_mask"]
+                if not isinstance(available_mask, torch.Tensor):
+                    raise TypeError(
+                        "problem['available_mask'] must be a torch.Tensor, "
+                        f"got {type(available_mask).__name__}"
+                    )
+                if tuple(available_mask.shape) != (self._num_envs, self._num_agents, self._num_viewpoints):
+                    raise RuntimeError(
+                        "problem['available_mask'] must have shape "
+                        f"{(self._num_envs, self._num_agents, self._num_viewpoints)}, "
+                        f"got {tuple(available_mask.shape)}"
+                    )
+                filtered_mask = available_mask.to(device=self._device, dtype=torch.bool).clone()
+                if cooldown_mask_enabled:
+                    filtered_mask = self._apply_assignment_cooldown_to_available_mask(filtered_mask)
+                if redirect_guardrail_enabled:
+                    filtered_mask = self._apply_assignment_redirect_guardrail_to_available_mask(
+                        filtered_mask,
+                        problem=problem,
+                    )
+                else:
+                    self._reset_assignment_redirect_guardrail_mask_diagnostics()
+                if failed_pair_memory_mask_enabled:
+                    filtered_mask = self._apply_assignment_failed_pair_memory_to_available_mask(filtered_mask)
+                else:
+                    self._reset_assignment_failed_pair_memory_mask_diagnostics()
+                available_actions = filtered_mask.to(dtype=torch.float32)
+                if self.include_noop:
+                    noop_mask = torch.ones(
+                        self._num_envs,
+                        self._num_agents,
+                        1,
+                        dtype=torch.float32,
+                        device=available_actions.device,
+                    )
+                    available_actions = torch.cat((available_actions, noop_mask), dim=-1)
         expected_shape = (self._num_envs, self._num_agents, self._num_viewpoints + int(self.include_noop))
         if tuple(available_actions.shape) != expected_shape:
             raise RuntimeError(f"available_actions must have shape {expected_shape}, got {tuple(available_actions.shape)}")
@@ -1870,7 +2279,11 @@ class AssignmentHarlWrapper:
             if raw.ndim > 2:
                 raw = raw.reshape(raw.shape[0], -1)
             extension = self._assignment_observation_extension(problem, agent_index)
-            augmented[agent] = torch.cat((raw.to(dtype=torch.float32), extension), dim=-1)
+            augmented_obs = torch.cat((raw.to(dtype=torch.float32), extension), dim=-1)
+            expected_shape = (self._num_envs, self._actor_observation_dim(agent))
+            if tuple(augmented_obs.shape) != expected_shape:
+                raise RuntimeError(f"{agent} observation must have shape {expected_shape}, got {tuple(augmented_obs.shape)}")
+            augmented[agent] = augmented_obs
         return augmented
 
     def _assignment_observation_extension(self, problem: dict, agent_index: int) -> torch.Tensor:
@@ -1897,20 +2310,33 @@ class AssignmentHarlWrapper:
         ).to(dtype=dtype)
         age_norm = torch.clamp(age_steps / float(self._normalization_horizon), 0.0, 1.0)
         age_norm = torch.where(never_attempted, torch.ones_like(age_norm), age_norm).unsqueeze(-1)
-        viewpoint_rows = torch.cat(
-            (
-                relative_pos,
-                viewpoint_quat,
-                covered.to(dtype=dtype).unsqueeze(-1),
-                available_mask[:, agent_index, :].to(dtype=dtype).unsqueeze(-1),
-                feasible_mask[:, agent_index, :].to(dtype=dtype).unsqueeze(-1),
-                static_mask[:, agent_index, :].to(dtype=dtype).unsqueeze(-1),
-                normalized_cost,
-                attempted_norm,
-                age_norm,
-            ),
-            dim=-1,
-        ).reshape(self._num_envs, self._num_viewpoints * self._viewpoint_row_dim)
+        viewpoint_row_parts = [
+            relative_pos,
+            viewpoint_quat,
+            covered.to(dtype=dtype).unsqueeze(-1),
+            available_mask[:, agent_index, :].to(dtype=dtype).unsqueeze(-1),
+            feasible_mask[:, agent_index, :].to(dtype=dtype).unsqueeze(-1),
+            static_mask[:, agent_index, :].to(dtype=dtype).unsqueeze(-1),
+            normalized_cost,
+            attempted_norm,
+            age_norm,
+        ]
+        if self._lifecycle_observation_enabled():
+            snapshot = self._require_lifecycle_decision_snapshot()
+            actor_lifecycle = self._last_actor_lifecycle_tensor_result
+            if actor_lifecycle is None or actor_lifecycle.snapshot_generation != snapshot.snapshot_generation:
+                actor_lifecycle = build_actor_lifecycle_tensors(snapshot)
+                self._last_actor_lifecycle_tensor_result = actor_lifecycle
+            if actor_lifecycle.snapshot_generation != snapshot.snapshot_generation:
+                raise RuntimeError("actor lifecycle tensor generation does not match lifecycle snapshot generation")
+            viewpoint_row_parts.append(
+                actor_lifecycle.actor_lifecycle_features[:, agent_index, :, :].to(device=self._device, dtype=dtype)
+            )
+            self._last_actor_observation_generation = int(snapshot.snapshot_generation)
+        viewpoint_rows = torch.cat(tuple(viewpoint_row_parts), dim=-1).reshape(
+            self._num_envs,
+            self._num_viewpoints * self._viewpoint_row_dim,
+        )
 
         episode_progress = self._episode_progress_norm().unsqueeze(-1)
         agent_has_any_available = available_mask[:, agent_index, :].any(dim=-1, keepdim=True).to(dtype=dtype)

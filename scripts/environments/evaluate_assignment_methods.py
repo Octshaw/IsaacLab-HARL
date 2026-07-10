@@ -5139,55 +5139,6 @@ def _new_viewpoints_from_env(unwrapped) -> torch.Tensor:
     return torch.zeros(unwrapped.num_envs, dtype=torch.float32, device=unwrapped.device)
 
 
-def _actor_checkpoint_path(model_dir: Path, agent_name: str, agent_id: int) -> Path:
-    candidates = (
-        model_dir / f"actor_agent_{agent_name}.pt",
-        model_dir / f"actor_agent_{agent_id}.pt",
-    )
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    raise FileNotFoundError(f"Could not find actor checkpoint for {agent_name}; checked {candidates}")
-
-
-def _load_assignment_actors(wrapper, algo_args: dict, model_dir: Path, device: torch.device):
-    actor_args = {**algo_args["model"], **algo_args["algo"]}
-    actors = []
-    for agent_id, agent_name in enumerate(wrapper.agents):
-        actor = ALGO_REGISTRY[algorithm](
-            actor_args,
-            wrapper.observation_space[agent_id],
-            wrapper.action_space[agent_id],
-            device=device,
-        )
-        checkpoint_path = _actor_checkpoint_path(model_dir, agent_name, agent_id)
-        state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-        try:
-            actor.actor.load_state_dict(state_dict)
-        except RuntimeError as exc:
-            raise RuntimeError(
-                f"Failed to load {checkpoint_path}. Use an assignment-mode Discrete/Categorical checkpoint, "
-                "not an old 9D continuous checkpoint or a checkpoint trained with a different fixed-N viewpoint count."
-            ) from exc
-        actor.prep_rollout()
-
-        act_layer = getattr(actor.actor, "act", None)
-        action_type = getattr(act_layer, "action_type", None)
-        action_head = getattr(act_layer, "action_out", None)
-        action_head_name = action_head.__class__.__name__ if action_head is not None else None
-        print(
-            f"[INFO]: restored {agent_name} from {checkpoint_path} "
-            f"action_type={action_type} distribution_head={action_head_name}"
-        )
-        if action_type != "Discrete" or action_head_name != "Categorical":
-            raise RuntimeError(
-                "assignment_rl expected HARL Categorical actor for Discrete action space, "
-                f"got action_type={action_type}, distribution_head={action_head_name}"
-            )
-        actors.append(actor)
-    return actors
-
-
 def _assert_available_actions(wrapper, available_actions: torch.Tensor | None) -> None:
     if available_actions is None:
         raise RuntimeError("assignment_rl requires available_actions, got None")
@@ -5812,6 +5763,10 @@ def _evaluate_baseline_methods(methods: list[str], env_cfg) -> tuple[list[dict],
 
 
 def _evaluate_assignment_rl(env_cfg, agent_cfg: dict) -> list[dict]:
+    raise RuntimeError(
+        "Comparison-method assignment RL remains disabled and hard-rejects before any checkpoint load. "
+        "Use a dedicated validated assignment playback entry point."
+    )
     if args_cli.assignment_checkpoint_dir is None:
         raise ValueError("--assignment_checkpoint_dir is required when methods include assignment_rl")
     model_dir = Path(args_cli.assignment_checkpoint_dir).expanduser().resolve()
@@ -5821,7 +5776,7 @@ def _evaluate_assignment_rl(env_cfg, agent_cfg: dict) -> list[dict]:
     wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
     prereset_coverage_snapshots, original_reset_idx = _install_prereset_coverage_capture(wrapper.unwrapped)
     device = init_device(agent_cfg["device"])
-    actors = _load_assignment_actors(wrapper, agent_cfg, model_dir, device)
+    raise AssertionError("unreachable: assignment checkpoint loading is disabled above")
     reset_kwargs = {"seed": args_cli.seed} if args_cli.seed is not None else {}
     obs, _, available_actions = wrapper.reset(**reset_kwargs)
     _assert_available_actions(wrapper, available_actions)

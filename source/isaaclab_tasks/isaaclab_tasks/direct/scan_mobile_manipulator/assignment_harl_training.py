@@ -38,11 +38,31 @@ from harl.utils.envs_tools import make_eval_env, make_render_env, make_train_env
 from harl.utils.models_tools import init_device
 
 try:
+    from .assignment_checkpoint_contract import CompatibilityPurpose
+    from .assignment_checkpoint_load import load_assignment_checkpoint
+    from .assignment_checkpoint_save import (
+        AssignmentCheckpointSaveCoordinator,
+        AssignmentCheckpointSaveError,
+        build_assignment_checkpoint_contract_manifest,
+        capture_assignment_checkpoint_runtime_state,
+        infer_assignment_checkpoint_kind,
+    )
     from .assignment_harl_adapter import get_harl_scalar_action_dim
     from .assignment_harl_wrapper import AssignmentHarlWrapper
+    from .assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence
 except ImportError:  # Allows direct file-based smoke tests after adding this directory to sys.path.
+    from assignment_checkpoint_contract import CompatibilityPurpose  # type: ignore
+    from assignment_checkpoint_load import load_assignment_checkpoint  # type: ignore
+    from assignment_checkpoint_save import (  # type: ignore
+        AssignmentCheckpointSaveCoordinator,
+        AssignmentCheckpointSaveError,
+        build_assignment_checkpoint_contract_manifest,
+        capture_assignment_checkpoint_runtime_state,
+        infer_assignment_checkpoint_kind,
+    )
     from assignment_harl_adapter import get_harl_scalar_action_dim  # type: ignore
     from assignment_harl_wrapper import AssignmentHarlWrapper  # type: ignore
+    from assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence  # type: ignore
 
 
 SUPPORTED_ASSIGNMENT_ALGORITHMS = ("happo", "hatrpo", "haa2c")
@@ -248,6 +268,16 @@ class AssignmentIsaacLabEnv:
             )
 
         self.assignment_env = AssignmentHarlWrapper(raw_env)
+        profile_config = self.assignment_env.assignment_lifecycle_profile_config
+        if not bool(profile_config.get("training_allowed", True)):
+            raise RuntimeError(
+                str(
+                    profile_config.get(
+                        "training_blocked_reason",
+                        f"assignment_lifecycle_profile={profile_config.get('profile_name')!r} is not training-ready.",
+                    )
+                )
+            )
         # HARL save() and video finalization traverse runner.env.env.*.
         self.env = self.assignment_env
         self.unwrapped = self.assignment_env.unwrapped
@@ -353,6 +383,14 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
 
     def __init__(self, args, algo_args, env_args):
         self.assignment_rl = bool(env_args.get("assignment_rl", False))
+        self._assignment_checkpoint_generation = 0
+        self._assignment_checkpoint_coordinator: AssignmentCheckpointSaveCoordinator | None = None
+        self.assignment_checkpoint_load_result = None
+        self.assignment_policy_sequence_contract = (
+            validate_assignment_lifecycle_policy_sequence(algo_args=algo_args, env_args=env_args)
+            if self.assignment_rl
+            else None
+        )
         self._assignment_collect_mask_printed = False
 
         self.args = args
@@ -564,6 +602,112 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
             self._assignment_collect_mask_printed = True
         return super().collect(step)
 
+    def save(
+        self,
+        directory,
+        *,
+        checkpoint_kind: str | None = None,
+        episode_or_update_index: int | None = None,
+    ):
+        """Route supported assignment state-dict saves through project-owned metadata coordination."""
+
+        if not self.assignment_rl:
+            return super().save(directory)
+        profile = str(
+            self.env.assignment_env.assignment_lifecycle_profile_config["profile_name"]
+        )
+        if profile in {"lifecycle_ablation", "diagnostics_hidden_state"}:
+            raise AssignmentCheckpointSaveError(
+                f"profile {profile!r} is not a native assignment training checkpoint profile"
+            )
+        if profile == "lifecycle_contract_c" and self.save_entire_model:
+            raise AssignmentCheckpointSaveError(
+                "lifecycle_contract_c checkpoint v1 requires save_entire_model=False "
+                "and state_dict serialization"
+            )
+        if profile == "legacy" and (
+            self.save_entire_model
+            or str(self.args["algo"]).lower() != "happo"
+            or bool(self.share_param)
+        ):
+            # Preserve legacy full-model and non-native legacy configurations without
+            # claiming assignment_checkpoint_contract_v1 compatibility.
+            return super().save(directory)
+        if profile not in {"legacy", "lifecycle_contract_c"}:
+            raise AssignmentCheckpointSaveError(
+                f"unknown assignment lifecycle profile {profile!r}"
+            )
+
+        inferred_index = episode_or_update_index
+        if checkpoint_kind is None:
+            checkpoint_kind, inferred_index = infer_assignment_checkpoint_kind(
+                self.run_dir,
+                directory,
+            )
+        runtime_state = capture_assignment_checkpoint_runtime_state(self)
+        manifest = build_assignment_checkpoint_contract_manifest(runtime_state)
+        if self._assignment_checkpoint_coordinator is None:
+            self._assignment_checkpoint_coordinator = AssignmentCheckpointSaveCoordinator(
+                self.run_dir
+            )
+
+        actor_state_dicts = tuple(
+            (name, self.actor[index].actor.state_dict())
+            for index, name in enumerate(runtime_state.ordered_agent_names)
+        )
+        critic_state_dict = self.critic.critic.state_dict()
+        value_normalizer_state_dict = (
+            None
+            if self.value_normalizer is None
+            else self.value_normalizer.state_dict()
+        )
+        result = self._assignment_checkpoint_coordinator.save_checkpoint(
+            checkpoint_directory=directory,
+            checkpoint_kind=checkpoint_kind,
+            checkpoint_generation=self._assignment_checkpoint_generation,
+            manifest=manifest,
+            actor_state_dicts=actor_state_dicts,
+            critic_state_dict=critic_state_dict,
+            value_normalizer_state_dict=value_normalizer_state_dict,
+            episode_or_update_index=inferred_index,
+        )
+        self._assignment_checkpoint_generation += 1
+        return result
+
+    def restore(self):
+        """Use the shared strict loader for assignment weight continuation."""
+
+        if not self.assignment_rl:
+            return super().restore()
+        model_dir = self.algo_args["train"]["model_dir"]
+        if model_dir is None:
+            return None
+        acknowledged = self.env_args.get(
+            "acknowledge_weight_continuation_reset",
+            False,
+        )
+        if acknowledged is not True:
+            raise RuntimeError(
+                "Assignment weight continuation requires explicit "
+                "--acknowledge-weight-continuation-reset before any checkpoint load."
+            )
+        runtime_state = capture_assignment_checkpoint_runtime_state(self)
+        current_manifest = build_assignment_checkpoint_contract_manifest(runtime_state)
+        actor_modules = tuple(
+            (name, self.actor[index].actor)
+            for index, name in enumerate(runtime_state.ordered_agent_names)
+        )
+        self.assignment_checkpoint_load_result = load_assignment_checkpoint(
+            checkpoint_directory=model_dir,
+            purpose=CompatibilityPurpose.VALIDATED_WEIGHT_CONTINUATION,
+            current_manifest=current_manifest,
+            actor_modules=actor_modules,
+            critic_module=self.critic.critic,
+            value_normalizer_module=self.value_normalizer,
+            continuation_reset_acknowledged=True,
+        )
+        return self.assignment_checkpoint_load_result
+
     def _print_assignment_env_summary(self) -> None:
         print("[INFO]: Assignment RL mode enabled: using repo-local AssignmentIsaacLabEnv/AssignmentHarlWrapper")
         print(f"[INFO]: Assignment RL num_viewpoints={self.env.num_viewpoints}")
@@ -612,4 +756,5 @@ __all__ = [
     "_compute_reward_accumulator_total",
     "_should_accumulate_reward_key",
     "register_assignment_harl_runner",
+    "validate_assignment_lifecycle_policy_sequence",
 ]

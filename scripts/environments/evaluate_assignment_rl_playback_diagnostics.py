@@ -64,6 +64,18 @@ parser.add_argument("--num_envs", type=int, default=1, help="Number of vectorize
 parser.add_argument("--task", type=str, default=None, help="Isaac Lab task name.")
 parser.add_argument("--seed", type=int, default=None, help="Optional environment seed.")
 parser.add_argument("--dir", type=str, required=True, help="Assignment RL checkpoint model directory.")
+parser.add_argument(
+    "--assignment_checkpoint_ablation",
+    type=str,
+    choices=("lifecycle_contract_c_checkpoint_to_lifecycle_ablation_evaluation_v1",),
+    default=None,
+    help="Explicit validator-owned lifecycle checkpoint ablation policy.",
+)
+parser.add_argument(
+    "--allow_unversioned_legacy_checkpoint",
+    action="store_true",
+    help="Explicitly allow resolver-disabled legacy actor evaluation without native metadata.",
+)
 parser.add_argument("--num_episodes", type=int, default=1, help="Number of playback episodes.")
 parser.add_argument("--max_steps", type=int, default=300, help="Maximum wrapper steps per episode.")
 parser.add_argument("--output_dir", type=str, required=True, help="Directory for diagnostics.json/CSV outputs.")
@@ -134,6 +146,13 @@ from isaaclab.envs import DirectMARLEnvCfg, DirectRLEnvCfg, ManagerBasedRLEnvCfg
 
 import isaaclab_tasks  # noqa: F401,E402
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_adapter import make_harl_action_tensor  # noqa: E402
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_contract import (  # noqa: E402
+    CompatibilityPurpose,
+)
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_load import (  # noqa: E402
+    build_assignment_evaluation_contract_manifest,
+    load_assignment_checkpoint,
+)
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import make_assignment_harl_env  # noqa: E402
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_diagnostics import (  # noqa: E402
     AssignmentLifecycleDiagnosticsAdapter,
@@ -748,19 +767,12 @@ def _coverage_from_env(unwrapped: Any, done_envs: torch.Tensor, capture: dict[st
     return covered
 
 
-def _actor_checkpoint_path(model_dir: Path, agent_name: str, agent_id: int) -> Path:
-    candidates = (
-        model_dir / f"actor_agent_{agent_name}.pt",
-        model_dir / f"actor_agent_{agent_id}.pt",
-    )
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    joined = ", ".join(str(path) for path in candidates)
-    raise FileNotFoundError(f"Could not find assignment actor checkpoint for {agent_name}; checked: {joined}")
-
-
-def _load_assignment_actors(wrapper: Any, algo_args: dict[str, Any], model_dir: Path, device: torch.device):
+def _build_and_load_assignment_actors(
+    wrapper: Any,
+    algo_args: dict[str, Any],
+    model_dir: Path,
+    device: torch.device,
+):
     actor_args = {**algo_args["model"], **algo_args["algo"]}
     actors = []
     for agent_id, agent_name in enumerate(wrapper.agents):
@@ -770,32 +782,44 @@ def _load_assignment_actors(wrapper: Any, algo_args: dict[str, Any], model_dir: 
             wrapper.action_space[agent_id],
             device=device,
         )
-        checkpoint_path = _actor_checkpoint_path(model_dir, agent_name, agent_id)
-        state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-        try:
-            actor.actor.load_state_dict(state_dict)
-        except RuntimeError as exc:
-            raise RuntimeError(
-                f"Failed to load {checkpoint_path}. Expected assignment-mode Discrete/Categorical actor "
-                "weights for this fixed-N viewpoint count, not old N=12 assignment or 9D continuous scan weights."
-            ) from exc
-        actor.prep_rollout()
         actors.append(actor)
 
         act_layer = getattr(actor.actor, "act", None)
         action_type = getattr(act_layer, "action_type", None)
         action_head = getattr(act_layer, "action_out", None)
         action_head_name = action_head.__class__.__name__ if action_head is not None else None
-        print(
-            f"[INFO]: restored {agent_name} from {checkpoint_path} "
-            f"action_type={action_type} distribution_head={action_head_name}"
-        )
         if action_type != "Discrete" or action_head_name != "Categorical":
             raise RuntimeError(
                 "assignment diagnostics expected HARL Categorical actor for Discrete action space, "
                 f"got action_type={action_type}, distribution_head={action_head_name}"
             )
-    return actors
+    current_manifest = build_assignment_evaluation_contract_manifest(
+        wrapper=wrapper,
+        actors=actors,
+        algo_args=algo_args,
+        algorithm_name=ALGORITHM,
+    )
+    purpose = (
+        CompatibilityPurpose.EXPLICIT_ABLATION_EVALUATION
+        if args_cli.assignment_checkpoint_ablation is not None
+        else CompatibilityPurpose.NORMAL_EVALUATION
+    )
+    result = load_assignment_checkpoint(
+        checkpoint_directory=model_dir,
+        purpose=purpose,
+        current_manifest=current_manifest,
+        actor_modules=tuple(
+            (name, actors[index].actor)
+            for index, name in enumerate(wrapper.agents)
+        ),
+        explicit_ablation_name=args_cli.assignment_checkpoint_ablation,
+        allow_unversioned_legacy_fallback=bool(
+            args_cli.allow_unversioned_legacy_checkpoint
+        ),
+    )
+    for actor in actors:
+        actor.prep_rollout()
+    return actors, result
 
 
 def _assert_available_actions(wrapper: Any, available_actions: torch.Tensor | None) -> None:
@@ -804,15 +828,6 @@ def _assert_available_actions(wrapper: Any, available_actions: torch.Tensor | No
     expected_shape = (wrapper.num_envs, wrapper.num_agents, wrapper.num_viewpoints + 1)
     if tuple(available_actions.shape) != expected_shape:
         raise RuntimeError(f"available_actions shape mismatch: expected {expected_shape}, got {tuple(available_actions.shape)}")
-
-
-def _checkpoint_kind(model_dir: Path) -> str:
-    name = model_dir.name.lower()
-    if name == "models":
-        return "models"
-    if name == "best_model":
-        return "best_model"
-    return "unknown"
 
 
 def _exp_name_from_checkpoint(model_dir: Path) -> str:
@@ -2039,9 +2054,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         raise FileNotFoundError(f"Model directory does not exist: {model_dir}")
     output_dir = Path(args_cli.output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_kind = _checkpoint_kind(model_dir)
-    if checkpoint_kind == "best_model":
-        print("[WARN]: best_model from pre-9D-2A runs may have polluted Total_Reward accounting. Use as a debug artifact only.")
+    checkpoint_kind = "unvalidated"
 
     env_cfg.scene.num_envs = args_cli.num_envs
     if args_cli.seed is not None:
@@ -2066,11 +2079,23 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     wrapper = None
     capture_state: dict[str, Any] | None = None
     lifecycle_adapter: AssignmentLifecycleDiagnosticsAdapter | None = None
+    checkpoint_load_result = None
     try:
         wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
         capture_state = _install_prereset_coverage_capture(wrapper.unwrapped)
         device = init_device(agent_cfg["device"])
-        actors = _load_assignment_actors(wrapper, agent_cfg, model_dir, device)
+        actors, checkpoint_load_result = _build_and_load_assignment_actors(
+            wrapper,
+            agent_cfg,
+            model_dir,
+            device,
+        )
+        checkpoint_kind = checkpoint_load_result.checkpoint_kind
+        if checkpoint_kind == "best":
+            print(
+                "[WARN]: best_model from pre-9D-2A runs may have polluted Total_Reward accounting. "
+                "Use as a debug artifact only."
+            )
         print(
             "[INFO]: Assignment RL playback diagnostics env "
             f"num_envs={wrapper.num_envs} num_agents={wrapper.num_agents} "
@@ -2343,6 +2368,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 "method": "rl_checkpoint",
                 "checkpoint_dir": str(model_dir),
                 "checkpoint_kind": checkpoint_kind,
+                "checkpoint_generation": checkpoint_load_result.checkpoint_generation,
+                "checkpoint_load_purpose": checkpoint_load_result.load_purpose.value,
+                "checkpoint_named_ablation": checkpoint_load_result.named_ablation_used,
+                "checkpoint_legacy_fallback": checkpoint_load_result.legacy_fallback_used,
                 "exp_name": _exp_name_from_checkpoint(model_dir),
                 "task": args_cli.task,
                 "algorithm": ALGORITHM,

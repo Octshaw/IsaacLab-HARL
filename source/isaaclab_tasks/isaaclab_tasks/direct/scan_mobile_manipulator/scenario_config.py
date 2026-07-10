@@ -39,6 +39,16 @@ SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES = {"per_robot_target"}
 SUPPORTED_ASSIGNMENT_COOLDOWN_TRIGGER_MODES = {"streak", "budget", "budget_and_streak"}
 SUPPORTED_ASSIGNMENT_REDIRECT_GUARDRAIL_CONTEXTS = {"recent_budget_trigger"}
 SUPPORTED_ASSIGNMENT_FAILED_PAIR_MEMORY_SOURCES = {"budget_trigger"}
+SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES = {
+    "legacy",
+    "lifecycle_ablation",
+    "lifecycle_contract_c",
+    "diagnostics_hidden_state",
+}
+
+ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS = (
+    "assignment_lifecycle_profile",
+)
 
 ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
     "assignment_cooldown_enabled",
@@ -238,6 +248,11 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
 
     assignment = _mapping(config.get("assignment"), "assignment", required=False)
     _put(defaults, "viewpoint_candidate_top_k", assignment.get("viewpoint_candidate_top_k"))
+
+    for attr in ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS:
+        _put(defaults, attr, config.get(attr))
+    assignment_lifecycle = _mapping(config.get("assignment_lifecycle"), "assignment_lifecycle", required=False)
+    _put(defaults, "assignment_lifecycle_profile", assignment_lifecycle.get("profile"))
 
     for attr in ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS:
         _put(defaults, attr, config.get(attr))
@@ -529,6 +544,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
         _validate_inter_robot_conflict_diagnostics_metadata(config)
         _validate_target_conflict_candidate_comparison_metadata(config)
         _validate_conflict_aware_baseline_metadata(config)
+        _validate_assignment_lifecycle_metadata(config)
         _validate_assignment_cooldown_metadata(config)
         _validate_assignment_redirect_guardrail_metadata(config)
         _validate_assignment_failed_pair_memory_metadata(config)
@@ -578,6 +594,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
     if capability_config_path is not None:
         resolve_path(capability_config_path, repo_root=repo_root, must_exist=True, label="capabilities.config_path")
     _ensure_output_parent(getattr(args, "result_file", None), repo_root=repo_root, label="output.result_file")
+    _validate_assignment_lifecycle_args(args)
     _validate_assignment_cooldown_args(args)
     _validate_assignment_redirect_guardrail_args(args)
     _validate_assignment_failed_pair_memory_args(args)
@@ -1123,6 +1140,36 @@ def _validate_conflict_aware_baseline_metadata(config: Mapping[str, Any]) -> Non
     if max_pairs is not None and (not isinstance(max_pairs, int) or max_pairs < 0):
         raise ValueError(
             f"conflict_aware_baseline.max_pairs_sample must be a non-negative integer, got {max_pairs!r}."
+        )
+
+
+def _validate_assignment_lifecycle_metadata(config: Mapping[str, Any]) -> None:
+    values = {
+        attr: config.get(attr)
+        for attr in ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS
+        if config.get(attr) is not None
+    }
+    block = _mapping(config.get("assignment_lifecycle"), "assignment_lifecycle", required=False)
+    if block.get("profile") is not None:
+        values["assignment_lifecycle_profile"] = block.get("profile")
+    _validate_assignment_lifecycle_values(values)
+
+
+def _validate_assignment_lifecycle_args(args: Namespace) -> None:
+    values = {
+        attr: getattr(args, attr, None)
+        for attr in ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS
+        if getattr(args, attr, None) is not None
+    }
+    _validate_assignment_lifecycle_values(values)
+
+
+def _validate_assignment_lifecycle_values(values: Mapping[str, Any]) -> None:
+    profile = values.get("assignment_lifecycle_profile")
+    if profile is not None and str(profile).strip().lower() not in SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES:
+        raise ValueError(
+            "assignment_lifecycle_profile must be one of "
+            f"{sorted(SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES)!r}, got {profile!r}."
         )
 
 
