@@ -2,53 +2,50 @@
 
 ## Current Status
 
-Phase 9G-8H-2 completed one bounded headless proposal/effective attribution playback.
+Phase 9G-8I-0 completed the documentation-only design and static preflight for one fresh 100k-configured-step `lifecycle_contract_c` training run.
 
-Classification: `PASS`.
+Classification: `CONTROLLED-TRAINING-READY`.
 
-The uncommitted Phase 9G-8H-1 diagnostic ran exactly once for 300 environment decisions with one environment, three robots, N=50, seed 1, and the accepted final generation-2 checkpoint.
+The Phase 9G-8H attribution implementation and evidence are committed at baseline `7875612117fbf617aa5f740ebca6dfbd0280485b` (`feat(assignment): add validated playback attribution diagnostics`). The pre-design worktree was clean.
 
-## Runtime Result
+## Frozen Manual Experiment
 
-- Process exited naturally with code 0 after 142.224 seconds.
-- Console contained 300 aggregate decision lines and 900 compact robot lines.
-- The three frozen artifacts parsed successfully: 900 joined rows, one summary, and 12 target segments.
-- Row/action/controller/event/physical/coverage/summary/segment invariants passed.
-- `unclassified=0`, `invariant_break=0`, duplicate row keys=0, and duplicate effective target decisions=0.
-- Episode split was 299 decisions in episode 0 plus one decision after reset in episode 1.
+```text
+HAPPO / EP / feed-forward / share_param=false
+fresh start; no --dir or checkpoint load
+num_envs=1
+M=3, N=50
+episode_length=300
+num_env_steps=100000
+save_interval=20 rollouts
+log_interval=1 rollout
+seed=1
+```
 
-## Behavioral Attribution
+Installed HARL will execute 333 complete rollouts, collect 99,900 environment transitions and 299,700 robot decisions, and run 333 update cycles. The 100-transition remainder is not collected because the runner floors to complete rollouts.
 
-- `robot_0`: 300 policy noops, 300 effective-idle steps, no target, rejection, command, motion, completion, or release.
-- `robot_1`: 300 effective-executing steps, eight segments, five completions, one budget release, one reset ending, and one playback-truncated ending.
-- `robot_2`: 248 policy noops, 239 effective-idle steps, 61 executing steps, four segments, two completions, one budget release, and nine Contract-C noop continuations.
-- All proposal rejection counters were zero. The workload imbalance was driven mainly by policy noop, not resolver rejection.
-- Exact-target exclusivity held on all 300 decisions; no exact-claim conflict was sampled.
-
-## Active Implementation
-
-- Pure collector: `assignment_playback_attribution_diagnostics.py`.
-- Default-off playback integration: `play_assignment.py`.
-- Fake regression: `test_assignment_playback_attribution_diagnostics.py`.
-- Event draining remains owned by the runtime adapter and wrapper.
-- The implementation remains uncommitted pending review.
+The unique experiment parent was absent during preflight. The exact foreground PowerShell command, checkpoint-v2 expectations, 63-tag TensorBoard inventory, trend-review plan, and later best/final attribution comparison are frozen in the Phase 9G-8I-0 report.
 
 ## Boundaries
 
-Phase 9G-8H-2 changed documentation only. It did not modify production Python, tests, YAML, resolver, Contract C, observation, mask, reward, controller, environment, checkpoint, HARL, or Conda behavior.
+This experiment changes only the configured duration and approved save/log cadence. It does not change resolver behavior, Contract C, observations, masks, rewards, controller/environment behavior, policy architecture, YAML defaults, or checkpoint behavior.
 
-No training, continuation, evaluation, GUI, visual inspection, video, second playback, automatic retry, or commit occurred. No critic or ValueNorm state was restored.
+No source, test, YAML, training, playback, checkpoint load, AppLauncher, Isaac Sim, evaluation, GUI, environment construction, or commit occurred in Phase 9G-8I-0.
+
+No automatic retry or 300k extension is authorized. Checkpoint and TensorBoard review must precede any separately authorized best/final attribution playback.
 
 ## Next Step
 
-Review the uncommitted 8H-0 through 8H-2 implementation and runtime evidence. Do not commit, rerun playback, begin a repair, train, evaluate, or continue a checkpoint automatically.
+After review, the next possible phase is:
 
-## Detailed Reports / Archives
+```text
+Phase 9G-8I-1:
+User-Executed Fresh 100k Controlled Training
+```
 
-- `AgentRead/20260720/PHASE9G8H2_BOUNDED_PROPOSAL_EFFECTIVE_ATTRIBUTION_PLAYBACK_REPORT.md`
-- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8H2_BOUNDED_ATTRIBUTION_PLAYBACK_20260720.md`
-- `AgentRead/20260720/PHASE9G8H1_PLAYBACK_PROPOSAL_EFFECTIVE_ATTRIBUTION_DIAGNOSTIC_IMPLEMENTATION_AND_FAKE_REGRESSION.md`
-- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8H1_ATTRIBUTION_IMPLEMENTATION_20260720.md`
-- `AgentRead/20260720/PHASE9G8H0_PLAYBACK_PROPOSAL_EFFECTIVE_ATTRIBUTION_AND_LOAD_BALANCE_DIAGNOSTIC_DESIGN.md`
-- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8H0_PLAYBACK_ATTRIBUTION_DESIGN_20260720.md`
-- `AgentRead/20260710/PHASE9G8G1R2T_TIMEOUT_CORRECTED_CONTROLLED_SMOKE_EXECUTION_REPORT.md`
+The user runs the frozen command manually from the repository root in a foreground PowerShell process with no short external timeout. Codex must not launch the long run.
+
+## Detailed Report / Archive
+
+- `AgentRead/20260720/PHASE9G8I0_POLICY_NOOP_LOAD_IMBALANCE_CONTROLLED_TRAINING_DESIGN_AND_PREFLIGHT.md`
+- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I0_CONTROLLED_TRAINING_DESIGN_20260720.md`
