@@ -39,6 +39,13 @@ from scenario_config import (
     smoke_defaults_from_config,
     validate_smoke_args,
 )
+from assignment_playback_attribution_diagnostics import (
+    capture_assignment_playback_physical_snapshot,
+    format_assignment_playback_attribution_row,
+    make_assignment_playback_attribution_collector_if_enabled,
+    stack_assignment_controller_actions,
+    validate_assignment_playback_attribution_cli,
+)
 
 from isaaclab.app import AppLauncher
 
@@ -88,6 +95,22 @@ parser.add_argument(
     action="store_true",
     help="Stop play when any environment finishes one episode.",
 )
+parser.add_argument(
+    "--log_assignment_proposal_effective",
+    action="store_true",
+    help="Write playback-only proposal/effective attribution diagnostics.",
+)
+parser.add_argument(
+    "--assignment_proposal_effective_output_dir",
+    type=str,
+    default=None,
+    help="New output directory for proposal/effective attribution files.",
+)
+parser.add_argument(
+    "--print_assignment_proposal_effective",
+    action="store_true",
+    help="Print compact per-robot proposal/effective attribution rows.",
+)
 
 
 AppLauncher.add_app_launcher_args(parser)
@@ -95,6 +118,11 @@ parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli, hydra_args = parser.parse_known_args()
 if args_cli.scenario_config is not None:
     validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
+ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR = validate_assignment_playback_attribution_cli(
+    log_enabled=bool(args_cli.log_assignment_proposal_effective),
+    print_enabled=bool(args_cli.print_assignment_proposal_effective),
+    output_dir=args_cli.assignment_proposal_effective_output_dir,
+)
 sys.argv = [sys.argv[0]] + hydra_args
 
 
@@ -371,6 +399,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         print(f"[INFO]: Assignment play scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
 
     wrapper = None
+    attribution_collector = None
     try:
         wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
         device = init_device(agent_cfg["device"])
@@ -388,9 +417,24 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
             f"action_spaces={wrapper.action_space}"
         )
 
+        attribution_collector = make_assignment_playback_attribution_collector_if_enabled(
+            log_enabled=bool(args_cli.log_assignment_proposal_effective),
+            print_enabled=bool(args_cli.print_assignment_proposal_effective),
+            output_dir=ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR,
+            method_name=algorithm,
+            num_envs=wrapper.num_envs,
+            num_robots=wrapper.num_agents,
+            num_tasks=wrapper.num_viewpoints,
+            robot_names=wrapper.agents,
+            noop_raw_id=wrapper.noop_action_id,
+            distance_dwell_thresholds=getattr(wrapper.unwrapped, "scan_pos_tolerance", None),
+        )
+
         reset_kwargs = {"seed": args_cli.seed} if args_cli.seed is not None else {}
         obs, _, available_actions = wrapper.reset(**reset_kwargs)
         _assert_available_actions(wrapper, available_actions)
+        if attribution_collector is not None:
+            attribution_collector.reset_envs(episode_ids=torch.zeros(wrapper.num_envs, dtype=torch.long))
         print(f"[INFO]: reset available_actions shape={tuple(available_actions.shape)} device={available_actions.device}")
 
         actions = make_harl_action_tensor(wrapper.num_envs, wrapper.action_space, device=wrapper.device)
@@ -443,15 +487,50 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     )
 
             pre_step_diagnostics = _collect_pre_step_diagnostics(wrapper, available_actions, actions)
+            attribution_pre_state = None
+            if attribution_collector is not None:
+                attribution_pre_state = capture_assignment_playback_physical_snapshot(
+                    wrapper.unwrapped.get_assignment_problem()
+                )
             obs, _, rewards, dones, info, available_actions = wrapper.step(actions)
             _assert_available_actions(wrapper, available_actions)
             newly_covered_ids = _newly_covered_ids(pre_step_diagnostics["pre_covered_mask"], wrapper)
+            dones_env = torch.all(dones, dim=1)
 
-            if (
+            attribution_rows: list[dict[str, Any]] = []
+            if attribution_collector is not None:
+                lifecycle_resolution = wrapper.get_last_assignment_lifecycle_resolution()
+                if lifecycle_resolution is None:
+                    raise RuntimeError("assignment attribution requires a lifecycle-resolution payload after wrapper.step")
+                if attribution_pre_state is None:
+                    raise RuntimeError("assignment attribution pre-state was not captured")
+                if wrapper.last_assignment is None or wrapper.last_env_actions is None:
+                    raise RuntimeError("assignment attribution requires wrapper controller assignments and actions")
+                attribution_post_state = capture_assignment_playback_physical_snapshot(
+                    wrapper.unwrapped.get_assignment_problem()
+                )
+                controller_actions = stack_assignment_controller_actions(
+                    wrapper.last_env_actions,
+                    wrapper.agents,
+                )
+                attribution_rows = attribution_collector.record_decision(
+                    raw_actions=actions,
+                    selected_action_probabilities=selected_action_prob,
+                    pre_state=attribution_pre_state,
+                    lifecycle_resolution=lifecycle_resolution,
+                    controller_assignment=wrapper.last_assignment,
+                    controller_actions=controller_actions,
+                    post_state=attribution_post_state,
+                    post_state_pre_reset_available=~dones_env,
+                    dones=dones_env,
+                )
+
+            print_this_step = (
                 step_id <= args_cli.print_steps
                 or step_id % args_cli.diagnostic_interval == 0
                 or step_id == args_cli.max_steps
-            ):
+            )
+            if print_this_step:
                 _print_step_diagnostics(
                     step_id,
                     wrapper,
@@ -461,9 +540,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     selected_action_prob=selected_action_prob,
                     newly_covered_ids=newly_covered_ids,
                 )
-
-            dones_env = torch.all(dones, dim=1)
-
+                if args_cli.print_assignment_proposal_effective:
+                    for row in attribution_rows:
+                        print(format_assignment_playback_attribution_row(row))
 
             if args_cli.stop_on_done and bool(dones_env.any()):
                 completed_step = step_id
@@ -483,8 +562,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                     device=device,
                 )
 
+        if attribution_collector is not None:
+            attribution_collector.finalize()
         print(f"[OK] assignment play smoke completed steps={completed_step}, max_steps={args_cli.max_steps}")
     finally:
+        if attribution_collector is not None:
+            attribution_collector.finalize()
         if wrapper is not None:
             wrapper.close()
 

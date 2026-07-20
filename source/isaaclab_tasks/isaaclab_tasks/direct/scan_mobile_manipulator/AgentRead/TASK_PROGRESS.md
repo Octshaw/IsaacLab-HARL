@@ -2,45 +2,53 @@
 
 ## Current Status
 
-Phase 9G-8G-1R-2 completed preflight only and did not run the ValueNorm-fixed controlled smoke retry.
+Phase 9G-8H-2 completed one bounded headless proposal/effective attribution playback.
 
-Classification: `FAIL-PREFLIGHT`.
+Classification: `PASS`.
 
-The new semantic experiment parent was absent and the failed 9G-8G-1 result was preserved. However, the required project ValueNorm adapter/checkpoint-v2 production source and matching tests are still uncommitted on top of the current HEAD:
+The uncommitted Phase 9G-8H-1 diagnostic ran exactly once for 300 environment decisions with one environment, three robots, N=50, seed 1, and the accepted final generation-2 checkpoint.
 
-`8a5f46cb feat(assignment): complete lifecycle training checkpoint readiness`.
+## Runtime Result
 
-The frozen retry command was not executed. No result directory, checkpoint, manifest, TensorBoard event, AppLauncher, Isaac Sim instance, assignment environment, or training process was created.
+- Process exited naturally with code 0 after 142.224 seconds.
+- Console contained 300 aggregate decision lines and 900 compact robot lines.
+- The three frozen artifacts parsed successfully: 900 joined rows, one summary, and 12 target segments.
+- Row/action/controller/event/physical/coverage/summary/segment invariants passed.
+- `unclassified=0`, `invariant_break=0`, duplicate row keys=0, and duplicate effective target decisions=0.
+- Episode split was 299 decisions in episode 0 plus one decision after reset in episode 1.
 
-## Blocking Condition
+## Behavioral Attribution
 
-The retry requires a committed corrective production baseline. The worktree still contains uncommitted changes to:
+- `robot_0`: 300 policy noops, 300 effective-idle steps, no target, rejection, command, motion, completion, or release.
+- `robot_1`: 300 effective-executing steps, eight segments, five completions, one budget release, one reset ending, and one playback-truncated ending.
+- `robot_2`: 248 policy noops, 239 effective-idle steps, 61 executing steps, four segments, two completions, one budget release, and nine Contract-C noop continuations.
+- All proposal rejection counters were zero. The workload imbalance was driven mainly by policy noop, not resolver rejection.
+- Exact-target exclusivity held on all 300 decisions; no exact-claim conflict was sampled.
 
-- `assignment_value_normalizer_checkpoint.py`
-- `assignment_checkpoint_contract.py`
-- `assignment_checkpoint_save.py`
-- `assignment_checkpoint_load.py`
-- `assignment_harl_training.py`
-- the corresponding ValueNorm/checkpoint regression tests
+## Active Implementation
 
-Uncommitted AgentRead handoff files are expected documentation, but they do not satisfy the production/test commit requirement.
+- Pure collector: `assignment_playback_attribution_diagnostics.py`.
+- Default-off playback integration: `play_assignment.py`.
+- Fake regression: `test_assignment_playback_attribution_diagnostics.py`.
+- Event draining remains owned by the runtime adapter and wrapper.
+- The implementation remains uncommitted pending review.
 
-## Do Not Do
+## Boundaries
 
-- Do not execute the retry command until the corrective baseline is committed.
-- Do not reuse this preflight after any worktree change.
-- Do not load, change, delete, or continue from the failed 9G-8G-1 result.
-- Do not run playback, evaluation, comparison, another seed, or longer training.
-- Do not modify installed HARL, Conda, resolver, Contract C, lifecycle observations/masks, or YAML defaults.
+Phase 9G-8H-2 changed documentation only. It did not modify production Python, tests, YAML, resolver, Contract C, observation, mask, reward, controller, environment, checkpoint, HARL, or Conda behavior.
+
+No training, continuation, evaluation, GUI, visual inspection, video, second playback, automatic retry, or commit occurred. No critic or ValueNorm state was restored.
 
 ## Next Step
 
-Commit the reviewed ValueNorm adapter/checkpoint-v2 production and regression changes. Then perform a fresh 9G-8G-1R-2 preflight, including commit hash, clean production/test boundary, experiment-name collision, and failed-result isolation, before running the single frozen command.
+Review the uncommitted 8H-0 through 8H-2 implementation and runtime evidence. Do not commit, rerun playback, begin a repair, train, evaluate, or continue a checkpoint automatically.
 
 ## Detailed Reports / Archives
 
-- `AgentRead/20260710/PHASE9G8G1R2_VALUENORM_FIXED_CONTROLLED_TRAINING_SMOKE_RETRY_REPORT.md`
-- `AgentRead/20260710/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8G1R2_SMOKE_RETRY_20260710.md`
-- `AgentRead/20260710/PHASE9G8G1R1_VALUENORM_CHECKPOINT_ADAPTER_IMPLEMENTATION_AND_REGRESSION.md`
-- `AgentRead/20260710/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8G1R1_VALUENORM_IMPLEMENTATION_20260710.md`
-- `AgentRead/20260710/PHASE9G8G1R0_VALUENORM_CHECKPOINT_ROOT_CAUSE_AND_ADAPTER_DESIGN.md`
+- `AgentRead/20260720/PHASE9G8H2_BOUNDED_PROPOSAL_EFFECTIVE_ATTRIBUTION_PLAYBACK_REPORT.md`
+- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8H2_BOUNDED_ATTRIBUTION_PLAYBACK_20260720.md`
+- `AgentRead/20260720/PHASE9G8H1_PLAYBACK_PROPOSAL_EFFECTIVE_ATTRIBUTION_DIAGNOSTIC_IMPLEMENTATION_AND_FAKE_REGRESSION.md`
+- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8H1_ATTRIBUTION_IMPLEMENTATION_20260720.md`
+- `AgentRead/20260720/PHASE9G8H0_PLAYBACK_PROPOSAL_EFFECTIVE_ATTRIBUTION_AND_LOAD_BALANCE_DIAGNOSTIC_DESIGN.md`
+- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8H0_PLAYBACK_ATTRIBUTION_DESIGN_20260720.md`
+- `AgentRead/20260710/PHASE9G8G1R2T_TIMEOUT_CORRECTED_CONTROLLED_SMOKE_EXECUTION_REPORT.md`
