@@ -2,95 +2,180 @@
 
 ## Current Status
 
-Phase 9G-8I-0A implemented and validated the pure offline post-run audit tool for the planned fresh 100k `lifecycle_contract_c` training.
+Phase 9G-8I-2-1 executed and validated the frozen sequential deterministic attribution playbacks for the fresh 100k `best_model` and final `models` checkpoints.
 
-Classification: `OFFLINE-AUDIT-READY`.
+Classification:
 
-The current committed baseline is `fadda4248b33d958d3798ef90013f21457358564` (`docs(assignment): define fresh 100k policy-noop training experiment`). Phase 9G-8I-0A changes are uncommitted as required.
+~~~text
+BEST-FINAL-ATTRIBUTION-COMPARISON-COMPLETE
+~~~
 
-## Latest Completed Phase
+Both runs used actor-only `normal_evaluation`, deterministic masked `Categorical.mode()`, one environment, seed 1, 300 decisions, `lifecycle_contract_c`, feed-forward actors, `share_param=false`, and the existing Phase 9G-8H attribution schema.
 
-The new opt-in audit path reads:
+## Latest Results
 
-```text
-configs.json
-TensorBoard scalar events
-native-v2 contract manifests/fingerprints
-training-state completion markers
-checkpoint artifacts as opaque bytes for size/SHA-256 only
-```
+Both playbacks exited 0 and independently produced:
 
-It audits fresh-start identity, all 63 expected scalar tags, exact 300..99900 step coverage, finiteness, noop/valid invariants, frozen trend windows, best/final kinds and generations, artifact inventories/hashes, and temporary/legacy artifact absence.
+~~~text
+900 robot rows
+300 environment decisions
+exactly three attribution artifacts
+schema phase9g8h1_assignment_proposal_effective_attribution_v1
+zero duplicate row keys
+zero duplicate effective targets
+zero invariant failures
+zero unclassified rows
+zero nonfinite applicable values
+valid segment/reset continuity
+~~~
 
-It writes exactly:
+Checkpoint identities:
 
-```text
-assignment_training_run_audit.json
-assignment_training_run_audit.md
-```
+~~~text
+best_model:
+  kind best
+  generation 10
 
-## Key Files
+models:
+  kind final
+  generation 22
+
+purpose:
+  normal_evaluation
+
+legacy_fallback:
+  false
+~~~
+
+The runs were sequential. Best passed all technical checks before final started. Neither run was retried.
+
+## Comparison Decision
+
+The frozen one-update/best/final comparison supports:
+
+~~~text
+Mixed Outcome A1 + Outcome A3
+
+A1:
+  both 100k checkpoints remove the prior deterministic robot_0 noop collapse
+  and robot_2 idle-noop asymmetry
+
+A3:
+  best_model is healthier than final models on completion balance,
+  budget burden, coverage, and robot_1/robot_2 progress quality
+~~~
+
+Headline values:
+
+| Metric | One update | Best | Final |
+| --- | --- | --- | --- |
+| Proposal noops `[r0,r1,r2]` | `[300,0,248]` | `[0,0,0]` | `[0,0,0]` |
+| Executing `[r0,r1,r2]` | `[0,300,61]` | `[300,300,300]` | `[300,300,300]` |
+| Completions `[r0,r1,r2]` | `[0,5,2]` | `[6,8,6]` | `[12,5,3]` |
+| Total completions | 7 | 20 | 20 |
+| First-episode coverage | 0.36 | 0.70 | 0.68 |
+| Budget releases | 2 | 1 | 4 |
+| Jain completion fairness | 0.5632 | 0.9804 | 0.7491 |
+| Mean active robots | 1.2033 | 3.0 | 3.0 |
+
+Checkpoint preference:
+
+~~~text
+prefer best_model
+~~~
+
+Final is technically healthy and robot 0 improves, but robots 1 and 2 show more zero-motion/zero-progress execution and greater budget pressure. Resolver rejection remains zero in both runs.
+
+## Active Architecture
+
+The committed Phase 9G-8 lifecycle architecture remains unchanged:
+
+~~~text
+lifecycle_contract_c
+actor observation 1059
+shared observation 3183
+action dimension 51
+feed-forward HAPPO
+three independent actors
+shared centralized critic
+historical lifecycle mask replay
+native checkpoint contract v2
+~~~
+
+No source, test, YAML, reward, observation, mask, resolver, Contract C, ownership, controller, environment, checkpoint, HARL, or Conda behavior changed in Phase 9G-8I-2-1.
+
+## Files
 
 Created:
 
-```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_training_run_audit.py
-scripts/reinforcement_learning/harl/audit_assignment_training_run.py
-scripts/environments/test_assignment_training_run_audit.py
-```
+- `AgentRead/20260720/PHASE9G8I21_SEQUENTIAL_BEST_FINAL_BOUNDED_ATTRIBUTION_PLAYBACK_EXECUTION_AND_COMPARISON.md`
+- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I21_BEST_FINAL_ATTRIBUTION_EXECUTION_20260720.md`
 
-No existing training, playback, environment, checkpoint save/load, resolver, observation, mask, reward, controller, test, or YAML behavior file was modified.
+Updated:
+
+- `AgentRead/TASK_PROGRESS.md`
+
+Runtime results remain only under their separate `results/.../phase9g8i21_*` directories. Console logs remain under the two frozen `%TEMP%` paths.
 
 ## Latest Verification
 
-```text
-py_compile for module, CLI, and regression:
+~~~text
+starting repository/worktree preflight:
   PASS
 
-test_assignment_training_run_audit.py:
-  PASS, 4/4 groups
-  1 complete 333-step/63-tag success fixture
-  31 required failure cases
-
-test_assignment_checkpoint_contract_core.py:
-  PASS, 28/28
-
-accepted native-v2 smoke checkpoint-only audit:
-  PASS WITH WARNINGS, 0 hard failures
-
-accepted native-v2 smoke events-only audit:
-  PASS WITH WARNINGS, 63/63 tags, 0 nonfinite points
-
-forbidden import/deserialization and entry-isolation scans:
+best checkpoint metadata/artifact preflight:
   PASS
 
-git diff/trailing-whitespace checks:
+best bounded attribution playback:
+  exit 0
   PASS
-```
 
-The real-evidence warnings were expected: empty historical `progress.txt` and reduced one-point trend evidence.
+best full technical artifact validation:
+  PASS
 
-## Safety Boundary
+final checkpoint metadata/artifact preflight:
+  PASS
 
-The tool has no checkpoint tensor deserialization, actor/critic/ValueNorm construction, AppLauncher, Isaac/omni runtime import, or HARL runner/model import. Existing result directories are read-only; audit output must be outside the audited timestamped seed directory.
+final bounded attribution playback:
+  exit 0
+  PASS
 
-No training, playback, evaluation, checkpoint load/restore, environment construction, AppLauncher, Isaac Sim, GUI, HARL/Conda modification, or commit occurred.
+final full technical artifact validation:
+  PASS
+
+three-way offline comparison:
+  COMPLETE
+
+post-run relevant process check:
+  none active
+
+git diff --check:
+  PASS (line-ending warning only)
+~~~
+
+## Known Limits
+
+This is one deterministic 300-decision trajectory per checkpoint and one seed. It is not a convergence, statistical performance, stochastic-policy, or generalization result. The current attribution schema supports base XY displacement but not rotation, arm motion, or joint-level attribution.
+
+## Do Not Do
+
+Do not automatically run a second seed, stochastic evaluation, GUI/video, checkpoint continuation, 300k training, reward/resolver modification, or broader evaluation. Do not infer that equal execution means equal capability or required equal completion.
 
 ## Next Step
 
-The next phase remains:
+After review only, the single recommended bounded phase is:
 
-```text
-Phase 9G-8I-1:
-User-Executed Fresh 100k Controlled Training
-```
+~~~text
+Phase 9G-8I-3-0:
+Late-Training Policy-Drift Diagnosis Design Using best_model As Candidate
+~~~
 
-The user manually runs the unchanged command frozen by Phase 9G-8I-0. After it completes, run the offline audit against the exact timestamped seed child and review its JSON/Markdown before authorizing any best/final attribution playback.
-
-Codex must not launch the 100k run automatically. Do not infer per-agent participation, load balance, convergence, or production readiness from aggregate TensorBoard metrics.
+Do not start it automatically.
 
 ## Detailed Reports / Archives
 
-- `AgentRead/20260720/PHASE9G8I0A_CONTROLLED_TRAINING_POSTRUN_OFFLINE_AUDIT_TOOL_IMPLEMENTATION_AND_REGRESSION.md`
-- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I0A_OFFLINE_TRAINING_AUDIT_TOOL_20260720.md`
-- `AgentRead/20260720/PHASE9G8I0_POLICY_NOOP_LOAD_IMBALANCE_CONTROLLED_TRAINING_DESIGN_AND_PREFLIGHT.md`
+- `AgentRead/20260720/PHASE9G8I21_SEQUENTIAL_BEST_FINAL_BOUNDED_ATTRIBUTION_PLAYBACK_EXECUTION_AND_COMPARISON.md`
+- `AgentRead/20260720/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I21_BEST_FINAL_ATTRIBUTION_EXECUTION_20260720.md`
+- `AgentRead/20260720/PHASE9G8I20_BEST_VS_FINAL_PROPOSAL_EFFECTIVE_ATTRIBUTION_COMPARISON_DESIGN.md`
+- `AgentRead/20260720/PHASE9G8I1_FRESH_100K_CONTROLLED_TRAINING_EXECUTION_AND_OFFLINE_AUDIT_REVIEW.md`
+- `AgentRead/20260720/PHASE9G8H2_BOUNDED_PROPOSAL_EFFECTIVE_ATTRIBUTION_PLAYBACK_REPORT.md`
