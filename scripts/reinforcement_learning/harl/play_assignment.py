@@ -12,8 +12,10 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import math
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any
 
@@ -40,6 +42,8 @@ from scenario_config import (
     validate_smoke_args,
 )
 from assignment_playback_attribution_diagnostics import (
+    OUTPUT_FILENAMES as ASSIGNMENT_ATTRIBUTION_OUTPUT_FILENAMES,
+    SCHEMA_VERSION as ASSIGNMENT_ATTRIBUTION_SCHEMA_VERSION,
     capture_assignment_playback_physical_snapshot,
     format_assignment_playback_attribution_row,
     make_assignment_playback_attribution_collector_if_enabled,
@@ -48,6 +52,51 @@ from assignment_playback_attribution_diagnostics import (
 )
 
 from isaaclab.app import AppLauncher
+
+
+PRELAUNCH_INITIAL_CONDITION_PROFILE_CHOICES = (
+    "baseline_identity",
+    "pose_cycle_forward",
+    "pose_cycle_reverse",
+)
+
+
+def _validate_initial_condition_prelaunch_cli(
+    *,
+    profile_id: str | None,
+    attribution_logging_enabled: bool,
+    attribution_output_dir: str | Path | None,
+) -> None:
+    """Preserve early CLI failures without importing the task package."""
+
+    if profile_id is None:
+        return
+    if profile_id not in PRELAUNCH_INITIAL_CONDITION_PROFILE_CHOICES:
+        raise ValueError(
+            f"unknown initial-condition profile {profile_id!r}; "
+            f"expected one of {PRELAUNCH_INITIAL_CONDITION_PROFILE_CHOICES!r}"
+        )
+    if not attribution_logging_enabled:
+        raise ValueError(
+            "--assignment_initial_condition_profile requires "
+            "--log_assignment_proposal_effective"
+        )
+    if attribution_output_dir is None:
+        raise ValueError(
+            "--assignment_initial_condition_profile requires "
+            "--assignment_proposal_effective_output_dir"
+        )
+    output_path = Path(attribution_output_dir).expanduser().resolve()
+    if output_path.exists() and not output_path.is_dir():
+        raise NotADirectoryError(
+            f"initial-condition attribution output is not a directory: {output_path}"
+        )
+    if output_path.exists():
+        collisions = tuple(output_path.iterdir())
+        if collisions:
+            raise FileExistsError(
+                f"explicit initial-condition attribution output must be new/empty: {collisions[0]}"
+            )
 
 
 pre_parser = argparse.ArgumentParser(add_help=False)
@@ -111,6 +160,13 @@ parser.add_argument(
     action="store_true",
     help="Print compact per-robot proposal/effective attribution rows.",
 )
+parser.add_argument(
+    "--assignment_initial_condition_profile",
+    type=str,
+    choices=PRELAUNCH_INITIAL_CONDITION_PROFILE_CHOICES,
+    default=None,
+    help="Optional controlled playback-only robot start-pose profile.",
+)
 
 
 AppLauncher.add_app_launcher_args(parser)
@@ -122,6 +178,11 @@ ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR = validate_assignment_playback_attribution_cli
     log_enabled=bool(args_cli.log_assignment_proposal_effective),
     print_enabled=bool(args_cli.print_assignment_proposal_effective),
     output_dir=args_cli.assignment_proposal_effective_output_dir,
+)
+_validate_initial_condition_prelaunch_cli(
+    profile_id=args_cli.assignment_initial_condition_profile,
+    attribution_logging_enabled=bool(args_cli.log_assignment_proposal_effective),
+    attribution_output_dir=args_cli.assignment_proposal_effective_output_dir,
 )
 sys.argv = [sys.argv[0]] + hydra_args
 
@@ -153,6 +214,18 @@ from harl.utils.models_tools import init_device
 from isaaclab.envs import DirectMARLEnvCfg, DirectRLEnvCfg, ManagerBasedRLEnvCfg
 
 import isaaclab_tasks  # noqa: F401
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_initial_condition import (
+    INITIAL_CONDITION_MANIFEST_FILENAME,
+    INITIAL_CONDITION_PROFILE_CHOICES,
+    InitialConditionRunProvenance,
+    build_initial_condition_manifest,
+    make_initial_condition_request,
+    make_playback_policy_interface_contract,
+    validate_initial_condition_output_files,
+    validate_initial_condition_playback_cli,
+    validate_initial_condition_runtime_interface,
+    write_initial_condition_manifest_atomic,
+)
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_adapter import make_harl_action_tensor
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_contract import CompatibilityPurpose
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_load import (
@@ -161,6 +234,19 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_load im
 )
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import make_assignment_harl_env
 from isaaclab_tasks.utils.hydra import hydra_task_config
+
+
+if PRELAUNCH_INITIAL_CONDITION_PROFILE_CHOICES != INITIAL_CONDITION_PROFILE_CHOICES:
+    raise RuntimeError(
+        "pre-AppLauncher initial-condition profile vocabulary differs from the canonical registry: "
+        f"prelaunch={PRELAUNCH_INITIAL_CONDITION_PROFILE_CHOICES!r}, "
+        f"canonical={INITIAL_CONDITION_PROFILE_CHOICES!r}"
+    )
+validate_initial_condition_playback_cli(
+    profile_id=args_cli.assignment_initial_condition_profile,
+    attribution_logging_enabled=bool(args_cli.log_assignment_proposal_effective),
+    attribution_output_dir=args_cli.assignment_proposal_effective_output_dir,
+)
 
 
 algorithm = args_cli.algorithm.lower()
@@ -324,6 +410,126 @@ def _build_and_load_assignment_actors(wrapper, algo_args: dict, model_dir: Path,
     return actors, result
 
 
+def _resolved_bool(mapping: dict, key: str, *, field: str) -> bool:
+    value = mapping.get(key)
+    if not isinstance(value, bool):
+        raise ValueError(f"{field} must resolve to a boolean, got {value!r}")
+    return value
+
+
+def _attach_initial_condition_request(env_cfg, agent_cfg: dict) -> None:
+    profile_id = args_cli.assignment_initial_condition_profile
+    if profile_id is None:
+        return
+    existing_profile = getattr(env_cfg, "assignment_initial_condition_profile", None)
+    existing_request = getattr(env_cfg, "assignment_initial_condition_request", None)
+    if existing_profile is not None or existing_request is not None:
+        raise ValueError(
+            "controlled initial conditions must be selected only through "
+            "--assignment_initial_condition_profile; low-level profile/request values are not accepted"
+        )
+    model_cfg = agent_cfg.get("model")
+    algo_cfg = agent_cfg.get("algo")
+    device_cfg = agent_cfg.get("device")
+    if not isinstance(model_cfg, dict) or not isinstance(algo_cfg, dict) or not isinstance(device_cfg, dict):
+        raise ValueError("controlled initial-condition playback requires resolved HARL model/algo/device mappings")
+    policy_interface = make_playback_policy_interface_contract(
+        assignment_lifecycle_profile=str(getattr(env_cfg, "assignment_lifecycle_profile", "legacy")),
+        algorithm=algorithm,
+        use_recurrent_policy=_resolved_bool(
+            model_cfg, "use_recurrent_policy", field="agent.model.use_recurrent_policy"
+        ),
+        use_naive_recurrent_policy=_resolved_bool(
+            model_cfg, "use_naive_recurrent_policy", field="agent.model.use_naive_recurrent_policy"
+        ),
+        share_param=_resolved_bool(algo_cfg, "share_param", field="agent.algo.share_param"),
+        cuda_deterministic=_resolved_bool(
+            device_cfg, "cuda_deterministic", field="agent.device.cuda_deterministic"
+        ),
+    )
+    request = make_initial_condition_request(
+        profile_id=profile_id,
+        task_id=str(args_cli.task),
+        repository_root=REPO_ROOT,
+        policy_interface_contract=policy_interface,
+    )
+    env_cfg.assignment_initial_condition_profile = profile_id
+    env_cfg.assignment_initial_condition_request = request
+
+
+def _validated_initial_condition_result(wrapper):
+    profile_id = args_cli.assignment_initial_condition_profile
+    if profile_id is None:
+        return None
+    accessor = getattr(wrapper.unwrapped, "get_assignment_initial_condition_result", None)
+    if not callable(accessor):
+        raise RuntimeError("assignment environment does not expose the validated initial-condition result")
+    result = accessor()
+    if result is None:
+        raise RuntimeError(f"explicit initial-condition profile {profile_id!r} produced no validated result")
+    validate_initial_condition_runtime_interface(
+        result,
+        ordered_agent_ids=wrapper.agents,
+        observation_manifest=wrapper.assignment_observation_schema_manifest,
+    )
+    return result
+
+
+def _repository_commit() -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    commit = completed.stdout.strip()
+    if len(commit) != 40:
+        raise RuntimeError(f"unexpected repository commit identity: {commit!r}")
+    return commit
+
+
+def _write_initial_condition_manifest(
+    *,
+    result,
+    checkpoint_load_result,
+    model_dir: Path,
+) -> Path:
+    if ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR is None:
+        raise RuntimeError("explicit initial-condition profile has no attribution output directory")
+    validate_initial_condition_output_files(
+        ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR,
+        attribution_filenames=ASSIGNMENT_ATTRIBUTION_OUTPUT_FILENAMES,
+        manifest_expected=False,
+    )
+    provenance = InitialConditionRunProvenance(
+        repository_commit=_repository_commit(),
+        selected_cli_field="--assignment_initial_condition_profile",
+        profile_id=result.condition_contract.profile_id,
+        resolved_absolute_source_paths=result.resolved_absolute_source_paths,
+        command_seed=args_cli.seed,
+        deterministic_actor_mode=True,
+        checkpoint_directory=str(model_dir),
+        checkpoint_child=model_dir.name,
+        checkpoint_kind=checkpoint_load_result.checkpoint_kind,
+        checkpoint_generation=checkpoint_load_result.checkpoint_generation,
+        assignment_checkpoint_fingerprint=checkpoint_load_result.contract_fingerprint,
+        load_purpose=checkpoint_load_result.load_purpose.value,
+        legacy_fallback=bool(checkpoint_load_result.legacy_fallback_used),
+        attribution_schema=ASSIGNMENT_ATTRIBUTION_SCHEMA_VERSION,
+        created_timestamp=datetime.now(timezone.utc).isoformat(),
+    )
+    manifest = build_initial_condition_manifest(result, provenance)
+    manifest_path = ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR / INITIAL_CONDITION_MANIFEST_FILENAME
+    write_initial_condition_manifest_atomic(manifest_path, manifest)
+    validate_initial_condition_output_files(
+        ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR,
+        attribution_filenames=ASSIGNMENT_ATTRIBUTION_OUTPUT_FILENAMES,
+        manifest_expected=True,
+    )
+    return manifest_path
+
+
 def _assert_available_actions(wrapper, available_actions: torch.Tensor | None) -> None:
     if available_actions is None:
         raise RuntimeError("assignment play requires available_actions, got None")
@@ -397,11 +603,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if args_cli.scenario_config is not None:
         apply_scenario_config_to_env_cfg(env_cfg, args_cli)
         print(f"[INFO]: Assignment play scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
+    _attach_initial_condition_request(env_cfg, agent_cfg)
 
     wrapper = None
     attribution_collector = None
     try:
         wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
+        initial_condition_result = _validated_initial_condition_result(wrapper)
         device = init_device(agent_cfg["device"])
         actors, checkpoint_load_result = _build_and_load_assignment_actors(
             wrapper,
@@ -409,6 +617,17 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
             model_dir,
             device,
         )
+        if initial_condition_result is not None:
+            mapping_text = ",".join(
+                f"{robot_id}->{slot_id}"
+                for robot_id, slot_id in initial_condition_result.condition_contract.robot_to_slot_mapping
+            )
+            print(
+                "[INFO]: assignment initial condition "
+                f"profile={initial_condition_result.condition_contract.profile_id} "
+                f"fingerprint={initial_condition_result.condition_fingerprint} "
+                f"mapping={mapping_text}"
+            )
 
         print(
             "[INFO]: Assignment play env "
@@ -564,6 +783,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
         if attribution_collector is not None:
             attribution_collector.finalize()
+        if initial_condition_result is not None:
+            manifest_path = _write_initial_condition_manifest(
+                result=initial_condition_result,
+                checkpoint_load_result=checkpoint_load_result,
+                model_dir=model_dir,
+            )
+            print(f"[INFO]: assignment initial-condition manifest written: {manifest_path}")
         print(f"[OK] assignment play smoke completed steps={completed_step}, max_steps={args_cli.max_steps}")
     finally:
         if attribution_collector is not None:

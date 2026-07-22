@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import copy
 import math
 import torch
 from collections.abc import Mapping, Sequence
@@ -44,6 +45,17 @@ from .static_feasibility import generate_static_geometric_feasibility
 from .viewpoint_csv import VIEWPOINT_CSV_FORMAT, load_fixed_viewpoint_csv
 from .robot_config import RobotConfig, RobotSpec, load_robot_config
 from .capability_config import CapabilityConfig, CapabilityProfile, load_capability_profiles
+from .assignment_initial_condition import (
+    InitialConditionContractError,
+    InitialConditionRequest,
+    ResolvedComponentIdentity,
+    ResolvedInitialConditionConfig,
+    ResolvedRobotIdentity,
+    capability_binding_from_mapping,
+    make_resolved_file_reference,
+    quaternion_wxyz_to_yaw,
+    resolve_assignment_initial_condition,
+)
 
 
 ROBOT_ACTION_DIM = 9
@@ -98,6 +110,12 @@ class ScanMobileManipulatorEnvCfg(DirectMARLEnvCfg):
     # Optional capability profile YAML. When omitted, configs/capabilities/mobile_scanner_profiles.yaml is used.
     capability_config_path = None
     capability_config_diagnostics = None
+    # Playback-only controlled initial-condition handoff. The default None path
+    # performs no condition resolution, hashing, pose mutation, or diagnostics.
+    assignment_initial_condition_profile = None
+    assignment_initial_condition_request = None
+    assignment_initial_condition_result = None
+    assignment_initial_condition_diagnostics = None
     # Visual mode controls let algorithm scenarios avoid loading large visual-only assets while preserving GUI demos.
     robot_visual_mode = "mesh"
     component_visual_mode = "mesh"
@@ -393,12 +411,10 @@ def _robot_visual_pose_from_proxy(
 
 
 def _quat_wxyz_to_yaw(quat: Sequence[float], *, name: str) -> float:
-    qw, qx, qy, qz = _as_float_tuple(quat, name=name, length=4)
-    quat_norm = math.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
-    if quat_norm <= 1.0e-8:
-        raise ValueError(f"{name} quaternion must be non-zero.")
-    qw, qx, qy, qz = (qw / quat_norm, qx / quat_norm, qy / quat_norm, qz / quat_norm)
-    return math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
+    try:
+        return quaternion_wxyz_to_yaw(quat, field=name)
+    except InitialConditionContractError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 def _safe_usd_prim_name(value: str) -> str:
@@ -1127,6 +1143,299 @@ def _prepare_viewpoint_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
     cfg.viewpoint_source = "builtin_fixed_12"
 
 
+_INITIAL_CONDITION_PROTECTED_CFG_FIELDS = (
+    "possible_agents",
+    "action_spaces",
+    "observation_spaces",
+    "state_spaces",
+    "robot_config_path",
+    "robot_config_diagnostics",
+    "capability_config_path",
+    "capability_config_diagnostics",
+    "scanner_start_offsets",
+    "arm_reach",
+    "scanner_min_range",
+    "scanner_max_range",
+    "scanner_fov_deg",
+    "scan_pos_tolerance",
+    "scan_rot_tolerance",
+    "max_base_xy_step",
+    "max_base_yaw_step",
+    "max_ee_xyz_step",
+    "max_ee_rpy_step",
+    "robot_visual_mode",
+    "component_visual_mode",
+    "component_mesh_path",
+    "viewpoint_csv_path",
+    "viewpoint_ids",
+    "viewpoint_poses",
+)
+
+
+def _optional_diagnostic_tuple(value: object, *, name: str, length: int) -> tuple[float, ...] | None:
+    if value is None:
+        return None
+    return _as_float_tuple(value, name=name, length=length)
+
+
+def _build_initial_condition_resolved_config(
+    cfg: ScanMobileManipulatorEnvCfg,
+    request: InitialConditionRequest,
+) -> ResolvedInitialConditionConfig:
+    robot_diagnostics = getattr(cfg, "robot_config_diagnostics", None)
+    capability_diagnostics = getattr(cfg, "capability_config_diagnostics", None)
+    if not isinstance(robot_diagnostics, Mapping):
+        raise InitialConditionContractError("robot_config_diagnostics must be a resolved mapping")
+    if not isinstance(capability_diagnostics, Mapping):
+        raise InitialConditionContractError("capability_config_diagnostics must be a resolved mapping")
+
+    ordered_robot_ids = tuple(str(robot_id) for robot_id in cfg.possible_agents)
+    agent_id_by_name = robot_diagnostics.get("agent_id_by_name")
+    source_pose_by_robot = robot_diagnostics.get("initial_pose_world_by_robot")
+    model_type_by_robot = robot_diagnostics.get("model_type_by_robot")
+    capability_profile_by_robot = robot_diagnostics.get("capability_profile_by_robot")
+    capability_profile_check = capability_diagnostics.get("capability_profile_by_robot")
+    speed_weight_by_robot = robot_diagnostics.get("speed_weight_by_robot")
+    cost_weight_by_robot = robot_diagnostics.get("cost_weight_by_robot")
+    required_mappings = {
+        "agent_id_by_name": agent_id_by_name,
+        "initial_pose_world_by_robot": source_pose_by_robot,
+        "model_type_by_robot": model_type_by_robot,
+        "capability_profile_by_robot": capability_profile_by_robot,
+        "capability_diagnostics.capability_profile_by_robot": capability_profile_check,
+        "speed_weight_by_robot": speed_weight_by_robot,
+        "cost_weight_by_robot": cost_weight_by_robot,
+    }
+    for field, value in required_mappings.items():
+        if not isinstance(value, Mapping):
+            raise InitialConditionContractError(f"robot identity field {field} must be a mapping")
+    if dict(capability_profile_check) != dict(capability_profile_by_robot):
+        raise InitialConditionContractError(
+            "capability profile bindings disagree between robot and capability diagnostics"
+        )
+
+    visual_fields = {
+        "visual_usd_path": robot_diagnostics.get("visual_usd_path_by_robot", {}),
+        "visual_mesh_path": robot_diagnostics.get("visual_mesh_path_by_robot", {}),
+        "visual_mesh_scale": robot_diagnostics.get("visual_mesh_scale_by_robot", {}),
+        "visual_mesh_position_offset": robot_diagnostics.get("visual_mesh_position_offset_by_robot", {}),
+        "visual_mesh_yaw_offset": robot_diagnostics.get("visual_mesh_yaw_offset_by_robot", {}),
+        "visual_mesh_align_bottom_to_proxy_z": robot_diagnostics.get(
+            "visual_mesh_align_bottom_to_proxy_z_by_robot", {}
+        ),
+    }
+    if any(not isinstance(value, Mapping) for value in visual_fields.values()):
+        raise InitialConditionContractError("resolved robot visual identity fields must be mappings")
+
+    robots: list[ResolvedRobotIdentity] = []
+    for index, robot_id in enumerate(ordered_robot_ids):
+        capability_values = {
+            "scanner_start_offset": cfg.scanner_start_offsets[index],
+            "arm_reach": cfg.arm_reach[index],
+            "scanner_min_range": cfg.scanner_min_range[index],
+            "scanner_max_range": cfg.scanner_max_range[index],
+            "scanner_fov_deg": cfg.scanner_fov_deg[index],
+            "scan_pos_tolerance": cfg.scan_pos_tolerance[index],
+            "scan_rot_tolerance": cfg.scan_rot_tolerance[index],
+            "max_base_xy_step": cfg.max_base_xy_step[index],
+            "max_base_yaw_step": cfg.max_base_yaw_step[index],
+            "max_ee_xyz_step": cfg.max_ee_xyz_step[index],
+            "max_ee_rpy_step": cfg.max_ee_rpy_step[index],
+        }
+        robots.append(
+            ResolvedRobotIdentity(
+                robot_id=robot_id,
+                agent_index=int(agent_id_by_name[robot_id]),
+                model_type=str(model_type_by_robot[robot_id]),
+                source_pose_world_wxyz=_as_float_tuple(
+                    source_pose_by_robot[robot_id],
+                    name=f"initial_pose_world_by_robot[{robot_id}]",
+                    length=7,
+                ),
+                baseline_reset_pose_world_xyzyaw=_as_float_tuple(
+                    cfg.base_start_poses[index],
+                    name=f"base_start_poses[{index}]",
+                    length=4,
+                ),
+                capability_profile=str(capability_profile_by_robot[robot_id]),
+                capability=capability_binding_from_mapping(
+                    capability_values,
+                    field=f"resolved_capability[{robot_id}]",
+                ),
+                speed_weight=float(speed_weight_by_robot[robot_id]),
+                cost_weight=float(cost_weight_by_robot[robot_id]),
+                visual_usd_path=visual_fields["visual_usd_path"].get(robot_id),
+                visual_mesh_path=visual_fields["visual_mesh_path"].get(robot_id),
+                visual_mesh_scale=_optional_diagnostic_tuple(
+                    visual_fields["visual_mesh_scale"].get(robot_id),
+                    name=f"visual_mesh_scale[{robot_id}]",
+                    length=3,
+                ),
+                visual_mesh_position_offset=_optional_diagnostic_tuple(
+                    visual_fields["visual_mesh_position_offset"].get(robot_id),
+                    name=f"visual_mesh_position_offset[{robot_id}]",
+                    length=3,
+                ),
+                visual_mesh_yaw_offset=(
+                    None
+                    if visual_fields["visual_mesh_yaw_offset"].get(robot_id) is None
+                    else float(visual_fields["visual_mesh_yaw_offset"][robot_id])
+                ),
+                visual_mesh_align_bottom_to_proxy_z=bool(
+                    visual_fields["visual_mesh_align_bottom_to_proxy_z"].get(robot_id, False)
+                ),
+            )
+        )
+
+    repository_root = request.repository_root
+    component = ResolvedComponentIdentity(
+        mesh_format=str(cfg.component_mesh_format),
+        mesh_unit=str(cfg.component_mesh_unit),
+        mesh_scale=_as_float_tuple(cfg.component_mesh_scale, name="component_mesh_scale", length=3),
+        mesh_position=_as_float_tuple(cfg.component_mesh_position, name="component_mesh_position", length=3),
+        mesh_orientation=_as_float_tuple(
+            cfg.component_mesh_orientation, name="component_mesh_orientation", length=4
+        ),
+        mesh_orientation_format=str(cfg.component_mesh_orientation_format),
+        align_base_center_to_world_origin=bool(cfg.component_mesh_align_base_center_to_world_origin),
+        base_center_before_translation=_as_float_tuple(
+            cfg.component_mesh_base_center_before_translation,
+            name="component_mesh_base_center_before_translation",
+            length=3,
+        ),
+        auto_translation_if_used=_as_float_tuple(
+            cfg.component_mesh_auto_translation_if_used,
+            name="component_mesh_auto_translation_if_used",
+            length=3,
+        ),
+        raw_bounds_min=_as_float_tuple(
+            cfg.component_mesh_raw_bounds_obj_units_min,
+            name="component_mesh_raw_bounds_obj_units_min",
+            length=3,
+        ),
+        raw_bounds_max=_as_float_tuple(
+            cfg.component_mesh_raw_bounds_obj_units_max,
+            name="component_mesh_raw_bounds_obj_units_max",
+            length=3,
+        ),
+        world_bounds_min=_as_float_tuple(
+            cfg.component_mesh_world_bounds_m_min,
+            name="component_mesh_world_bounds_m_min",
+            length=3,
+        ),
+        world_bounds_max=_as_float_tuple(
+            cfg.component_mesh_world_bounds_m_max,
+            name="component_mesh_world_bounds_m_max",
+            length=3,
+        ),
+        auto_proxy_center=_as_float_tuple(
+            cfg.component_mesh_auto_proxy_center,
+            name="component_mesh_auto_proxy_center",
+            length=3,
+        ),
+        auto_proxy_half_extents=_as_float_tuple(
+            cfg.component_mesh_auto_proxy_half_extents,
+            name="component_mesh_auto_proxy_half_extents",
+            length=3,
+        ),
+        proxy_type=str(cfg.component_proxy_type),
+        proxy_center=_as_float_tuple(cfg.component_proxy_center, name="component_proxy_center", length=3),
+        proxy_half_extents=_as_float_tuple(
+            cfg.component_proxy_half_extents, name="component_proxy_half_extents", length=3
+        ),
+        proxy_auto_from_mesh=bool(cfg.component_proxy_auto_from_mesh),
+        proxy_padding=float(cfg.component_proxy_padding),
+    )
+    return ResolvedInitialConditionConfig(
+        task_id=request.task_id,
+        scenario_name=str(getattr(cfg, "scenario_name", "")),
+        scenario_type=str(getattr(cfg, "scenario_type", "")),
+        scenario_file=make_resolved_file_reference(
+            cfg.scenario_config_path,
+            repository_root=repository_root,
+            field="scenario_config_path",
+        ),
+        robot_config_file=make_resolved_file_reference(
+            cfg.robot_config_path,
+            repository_root=repository_root,
+            field="robot_config_path",
+        ),
+        capability_config_file=make_resolved_file_reference(
+            cfg.capability_config_path,
+            repository_root=repository_root,
+            field="capability_config_path",
+        ),
+        viewpoint_csv_file=make_resolved_file_reference(
+            cfg.viewpoint_csv_path,
+            repository_root=repository_root,
+            field="viewpoint_csv_path",
+        ),
+        component_obj_file=make_resolved_file_reference(
+            cfg.component_mesh_path,
+            repository_root=repository_root,
+            field="component_mesh_path",
+        ),
+        ordered_robot_ids=ordered_robot_ids,
+        robots=tuple(robots),
+        action_space_key_order=tuple(str(key) for key in cfg.action_spaces),
+        observation_space_key_order=tuple(str(key) for key in cfg.observation_spaces),
+        state_space_key_order=tuple(str(key) for key in cfg.state_spaces),
+        viewpoint_format=str(cfg.viewpoint_csv_format),
+        viewpoint_source=str(cfg.viewpoint_source),
+        viewpoint_ids=tuple(int(value) for value in cfg.viewpoint_ids),
+        viewpoint_poses_world_wxyz=tuple(
+            _as_float_tuple(pose, name=f"viewpoint_poses[{index}]", length=7)
+            for index, pose in enumerate(cfg.viewpoint_poses)
+        ),
+        component=component,
+        num_robots=len(ordered_robot_ids),
+        num_tasks=len(cfg.viewpoint_poses),
+        policy_interface_contract=request.policy_interface_contract,
+    )
+
+
+def _prepare_assignment_initial_condition_cfg(cfg: ScanMobileManipulatorEnvCfg) -> None:
+    profile_id = getattr(cfg, "assignment_initial_condition_profile", None)
+    request = getattr(cfg, "assignment_initial_condition_request", None)
+    if profile_id is None and request is None:
+        return
+    if not isinstance(request, InitialConditionRequest):
+        raise InitialConditionContractError(
+            "explicit assignment_initial_condition_profile requires a project-owned InitialConditionRequest"
+        )
+    if profile_id != request.profile_id:
+        raise InitialConditionContractError(
+            "assignment_initial_condition_profile/request mismatch: "
+            f"profile={profile_id!r}, request={request.profile_id!r}"
+        )
+
+    protected_before = {
+        field: copy.deepcopy(getattr(cfg, field)) for field in _INITIAL_CONDITION_PROTECTED_CFG_FIELDS
+    }
+    baseline_poses = copy.deepcopy(cfg.base_start_poses)
+    resolved_config = _build_initial_condition_resolved_config(cfg, request)
+    result = resolve_assignment_initial_condition(request, resolved_config)
+    if result is None:
+        raise InitialConditionContractError("explicit initial-condition request resolved to no result")
+    cfg.base_start_poses = result.resolved_base_start_poses
+    protected_after = {
+        field: copy.deepcopy(getattr(cfg, field)) for field in _INITIAL_CONDITION_PROTECTED_CFG_FIELDS
+    }
+    changed_protected = [
+        field for field in _INITIAL_CONDITION_PROTECTED_CFG_FIELDS
+        if protected_before[field] != protected_after[field]
+    ]
+    if changed_protected:
+        cfg.base_start_poses = baseline_poses
+        raise InitialConditionContractError(
+            f"initial-condition application changed protected identity field(s): {changed_protected!r}"
+        )
+    if tuple(cfg.base_start_poses) != result.resolved_base_start_poses:
+        raise InitialConditionContractError("resolved base_start_poses were not applied exactly")
+    cfg.assignment_initial_condition_result = result
+    cfg.assignment_initial_condition_diagnostics = result.to_diagnostics()
+
+
 class ScanMobileManipulatorEnv(DirectMARLEnv):
     """DirectMARLEnv implementation for the high-level scan assignment skeleton."""
 
@@ -1142,11 +1451,15 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         _prepare_obstacle_debug_visualization_cfg(cfg)
         _prepare_inter_robot_conflict_diagnostics_cfg(cfg)
         _prepare_viewpoint_cfg(cfg)
+        _prepare_assignment_initial_condition_cfg(cfg)
         super().__init__(cfg, render_mode, **kwargs)
 
         self.num_agents_cfg = len(self.cfg.possible_agents)
         self.robot_config_diagnostics = self.get_robot_config_diagnostics()
         self.capability_diagnostics = self.get_capability_diagnostics()
+        self.assignment_initial_condition_result = getattr(
+            self.cfg, "assignment_initial_condition_result", None
+        )
         self.num_viewpoints = len(self.cfg.viewpoint_poses)
         self.viewpoint_ids = tuple(int(value) for value in self.cfg.viewpoint_ids)
         self.viewpoint_source = str(self.cfg.viewpoint_source)
@@ -1446,6 +1759,11 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
 
     def get_robot_config_diagnostics(self) -> dict:
         return dict(getattr(self.cfg, "robot_config_diagnostics", {}) or {})
+
+    def get_assignment_initial_condition_result(self):
+        """Return the immutable validated playback condition result, if selected."""
+
+        return self.assignment_initial_condition_result
 
     def get_capability_diagnostics(self) -> dict:
         return dict(getattr(self.cfg, "capability_config_diagnostics", {}) or {})

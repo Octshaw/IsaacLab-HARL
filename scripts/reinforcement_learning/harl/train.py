@@ -30,6 +30,7 @@ from scenario_config import (
     smoke_defaults_from_config,
     validate_smoke_args,
 )
+from assignment_initial_condition import validate_initial_condition_training_config
 
 from isaaclab.app import AppLauncher
 
@@ -182,6 +183,8 @@ agent_cfg_entry_point = f"harl_{algorithm}_cfg_entry_point"
 
 @hydra_task_config(args_cli.task, agent_cfg_entry_point)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: dict):
+
+    validate_initial_condition_training_config(env_cfg)
 
     args = args_cli.__dict__
 
