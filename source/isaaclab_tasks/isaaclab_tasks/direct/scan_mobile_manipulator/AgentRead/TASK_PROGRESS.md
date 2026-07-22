@@ -2,147 +2,81 @@
 
 ## Current Status
 
-Phase 9G-8I-3-0R-2R completed the controlled initial-condition runtime
-identity validation retry.
-
-Classification:
+Phase 9G-8I-3-2-0 completed the multi-condition best-final evidence synthesis
+and commit-readiness review.
 
 ```text
-MULTI-CONDITION-RUNTIME-IDENTITY-READY
+classification:
+  COMMIT-READY
+
+overall comparison:
+  CONSISTENT-LATE-TRAINING-REGRESSION
+
+checkpoint-selection alignment:
+  SELECTION-ALIGNED
+
+committed baseline:
+  9d31b15ff248d87634ae7487d0181ecf8a9349c2
 ```
 
-Starting committed baseline remains:
+## Independent Review Result
+
+Read-only recalculation reproduced the formal A/B/C condition pairings,
+canonical fingerprints, five primary metrics, per-condition Pareto classes,
+overall classification, selection-alignment assessment, and historical Final-A
+identity.
 
 ```text
-167bafaac84f7f8f527af40ed786e4834a7db704
-167bafaa docs(assignment): validate 100k best-final attribution comparison
+Condition A: BEST-DOMINANT
+Condition B: BEST-DOMINANT
+Condition C: MIXED
 ```
 
-The reviewed Phase 9G-8I-3-0 through R-2F-1 implementation chain remains
-uncommitted and preserved. R-2R changed documentation only and made no commit.
+Best is dominant under A and B. C is mixed because Final improves coverage,
+while Best retains advantages in total completions, completion fairness,
+zero-progress rows, and budget releases.
 
-## Latest Completed Phase
+Across all conditions, both checkpoints keep all three robots executing for all
+300 decisions. Final nevertheless has less balanced productive completion and
+substantially more zero-progress, zero-base-motion, and budget-release evidence.
+Execution participation alone is therefore not productive load balance.
 
-Exactly five new fresh-output, headless, deterministic 300-step best-checkpoint
-playbacks ran sequentially:
+Production/source blob identity, immutable input hashes, all 27 formal and
+historical attribution hashes, best/final checkpoint manifests and opaque file
+hashes, condition contracts, and historical Final-A reproduction all passed.
+Best and Final share the same checkpoint/inference contract but contain
+different actor weights.
+
+## Commit Boundary
+
+The exact seven-document staging set and this documentation commit message are
+frozen in the detailed report:
 
 ```text
-A:  baseline_identity
-B1: pose_cycle_forward
-B2: pose_cycle_forward
-C1: pose_cycle_reverse
-C2: pose_cycle_reverse
+docs(assignment): validate multi-condition late-training regression
 ```
 
-All five exited 0, loaded `best_model` generation 10 for
-`normal_evaluation`, produced 300 decisions / 900 rows, and wrote exactly the
-four frozen diagnostic artifacts.
+Result directories, console logs, and checkpoints remain local evidence and
+must not be staged. The review covers one checkpoint pair, seed 1, three fixed
+start-pose permutations, one environment, and 300 deterministic decisions; it
+does not establish statistical or broad generalization.
 
-Explicit A crossed the repaired strict request-type boundary and reproduced
-the accepted R-2 no-selector rows and segments byte-for-byte. Its summary was
-exact after removal of output-specific `artifact_paths` only.
-
-B1/B2 and C1/C2 each reproduced exactly across independent processes:
-
-```text
-fingerprinted condition contract: exact
-condition fingerprint:            exact
-rows CSV:                          byte exact
-segments CSV:                      byte exact
-summary behavior:                  exact
-```
-
-## Condition Results
-
-```text
-A baseline_identity:
-  fingerprint d22778fbe70a5300999c58044177f2632b3c782c931d3414e086142035c516bc
-  mapping r0:S0, r1:S1, r2:S2
-
-B pose_cycle_forward:
-  fingerprint e9b92541c293de20277a97c61037b1592c01d72e6a84e8e6ba0e3fbe68da630f
-  mapping r0:S1, r1:S2, r2:S0
-
-C pose_cycle_reverse:
-  fingerprint 9f476403513ffb4377405d809fc71e537e1982f4ea30e17fad4ea3f3ec97f320
-  mapping r0:S2, r1:S0, r2:S1
-```
-
-All pairwise condition fingerprints differ. B and C preserved robot-local
-scanner offsets, survived the automatic episode reset without profile drift,
-and produced deterministic trajectories behaviorally distinct from A and from
-each other. No immediate invalid-state or diagnostic-overlap failure occurred.
-
-## Latest Verification
-
-```text
-five process exits:                     PASS, all 0
-loader best/generation 10:              PASS, all five
-four-file contract:                     PASS, all five
-manifest schema/contract/provenance:     PASS, all five
-independent condition fingerprint:       PASS, all five
-rows/decisions/robot grouping:           PASS, 900/300/[0,1,2]
-duplicate keys/effective targets:        PASS, 0/0
-invariants/unclassified/nonfinite:       PASS, 0/0/0
-segment continuity/invariant breaks:     PASS, 0 breaks
-A vs accepted no-selector:               PASS, exact behavior
-B1 vs B2:                                PASS, exact repeat
-C1 vs C2:                                PASS, exact repeat
-A/B/C behavioral distinctness:           PASS
-reset-state identity:                    PASS
-preserved no-selector SHA-256:           PASS, unchanged
-post-run relevant process scan:          PASS, none
-git diff --check:                        PASS, line-ending warnings only
-```
-
-## Files Changed In R-2R
-
-Created:
-
-```text
-AgentRead/20260722/PHASE9G8I30R2R_CONTROLLED_INITIAL_CONDITION_RUNTIME_IDENTITY_VALIDATION_RETRY.md
-AgentRead/20260722/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I30R2R_RUNTIME_IDENTITY_RETRY_20260722.md
-```
-
-Updated:
-
-```text
-AgentRead/TASK_PROGRESS.md
-```
-
-No production source, test, YAML, data, installed HARL, or Conda file was
-modified by this phase.
-
-## Known Limits / Do Not Do
-
-The result covers one retained best checkpoint, seed 1, one environment, and
-300 deterministic decisions per process. It is not a convergence,
-checkpoint-ranking, physical-safety, or multi-seed result.
-
-No no-selector rerun, final-checkpoint run, best/final comparison, training,
-checkpoint continuation, new seed, stochastic action, GUI/video, 300k
-continuation, automatic retry, environment modification, or commit occurred.
-
-Do not infer final-checkpoint robustness or authorize broad experiments from
-this bounded identity result.
+No source, test, YAML/data, result, checkpoint, console-log, installed HARL, or
+Conda behavior changed. No AppLauncher, Isaac Sim, environment, playback,
+evaluation, checkpoint load, training, continuation, new seed, new condition,
+GUI/video, staging, or commit occurred.
 
 ## Next Step
 
-After review and explicit acceptance only:
-
-```text
-Phase 9G-8I-3-1-0:
-Paired Best-vs-Final Multi-Condition Robustness Comparison Design
-```
-
-Do not start it automatically.
+After GPT review, the user may manually stage exactly the seven Markdown files
+listed in the report and manually commit them. Do not begin another experiment
+automatically; subsequent work requires a separate roadmap decision.
 
 ## Detailed Reports / Archives
 
+- `AgentRead/20260722/PHASE9G8I320_MULTI_CONDITION_BEST_FINAL_EVIDENCE_SYNTHESIS_AND_COMMIT_READINESS_REVIEW.md`
+- `AgentRead/20260722/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I320_EVIDENCE_SYNTHESIS_COMMIT_READINESS_20260722.md`
+- `AgentRead/20260722/PHASE9G8I31_PAIRED_BEST_FINAL_MULTI_CONDITION_ROBUSTNESS_COMPARISON_EXECUTION.md`
+- `AgentRead/20260722/PHASE9G8I310_PAIRED_BEST_FINAL_MULTI_CONDITION_ROBUSTNESS_COMPARISON_DESIGN.md`
 - `AgentRead/20260722/PHASE9G8I30R2R_CONTROLLED_INITIAL_CONDITION_RUNTIME_IDENTITY_VALIDATION_RETRY.md`
-- `AgentRead/20260722/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I30R2R_RUNTIME_IDENTITY_RETRY_20260722.md`
-- `AgentRead/20260722/PHASE9G8I30R2F1_INITIAL_CONDITION_MODULE_IDENTITY_REPAIR_AND_IMPORT_BOUNDARY_REGRESSION.md`
-- `AgentRead/20260722/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G8I30R2F1_MODULE_IDENTITY_REPAIR_20260722.md`
-- `AgentRead/20260721/PHASE9G8I30R2_CONTROLLED_INITIAL_CONDITION_RUNTIME_IDENTITY_VALIDATION.md`
-- `AgentRead/20260721/PHASE9G8I30R1_CONTROLLED_INITIAL_CONDITION_INTERFACE_IMPLEMENTATION_AND_REGRESSION.md`
-- `AgentRead/20260721/PHASE9G8I30R_CONTROLLED_INITIAL_CONDITION_VARIATION_INTERFACE_AND_CONTRACT_DESIGN.md`
+- `AgentRead/20260720/PHASE9G8I21_SEQUENTIAL_BEST_FINAL_BOUNDED_ATTRIBUTION_PLAYBACK_EXECUTION_AND_COMPARISON.md`
