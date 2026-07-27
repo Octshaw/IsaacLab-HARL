@@ -2,33 +2,29 @@
 
 ## Current status
 
-Phase 10A Authoritative V2.1 targeted 文档修订已完成。
+Phase 10A authoritative V2 文档修订与契约冻结已完成。
 
 ```text
-V2.1 targeted revision:
-  complete
+revision classification:
+  REVISION-COMPLETE-AWAITING-GPT-REVIEW
 
-classification:
-  TARGETED-REVISION-COMPLETE-AWAITING-USER-APPROVAL
+V2 document status:
+  AUTHORITATIVE-DESIGN-CANDIDATE
 
-document status:
-  AUTHORITATIVE-DESIGN-CANDIDATE-V2.1
+finding resolution:
+  RESOLVED:            21
+  PARTIALLY-RESOLVED:   0
+  NOT-APPLICABLE:       0
 
-original findings:
-  DR-01–DR-21 remain resolved
-
-targeted residual findings:
-  TR-01–TR-03 resolved
-
-unresolved CRITICAL/HIGH:
+unresolved CRITICAL/HIGH documentation findings:
   0
 
-V2 and original 20260724 memo:
+original 20260724 memo:
   unchanged
   superseded for design recovery
 
 enter Phase A:
-  no -- wait for explicit user approval
+  no -- wait for targeted GPT re-review and user confirmation
 
 runtime behavior changed:
   no
@@ -40,15 +36,13 @@ commit:
   none
 ```
 
-V2.1 只修正三个 residual contracts：
+新 V2 已修正 nominal cost、strict event order、local-set closure、semantic
+action/DVM、atomic transfer component、pre-reset DTO、default-off direct bypass、
+team reward、baseline fairness 和 provenance。`[NUMERIC-TBD]` 与
+`[IMPLEMENTATION-EVIDENCE-TBD]` 是受控后续工作，不是未解决 review finding。
 
-- raw `ExecutionTransitionFacts` 与 derived `LifecycleTransitionResult` 分层；
-- event-gated default-off 按 resolved pre-event-gated profile 精确分派；
-- `RESOLVER_COMMIT_DIAGNOSTIC` 不自触发下一 assignment tick。
-
-原始 20260724 memo 与 V2 均未修改。V2.1 无需再次 broad review，但在用户确认前仍不是
-实现授权。`[NUMERIC-TBD]` 与 `[IMPLEMENTATION-EVIDENCE-TBD]` 继续是受控后续工作，
-不是 unresolved review finding。
+原始 20260724 memo 未修改，保留为历史讨论快照；V2 在 targeted GPT review 和用户确认前
+不是实现授权。
 
 Phase 10A event-gated local MRTA 与现有 HAPPO/HARL 训练接口兼容性审计已完成。
 
@@ -73,14 +67,15 @@ Phase 9G-8 已由当前 HEAD 的文档 commit 关闭，本审计没有重开其�
 
 ## Latest completed phase
 
-创建了 Phase 10A 之后、Phase A 之前的 V2.1 authoritative design candidate：
+创建了 Phase 10A 之后、Phase A 之前的 authoritative design candidate：
 
-- 继承 DR-01～DR-21 的 21/21 resolved 状态；
-- TR-01～TR-03 targeted residual findings 3/3 resolved；
-- 将 raw execution facts 与 lifecycle-derived result 拆成两个权威对象；
-- default-off 保留 resolved legacy、Contract C 或其他既有 profile 的精确路径；
-- resolver commit event 仅为 diagnostic，不独立进入 trigger set；
-- candidate 尚需用户显式批准。
+- 统一 `[CURRENT-CODE]`、`[FROZEN-TARGET-NOT-IMPLEMENTED]`、
+  `[NUMERIC-TBD]`、`[IMPLEMENTATION-EVIDENCE-TBD]` 和
+  `[DEFERRED-SECOND-WORK]`；
+- DR-01～DR-21 文档 findings 21/21 resolved；
+- 冻结 canonical order、cost/action/DVM、resolver/component、reward/HAPPO、
+  pre-reset、default-off、checkpoint、baseline 和 Phase A–E contract；
+- 明确 candidate 尚需 targeted GPT review。
 
 完成了 environment、assignment wrapper、lifecycle resolver、observation/action
 mask、reward、repo-local training facade、installed HARL runner/HAPPO/buffer/critic、
@@ -99,8 +94,8 @@ GAE、ValueNorm、checkpoint、config、logger 和 playback 的静态调用链�
   HAPPO loss/entropy/advantage normalization 和 sequential factor。
 - 非决策 HAPPO ratio 必须为 1；只在最终 policy loss 外乘 mask 不足。
 - zero-valid actor 必须跳过 optimizer；single-valid advantage 需要 finite fallback。
-- 当前 DirectMARLEnv 在 wrapper 读取 post-step problem 前自动 reset done env；Phase B0
-  需要 pre-reset `ExecutionTransitionFacts` hook 和唯一 lifecycle authority/result。
+- 当前 DirectMARLEnv 在 wrapper 读取 post-step problem 前自动 reset done env，
+  所以 terminal facts 需要 pre-reset hook。
 - 当前 resolver 只有 continue/idle claim/conflict，禁止 switch；没有 local-set、
   Top-K、preemption 或 staged atomic transfer component。
 - 最终分类不是 architectural blocker，而是明确且可控的 runner/trainer/buffer
@@ -110,14 +105,12 @@ GAE、ValueNorm、checkpoint、config、logger 和 playback 的静态调用链�
 
 推荐路径：
 
-1. Phase A：resolved-profile dispatcher、两个 transition object schema、typed
-   event/cost/local-set/component contract、checkpoint identity 和 diagnostics，
-   不改变行为。
-2. Phase B0：pre-reset raw-facts hook、lifecycle authority/result、terminal pair
-   failure、release、`NEEDS_ASSIGNMENT`、availability、`TEAM_INFEASIBLE` 和
-   termination reason。
-3. Phase B：trigger-source filtering、event-gated local Top-K/mask、DVM sidecar、
-   atomic component resolver；只做 deterministic smoke。
+1. Phase A：default-off profile/config、typed event/cost/local-set/component
+   contract、checkpoint identity 和 diagnostics，不改变行为。
+2. Phase B0：pre-reset facts、terminal pair failure、release、
+   `NEEDS_ASSIGNMENT`、availability 和 TEAM_INFEASIBLE state transition。
+3. Phase B：event-gated local Top-K/mask、DVM sidecar、atomic component resolver；
+   只做 deterministic smoke。
 4. Phase C：repo-local buffer/runner/HAPPO valid-only update 与 factor identity。
 5. Phase D：explicit team reward、component rejection penalty、termination reason。
 6. Phase E：完成全部 gate 后才设计并执行训练/消融。
@@ -144,12 +137,6 @@ Documentation only:
   `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_REVISION_SUMMARY.md`
 - Added
   `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_REVISION_20260727.md`
-- Added
-  `AgentRead/20260727/Lifecycle_Aware_Event_Gated_Local_MRTA_Design_Authoritative_V2_1_20260727.md`
-- Added
-  `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_SUMMARY.md`
-- Added
-  `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_20260727.md`
 - Updated `AgentRead/TASK_PROGRESS.md`
 
 No source, test, YAML/data, result, checkpoint, installed HARL, Conda environment,
@@ -165,7 +152,6 @@ git log -3 --oneline
 git status --short --untracked-files=all
 git diff --name-status
 git diff --check
-git diff --cached --name-status
 
 D:\miniconda3\Scripts\conda.exe run -p C:\isaacenvs\isaac45_harl \
   python -c "import sys; print(sys.executable)"
@@ -185,20 +171,6 @@ D:\miniconda3\Scripts\conda.exe run -p C:\isaacenvs\isaac45_harl \
 - `git diff --check` exit 0，`git diff --cached --name-status` 为空；
 - worktree 中没有 AgentRead 外的本轮修改。
 
-2026-07-27 V2.1 targeted revision closeout：
-
-- V2.1 与 targeted summary 的 TR matrix 均为 3/3 `RESOLVED`；
-- V2.1 的 DR-01～DR-21 rows 与 V2 逐行一致，仍为 21/21 `RESOLVED`；
-- V2.1、targeted summary 和 TASK_PROGRESS 的相对 Markdown links 均可解析；
-- backup、V2 和原 V2 summary SHA256 分别保持
-  `A9DD70253EC78575C14394B4F566505A5C85F0BFD0440D76E2F44403E55A42FC`、
-  `39F6C9F4857135E790DC897A2820FD83AA03CBA1CEAF93FC6824F7326899D517` 和
-  `E55DDDE44B4D1CFA8FA1B84FA09606F209BDA048286CB7314CDA14530BE9D517`；
-- V2.1 前 TASK_PROGRESS archive SHA256 为
-  `26EA9180AE7EF3FF531A2E0C679D108A9343A16BC2FEC372C7073A1038B61827`；
-- HEAD 未变，`git diff --check` exit 0，staged files 为空；
-- worktree 没有 AgentRead 外的变化。
-
 Interpreter and HARL import paths matched `C:\isaacenvs\isaac45_harl`.
 Pure tensor-level inspection confirmed unique-action sampling still occurs,
 zero-mask reductions are unsafe, and current unbiased nan-std is NaN for one
@@ -209,10 +181,9 @@ evaluation or checkpoint load was run.
 
 ## Known issues / blockers
 
-- V2.1 contracts are candidate-frozen and require explicit user approval before Phase A.
+- V2 contracts are candidate-frozen but require targeted GPT review and user confirmation.
 - Explicit team reward remains unimplemented; current EP learner uses robot 0 reward.
-- `ExecutionTransitionFacts` / `LifecycleTransitionResult` and the pre-reset hook remain
-  unimplemented.
+- Terminal pre-reset DTO/hook remains unimplemented.
 - Real navigation/alignment estimated-time sources are not present.
 - Scenario YAML lifecycle profile is parsed but not propagated by the current
   `apply_scenario_config_to_env_cfg` path.
@@ -225,7 +196,7 @@ These are implementation prerequisites, not architectural blockers.
 ## Do not do
 
 - Do not start training, playback or formal evaluation from this audit alone.
-- Do not treat the V2.1 candidate as implementation authorization before user approval.
+- Do not treat the V2 candidate as implementation authorization before review/user approval.
 - Do not modify or load old checkpoints under a new event-gated semantic profile.
 - Do not edit installed HARL; add repo-local subclasses/shims.
 - Do not use `active_masks` as `decision_valid_mask`.
@@ -235,29 +206,32 @@ These are implementation prerequisites, not architectural blockers.
 
 ## Next step
 
-Wait for explicit user approval. No further broad review is required for V2.1.
+Run a targeted GPT review of:
 
-After explicit user approval, implement **Phase A only**:
+- nominal cost and strict event order;
+- semantic DVM and rejected fallback;
+- transfer closure/pair/component objective;
+- team mean → component penalty → broadcast;
+- zero/singleton/factor identity;
+- pre-reset DTO;
+- default-off and checkpoint v2/v3;
+- baseline fairness and the 21-row resolution matrix.
 
-- freeze the event-gated gate and resolved-profile dispatcher;
-- define/version `ExecutionTransitionFacts` and `LifecycleTransitionResult`;
-- freeze generation、consume-once、authority and event-source provenance;
+After targeted review and explicit user confirmation, implement **Phase A only**:
+
+- freeze one high-level default-off profile;
 - freeze explicit EP team reward reducer/broadcast semantics;
 - define typed event/fact/cost/local-set/DVM/component interfaces;
 - add versioned checkpoint semantic fields with v2 backward parsing;
 - add structured correctness diagnostics;
-- prove feature-off identity separately for supported pre-event-gated profiles before Phase B0.
+- prove feature-off identity before Phase B0.
 
-The team reward reducer、singleton fallback、two-layer transition authority、
-profile-aware default-off dispatcher and resolver-commit trigger suppression are frozen
-as candidate contracts in V2.1. They still require user approval and later implementation
-evidence.
+The team reward reducer, singleton fallback and pre-reset authority are now frozen
+as candidate contracts in V2; they do not require another broad method redesign.
+They still require review approval and later implementation evidence.
 
 ## Detailed reports / archives
 
-- `AgentRead/20260727/Lifecycle_Aware_Event_Gated_Local_MRTA_Design_Authoritative_V2_1_20260727.md`
-- `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_SUMMARY.md`
-- `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_20260727.md`
 - `AgentRead/20260727/Lifecycle_Aware_Event_Gated_Local_MRTA_Design_Authoritative_V2_20260727.md`
 - `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_REVISION_SUMMARY.md`
 - `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_REVISION_20260727.md`
