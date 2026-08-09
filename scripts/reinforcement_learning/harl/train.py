@@ -26,7 +26,10 @@ for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
 
 from scenario_config import (
     apply_scenario_config_to_env_cfg,
+    finalize_assignment_lifecycle_profile_runtime_primitive,
     load_scenario_config,
+    preflight_assignment_lifecycle_profile_runtime_primitive,
+    resolve_assignment_lifecycle_profile_declaration,
     smoke_defaults_from_config,
     validate_smoke_args,
 )
@@ -39,6 +42,9 @@ pre_parser.add_argument("--scenario_config", type=str, default=None, help="Optio
 pre_args, _ = pre_parser.parse_known_args()
 SCENARIO_CONFIG = load_scenario_config(pre_args.scenario_config, repo_root=REPO_ROOT)
 SCENARIO_DEFAULTS = smoke_defaults_from_config(SCENARIO_CONFIG) if "--assignment_rl" in sys.argv else {}
+PRELAUNCH_ASSIGNMENT_PROFILE, _, _ = resolve_assignment_lifecycle_profile_declaration(
+    SCENARIO_CONFIG
+)
 
 parser = argparse.ArgumentParser(description="Train an RL agent with HARL.", parents=[pre_parser])
 parser.add_argument("--video", action="store_true", help="Record videos during training.")
@@ -91,6 +97,12 @@ AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
 # parse the arguments
 args_cli, hydra_args = parser.parse_known_args()
+preflight_assignment_lifecycle_profile_runtime_primitive(
+    PRELAUNCH_ASSIGNMENT_PROFILE,
+    raw_profile_present=PRELAUNCH_ASSIGNMENT_PROFILE is not None,
+    hydra_overrides=hydra_args,
+    entrypoint="scripts/reinforcement_learning/harl/train.py",
+)
 if args_cli.scenario_config is not None and not args_cli.assignment_rl:
     raise ValueError("--scenario_config is currently supported only with --assignment_rl in train.py")
 if args_cli.assignment_episode_length is not None and not args_cli.assignment_rl:
@@ -175,6 +187,11 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_training impo
     register_assignment_harl_runner,
     validate_assignment_lifecycle_policy_sequence,
 )
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (
+    AssignmentProfileResolutionOrigin,
+    require_assignment_profile_runtime_ready,
+    resolve_assignment_profile,
+)
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 algorithm = args_cli.algorithm.lower()
@@ -184,9 +201,28 @@ agent_cfg_entry_point = f"harl_{algorithm}_cfg_entry_point"
 @hydra_task_config(args_cli.task, agent_cfg_entry_point)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: dict):
 
-    validate_initial_condition_training_config(env_cfg)
-
     args = args_cli.__dict__
+    resolved_assignment_profile = None
+    if args["assignment_rl"]:
+        if args.get("scenario_config") is not None:
+            apply_scenario_config_to_env_cfg(env_cfg, args)
+        canonical_profile = finalize_assignment_lifecycle_profile_runtime_primitive(
+            env_cfg,
+            declaration_settings=args,
+            entrypoint="scripts/reinforcement_learning/harl/train.py",
+        )
+        resolved_assignment_profile = resolve_assignment_profile(
+            canonical_profile,
+            AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+        )
+        require_assignment_profile_runtime_ready(
+            resolved_assignment_profile,
+            consumer="train.py",
+            entrypoint="scripts/reinforcement_learning/harl/train.py",
+            barrier="post-AppLauncher pre-runner/output/environment/actor/checkpoint",
+        )
+
+    validate_initial_condition_training_config(env_cfg)
 
     args["env"] = "isaaclab"
 
@@ -227,7 +263,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     env_args = {}
     if args["assignment_rl"] and args.get("scenario_config") is not None:
-        apply_scenario_config_to_env_cfg(env_cfg, args)
         print(f"[INFO]: Assignment RL scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
     env_cfg.scene.num_envs = args["num_envs"]
     env_args["task"] = args["task"]
@@ -255,6 +290,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     if args["assignment_rl"]:
         sequence_contract = validate_assignment_lifecycle_policy_sequence(
+            resolved_assignment_profile=resolved_assignment_profile,
             algo_args=algo_args,
             env_args=env_args,
         )
@@ -267,7 +303,16 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     # create runner
 
-    runner = RUNNER_REGISTRY[args["algo"]](args, algo_args, env_args)
+    if args["assignment_rl"]:
+        runner = RUNNER_REGISTRY[args["algo"]](
+            args,
+            algo_args,
+            env_args,
+            resolved_assignment_profile=resolved_assignment_profile,
+            assignment_profile_entrypoint="scripts/reinforcement_learning/harl/train.py",
+        )
+    else:
+        runner = RUNNER_REGISTRY[args["algo"]](args, algo_args, env_args)
     run_dir = getattr(runner, "run_dir", None)
     save_dir = getattr(runner, "save_dir", None)
     if run_dir is not None:

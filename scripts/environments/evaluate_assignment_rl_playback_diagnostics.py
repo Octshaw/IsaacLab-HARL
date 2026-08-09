@@ -40,7 +40,9 @@ for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
 
 from scenario_config import (  # noqa: E402
     apply_scenario_config_to_env_cfg,
+    finalize_assignment_lifecycle_profile_runtime_primitive,
     load_scenario_config,
+    preflight_assignment_lifecycle_profile_runtime_primitive,
     smoke_defaults_from_config,
     validate_smoke_args,
 )
@@ -113,6 +115,12 @@ parser.add_argument("--stop_on_done", action="store_true", help="End each episod
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli, hydra_args = parser.parse_known_args()
+preflight_assignment_lifecycle_profile_runtime_primitive(
+    SCENARIO_DEFAULTS.get("assignment_lifecycle_profile"),
+    raw_profile_present="assignment_lifecycle_profile" in SCENARIO_DEFAULTS,
+    hydra_overrides=hydra_args,
+    entrypoint="scripts/environments/evaluate_assignment_rl_playback_diagnostics.py",
+)
 if args_cli.scenario_config is not None:
     validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
 sys.argv = [sys.argv[0]] + hydra_args
@@ -149,6 +157,9 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_adapter impor
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_contract import (  # noqa: E402
     CompatibilityPurpose,
 )
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_entry_guard import (  # noqa: E402
+    AssignmentCheckpointEntryPurpose,
+)
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_load import (  # noqa: E402
     build_assignment_evaluation_contract_manifest,
     load_assignment_checkpoint,
@@ -164,6 +175,11 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_resolver
 )
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_rl_interface import (  # noqa: E402
     compute_assignment_duplicate_count,
+)
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (  # noqa: E402
+    AssignmentProfileResolutionOrigin,
+    require_assignment_profile_runtime_ready,
+    resolve_assignment_profile,
 )
 from isaaclab_tasks.utils.hydra import hydra_task_config  # noqa: E402
 
@@ -807,6 +823,7 @@ def _build_and_load_assignment_actors(
     result = load_assignment_checkpoint(
         checkpoint_directory=model_dir,
         purpose=purpose,
+        entry_purpose=AssignmentCheckpointEntryPurpose.LOAD_EVALUATION,
         current_manifest=current_manifest,
         actor_modules=tuple(
             (name, actors[index].actor)
@@ -2046,6 +2063,26 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         raise ValueError("--num_episodes must be positive")
     if args_cli.max_steps <= 0:
         raise ValueError("--max_steps must be positive")
+
+    if args_cli.scenario_config is not None:
+        apply_scenario_config_to_env_cfg(env_cfg, args_cli)
+    setattr(env_cfg, "assignment_lifecycle_resolver_enabled", bool(args_cli.assignment_lifecycle_resolver_enabled))
+    canonical_assignment_profile = finalize_assignment_lifecycle_profile_runtime_primitive(
+        env_cfg,
+        declaration_settings=args_cli,
+        entrypoint="scripts/environments/evaluate_assignment_rl_playback_diagnostics.py",
+    )
+    resolved_assignment_profile = resolve_assignment_profile(
+        canonical_assignment_profile,
+        AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+    )
+    require_assignment_profile_runtime_ready(
+        resolved_assignment_profile,
+        consumer="evaluate_assignment_rl_playback_diagnostics.main",
+        entrypoint="scripts/environments/evaluate_assignment_rl_playback_diagnostics.py",
+        barrier="post-AppLauncher before model/output/env/actor/checkpoint/evaluation",
+    )
+
     if not args_cli.assignment_rl:
         print("[INFO]: evaluate_assignment_rl_playback_diagnostics.py is assignment-only; proceeding in assignment mode.")
 
@@ -2060,9 +2097,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if args_cli.seed is not None:
         env_cfg.seed = args_cli.seed
     if args_cli.scenario_config is not None:
-        apply_scenario_config_to_env_cfg(env_cfg, args_cli)
         print(f"[INFO]: Assignment RL playback scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
-    setattr(env_cfg, "assignment_lifecycle_resolver_enabled", bool(args_cli.assignment_lifecycle_resolver_enabled))
     setattr(env_cfg, "assignment_lifecycle_resolver_strict_proposals", True)
     setattr(env_cfg, "assignment_lifecycle_resolver_log_diagnostics", bool(args_cli.log_assignment_lifecycle_resolver))
     resolver_output_dir = (
@@ -2081,7 +2116,15 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     lifecycle_adapter: AssignmentLifecycleDiagnosticsAdapter | None = None
     checkpoint_load_result = None
     try:
-        wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
+        wrapper = make_assignment_harl_env(
+            args_cli.task,
+            cfg=env_cfg,
+            resolved_assignment_profile=resolved_assignment_profile,
+            profile_resolution_origin=AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+            assignment_profile_entrypoint=(
+                "scripts/environments/evaluate_assignment_rl_playback_diagnostics.py"
+            ),
+        )
         capture_state = _install_prereset_coverage_capture(wrapper.unwrapped)
         device = init_device(agent_cfg["device"])
         actors, checkpoint_load_result = _build_and_load_assignment_actors(

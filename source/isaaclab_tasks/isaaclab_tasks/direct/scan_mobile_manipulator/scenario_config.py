@@ -39,15 +39,38 @@ SUPPORTED_ASSIGNMENT_COOLDOWN_SCOPES = {"per_robot_target"}
 SUPPORTED_ASSIGNMENT_COOLDOWN_TRIGGER_MODES = {"streak", "budget", "budget_and_streak"}
 SUPPORTED_ASSIGNMENT_REDIRECT_GUARDRAIL_CONTEXTS = {"recent_budget_trigger"}
 SUPPORTED_ASSIGNMENT_FAILED_PAIR_MEMORY_SOURCES = {"budget_trigger"}
-SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES = {
+SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES = (
     "legacy",
     "lifecycle_ablation",
     "lifecycle_contract_c",
     "diagnostics_hidden_state",
-}
+    "event_gated_local_mrta",
+)
 
 ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS = (
     "assignment_lifecycle_profile",
+)
+ASSIGNMENT_LIFECYCLE_PROFILE_PROVENANCE_VALUES = (
+    "ABSENT",
+    "TOP_LEVEL",
+    "NESTED",
+    "TOP_LEVEL_AND_NESTED",
+)
+ASSIGNMENT_LIFECYCLE_PROFILE_TOP_LEVEL_SOURCE = ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS[0]
+ASSIGNMENT_LIFECYCLE_PROFILE_NESTED_SOURCE = "assignment_lifecycle.profile"
+ASSIGNMENT_LIFECYCLE_PROFILE_INVALID_ERROR = "SCENARIO_ASSIGNMENT_PROFILE_INVALID"
+ASSIGNMENT_LIFECYCLE_PROFILE_CONFLICT_ERROR = "SCENARIO_ASSIGNMENT_PROFILE_CONFLICT"
+ASSIGNMENT_LIFECYCLE_PROFILE_PREREQUISITE_ERROR = "SCENARIO_ASSIGNMENT_PROFILE_PREREQUISITE"
+ASSIGNMENT_LIFECYCLE_PROFILE_PRELAUNCH_BLOCKED_ERROR = (
+    "ASSIGNMENT_EVENT_PROFILE_PRELAUNCH_BLOCKED"
+)
+ASSIGNMENT_LIFECYCLE_PROFILE_RUNTIME_CONFLICT_ERROR = (
+    "ASSIGNMENT_RUNTIME_PROFILE_CONFLICT"
+)
+ASSIGNMENT_EVENT_GATED_LOCAL_MRTA_PROFILE = "event_gated_local_mrta"
+ASSIGNMENT_LIFECYCLE_HYDRA_OVERRIDE_KEYS = (
+    "assignment_lifecycle_profile",
+    "env.assignment_lifecycle_profile",
 )
 
 ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS = (
@@ -192,7 +215,373 @@ def load_scenario_config(config_path: str | Path | None, *, repo_root: Path) -> 
     return data
 
 
+def normalize_assignment_lifecycle_profile_primitive(raw_value: Any, *, source: str) -> str:
+    """Return one exact scenario-side primitive profile string.
+
+    This pre-bootstrap helper deliberately owns no enum or resolved-profile
+    identity.  Only surrounding whitespace is normalized; aliases and case
+    variants are rejected.
+    """
+
+    normalized = raw_value.strip() if type(raw_value) is str else None
+    if type(raw_value) is not str or normalized not in SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES:
+        raise ValueError(
+            f"{ASSIGNMENT_LIFECYCLE_PROFILE_INVALID_ERROR}: "
+            f"source={source!r}; raw={raw_value!r}; normalized={normalized!r}; "
+            f"allowed={SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES!r}."
+        )
+    return normalized
+
+
+def resolve_assignment_lifecycle_profile_declaration(
+    config: Mapping[str, Any],
+) -> tuple[str | None, str, tuple[tuple[str, str, str], ...]]:
+    """Resolve top-level/nested declarations without creating runtime identity.
+
+    The result is ``(canonical_profile, provenance, source_records)``.  Each
+    immutable source record contains ``(source_path, raw_value, canonical)``.
+    """
+
+    top_level_present = ASSIGNMENT_LIFECYCLE_PROFILE_TOP_LEVEL_SOURCE in config
+    assignment_lifecycle = _mapping(
+        config.get("assignment_lifecycle"),
+        "assignment_lifecycle",
+        required=False,
+    )
+    nested_key = "profile"
+    nested_present = nested_key in assignment_lifecycle
+
+    top_level_record: tuple[str, str, str] | None = None
+    if top_level_present:
+        top_level_raw = config[ASSIGNMENT_LIFECYCLE_PROFILE_TOP_LEVEL_SOURCE]
+        top_level_canonical = normalize_assignment_lifecycle_profile_primitive(
+            top_level_raw,
+            source=ASSIGNMENT_LIFECYCLE_PROFILE_TOP_LEVEL_SOURCE,
+        )
+        top_level_record = (
+            ASSIGNMENT_LIFECYCLE_PROFILE_TOP_LEVEL_SOURCE,
+            top_level_raw,
+            top_level_canonical,
+        )
+
+    nested_record: tuple[str, str, str] | None = None
+    if nested_present:
+        nested_raw = assignment_lifecycle[nested_key]
+        nested_canonical = normalize_assignment_lifecycle_profile_primitive(
+            nested_raw,
+            source=ASSIGNMENT_LIFECYCLE_PROFILE_NESTED_SOURCE,
+        )
+        nested_record = (
+            ASSIGNMENT_LIFECYCLE_PROFILE_NESTED_SOURCE,
+            nested_raw,
+            nested_canonical,
+        )
+
+    if top_level_record is None and nested_record is None:
+        return None, ASSIGNMENT_LIFECYCLE_PROFILE_PROVENANCE_VALUES[0], ()
+    if top_level_record is not None and nested_record is None:
+        return (
+            top_level_record[2],
+            ASSIGNMENT_LIFECYCLE_PROFILE_PROVENANCE_VALUES[1],
+            (top_level_record,),
+        )
+    if top_level_record is None and nested_record is not None:
+        return (
+            nested_record[2],
+            ASSIGNMENT_LIFECYCLE_PROFILE_PROVENANCE_VALUES[2],
+            (nested_record,),
+        )
+
+    assert top_level_record is not None and nested_record is not None
+    if top_level_record[2] != nested_record[2]:
+        raise ValueError(
+            f"{ASSIGNMENT_LIFECYCLE_PROFILE_CONFLICT_ERROR}: "
+            f"top_level_source={top_level_record[0]!r}; "
+            f"top_level_raw={top_level_record[1]!r}; "
+            f"top_level_canonical={top_level_record[2]!r}; "
+            f"nested_source={nested_record[0]!r}; "
+            f"nested_raw={nested_record[1]!r}; "
+            f"nested_canonical={nested_record[2]!r}; "
+            f"allowed={SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES!r}."
+        )
+    return (
+        top_level_record[2],
+        ASSIGNMENT_LIFECYCLE_PROFILE_PROVENANCE_VALUES[3],
+        (top_level_record, nested_record),
+    )
+
+
+def assignment_lifecycle_profile_from_hydra_overrides_primitive(
+    hydra_overrides: tuple[str, ...] | list[str],
+    *,
+    entrypoint: str,
+) -> str | None:
+    """Read only explicit primitive Hydra CLI profile overrides.
+
+    This helper runs before package bootstrap.  It intentionally does not
+    import or construct canonical profile enums/dataclasses.
+    """
+
+    records: list[tuple[str, str]] = []
+    for raw_token in hydra_overrides:
+        if type(raw_token) is not str:
+            continue
+        token = raw_token
+        while token.startswith("+"):
+            token = token[1:]
+        if token.startswith("~") or "=" not in token:
+            continue
+        key, raw_value = token.split("=", 1)
+        if key not in ASSIGNMENT_LIFECYCLE_HYDRA_OVERRIDE_KEYS:
+            continue
+        canonical = normalize_assignment_lifecycle_profile_primitive(
+            raw_value,
+            source=f"{entrypoint}:hydra_override:{key}",
+        )
+        records.append((key, canonical))
+    if not records:
+        return None
+    first = records[0][1]
+    if any(canonical != first for _, canonical in records[1:]):
+        raise ValueError(
+            f"{ASSIGNMENT_LIFECYCLE_PROFILE_RUNTIME_CONFLICT_ERROR}: "
+            f"entrypoint={entrypoint!r}; hydra_override_records={tuple(records)!r}."
+        )
+    return first
+
+
+def preflight_assignment_lifecycle_profile_runtime_primitive(
+    raw_profile: Any,
+    *,
+    raw_profile_present: bool,
+    hydra_overrides: tuple[str, ...] | list[str],
+    entrypoint: str,
+) -> str | None:
+    """Reject a prelaunch-visible event profile without identity imports."""
+
+    if type(raw_profile_present) is not bool:
+        raise TypeError(
+            "raw_profile_present must be bool in primitive assignment-profile preflight"
+        )
+    declared = (
+        normalize_assignment_lifecycle_profile_primitive(
+            raw_profile,
+            source=f"{entrypoint}:prelaunch_declaration",
+        )
+        if raw_profile_present
+        else None
+    )
+    override = assignment_lifecycle_profile_from_hydra_overrides_primitive(
+        hydra_overrides,
+        entrypoint=entrypoint,
+    )
+    if declared is not None and override is not None and declared != override:
+        raise ValueError(
+            f"{ASSIGNMENT_LIFECYCLE_PROFILE_RUNTIME_CONFLICT_ERROR}: "
+            f"entrypoint={entrypoint!r}; declaration={declared!r}; "
+            f"hydra_override={override!r}."
+        )
+    canonical = override if override is not None else declared
+    if canonical == ASSIGNMENT_EVENT_GATED_LOCAL_MRTA_PROFILE:
+        raise RuntimeError(
+            f"{ASSIGNMENT_LIFECYCLE_PROFILE_PRELAUNCH_BLOCKED_ERROR}: "
+            f"profile={canonical!r}; entrypoint={entrypoint!r}; "
+            "stage='prelaunch'; AppLauncher_constructed=False; "
+            "Phase A1c authorizes interface wiring only."
+        )
+    return canonical
+
+
+def finalize_assignment_lifecycle_profile_runtime_primitive(
+    env_cfg: Any,
+    *,
+    declaration_settings: Namespace | Mapping[str, Any] | None,
+    entrypoint: str,
+) -> str:
+    """Merge final env/scenario primitive sources without creating identity."""
+
+    env_present, env_raw = _setting_presence(
+        env_cfg,
+        "assignment_lifecycle_profile",
+    )
+    declaration_present = False
+    declaration_raw: Any = None
+    if declaration_settings is not None:
+        declaration_present, declaration_raw = _setting_presence(
+            declaration_settings,
+            "assignment_lifecycle_profile",
+        )
+
+    env_profile = (
+        normalize_assignment_lifecycle_profile_primitive(
+            env_raw,
+            source=f"{entrypoint}:env_cfg.assignment_lifecycle_profile",
+        )
+        if env_present
+        else None
+    )
+    declared_profile = (
+        normalize_assignment_lifecycle_profile_primitive(
+            declaration_raw,
+            source=f"{entrypoint}:declaration.assignment_lifecycle_profile",
+        )
+        if declaration_present
+        else None
+    )
+    if (
+        env_profile is not None
+        and declared_profile is not None
+        and env_profile != declared_profile
+    ):
+        raise ValueError(
+            f"{ASSIGNMENT_LIFECYCLE_PROFILE_RUNTIME_CONFLICT_ERROR}: "
+            f"entrypoint={entrypoint!r}; env_cfg={env_profile!r}; "
+            f"declaration={declared_profile!r}."
+        )
+    canonical = env_profile or declared_profile or "legacy"
+    validate_assignment_lifecycle_profile_prerequisites(
+        canonical,
+        env_cfg,
+        source=f"{entrypoint}:final_env_cfg",
+    )
+    return canonical
+
+
+def validate_assignment_lifecycle_profile_prerequisites(
+    profile: str,
+    settings: Namespace | Mapping[str, Any],
+    *,
+    source: str = "scenario_args",
+) -> None:
+    """Preflight current-profile primitive settings without mutating them."""
+
+    canonical_profile = normalize_assignment_lifecycle_profile_primitive(
+        profile,
+        source=source,
+    )
+    _validate_assignment_cooldown_values(
+        _present_settings(settings, ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS)
+    )
+    _validate_assignment_redirect_guardrail_values(
+        _present_settings(settings, ASSIGNMENT_REDIRECT_GUARDRAIL_SCENARIO_ATTRS)
+    )
+    _validate_assignment_failed_pair_memory_values(
+        _present_settings(settings, ASSIGNMENT_FAILED_PAIR_MEMORY_SCENARIO_ATTRS)
+    )
+
+    resolver_enabled = bool(
+        _setting_value(settings, "assignment_lifecycle_resolver_enabled", False)
+    )
+    cooldown_enabled = bool(
+        _setting_value(settings, "assignment_cooldown_enabled", False)
+    )
+    cooldown_trigger_mode = str(
+        _setting_value(settings, "assignment_cooldown_trigger_mode", "streak")
+    ).strip().lower()
+    cooldown_duration_steps = int(
+        _setting_value(settings, "assignment_cooldown_duration_steps", 20)
+    )
+    cooldown_apply_to_action_mask = bool(
+        _setting_value(settings, "assignment_cooldown_apply_to_action_mask", True)
+    )
+    redirect_guardrail_enabled = bool(
+        _setting_value(settings, "assignment_redirect_guardrail_enabled", False)
+    )
+    failed_pair_memory_enabled = bool(
+        _setting_value(settings, "assignment_failed_pair_memory_enabled", False)
+    )
+
+    if canonical_profile == "legacy":
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_lifecycle_resolver_enabled",
+            False,
+            resolver_enabled,
+        )
+        return
+
+    if canonical_profile == "lifecycle_ablation":
+        for field, actual in (
+            ("assignment_lifecycle_resolver_enabled", resolver_enabled),
+            ("assignment_cooldown_enabled", cooldown_enabled),
+            ("assignment_redirect_guardrail_enabled", redirect_guardrail_enabled),
+            ("assignment_failed_pair_memory_enabled", failed_pair_memory_enabled),
+        ):
+            _require_assignment_profile_setting(
+                canonical_profile,
+                source,
+                field,
+                False,
+                actual,
+            )
+        return
+
+    if canonical_profile == "lifecycle_contract_c":
+        # The current wrapper derives effective resolver_enabled=True from this
+        # profile; it does not require the raw resolver flag to be true.
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_cooldown_enabled",
+            True,
+            cooldown_enabled,
+        )
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_cooldown_trigger_mode",
+            ("budget", "budget_and_streak"),
+            cooldown_trigger_mode,
+            allowed=("budget", "budget_and_streak"),
+        )
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_cooldown_duration_steps",
+            "> 0",
+            cooldown_duration_steps,
+            condition=cooldown_duration_steps > 0,
+        )
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_cooldown_apply_to_action_mask",
+            False,
+            cooldown_apply_to_action_mask,
+        )
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_redirect_guardrail_enabled",
+            False,
+            redirect_guardrail_enabled,
+        )
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_failed_pair_memory_enabled",
+            False,
+            failed_pair_memory_enabled,
+        )
+        return
+
+    if canonical_profile == "diagnostics_hidden_state":
+        _require_assignment_profile_setting(
+            canonical_profile,
+            source,
+            "assignment_lifecycle_resolver_enabled",
+            True,
+            resolver_enabled,
+        )
+        return
+
+    # event_gated_local_mrta is declaration/apply-only in A1b.  Its runtime
+    # readiness and low-level event prerequisites belong to A1c and later.
+
+
 def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
+    lifecycle_profile, _, _ = resolve_assignment_lifecycle_profile_declaration(config)
     defaults: dict[str, Any] = {}
     _put(defaults, "scenario_config_path", config.get("_scenario_config_path"))
     _put(defaults, "scenario_name", config.get("scenario_name"))
@@ -249,10 +638,8 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
     assignment = _mapping(config.get("assignment"), "assignment", required=False)
     _put(defaults, "viewpoint_candidate_top_k", assignment.get("viewpoint_candidate_top_k"))
 
-    for attr in ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS:
-        _put(defaults, attr, config.get(attr))
-    assignment_lifecycle = _mapping(config.get("assignment_lifecycle"), "assignment_lifecycle", required=False)
-    _put(defaults, "assignment_lifecycle_profile", assignment_lifecycle.get("profile"))
+    if lifecycle_profile is not None:
+        defaults["assignment_lifecycle_profile"] = lifecycle_profile
 
     for attr in ASSIGNMENT_COOLDOWN_SCENARIO_ATTRS:
         _put(defaults, attr, config.get(attr))
@@ -479,6 +866,22 @@ def smoke_defaults_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
 def apply_scenario_config_to_env_cfg(env_cfg: Any, args: Namespace | Mapping[str, Any]) -> Any:
     """Apply loaded scenario defaults/CLI overrides to a ScanMobileManipulator env cfg."""
 
+    lifecycle_profile_present, lifecycle_profile_raw = _setting_presence(
+        args,
+        "assignment_lifecycle_profile",
+    )
+    lifecycle_profile: str | None = None
+    if lifecycle_profile_present:
+        lifecycle_profile = normalize_assignment_lifecycle_profile_primitive(
+            lifecycle_profile_raw,
+            source="args.assignment_lifecycle_profile",
+        )
+        validate_assignment_lifecycle_profile_prerequisites(
+            lifecycle_profile,
+            args,
+            source="args.assignment_lifecycle_profile",
+        )
+
     getter = args.get if isinstance(args, Mapping) else lambda key, default=None: getattr(args, key, default)
     for attr in ("scenario_config_path", "scenario_name", "scenario_type"):
         value = getter(attr, None)
@@ -492,6 +895,8 @@ def apply_scenario_config_to_env_cfg(env_cfg: Any, args: Namespace | Mapping[str
             setattr(env_cfg, attr, value)
     if bool(getter("align_base_center_to_world_origin", False)):
         env_cfg.component_mesh_align_base_center_to_world_origin = True
+    if lifecycle_profile is not None:
+        env_cfg.assignment_lifecycle_profile = lifecycle_profile
     return env_cfg
 
 
@@ -548,6 +953,7 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
         _validate_assignment_cooldown_metadata(config)
         _validate_assignment_redirect_guardrail_metadata(config)
         _validate_assignment_failed_pair_memory_metadata(config)
+    _validate_assignment_lifecycle_args(args)
     _validate_visual_mode_arg(
         getattr(args, "robot_visual_mode", None),
         label="visualization.robot_visual_mode",
@@ -594,7 +1000,6 @@ def validate_smoke_args(args: Namespace, *, repo_root: Path, config: Mapping[str
     if capability_config_path is not None:
         resolve_path(capability_config_path, repo_root=repo_root, must_exist=True, label="capabilities.config_path")
     _ensure_output_parent(getattr(args, "result_file", None), repo_root=repo_root, label="output.result_file")
-    _validate_assignment_lifecycle_args(args)
     _validate_assignment_cooldown_args(args)
     _validate_assignment_redirect_guardrail_args(args)
     _validate_assignment_failed_pair_memory_args(args)
@@ -1144,32 +1549,20 @@ def _validate_conflict_aware_baseline_metadata(config: Mapping[str, Any]) -> Non
 
 
 def _validate_assignment_lifecycle_metadata(config: Mapping[str, Any]) -> None:
-    values = {
-        attr: config.get(attr)
-        for attr in ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS
-        if config.get(attr) is not None
-    }
-    block = _mapping(config.get("assignment_lifecycle"), "assignment_lifecycle", required=False)
-    if block.get("profile") is not None:
-        values["assignment_lifecycle_profile"] = block.get("profile")
-    _validate_assignment_lifecycle_values(values)
+    resolve_assignment_lifecycle_profile_declaration(config)
 
 
 def _validate_assignment_lifecycle_args(args: Namespace) -> None:
-    values = {
-        attr: getattr(args, attr, None)
-        for attr in ASSIGNMENT_LIFECYCLE_SCENARIO_ATTRS
-        if getattr(args, attr, None) is not None
-    }
-    _validate_assignment_lifecycle_values(values)
-
-
-def _validate_assignment_lifecycle_values(values: Mapping[str, Any]) -> None:
-    profile = values.get("assignment_lifecycle_profile")
-    if profile is not None and str(profile).strip().lower() not in SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES:
-        raise ValueError(
-            "assignment_lifecycle_profile must be one of "
-            f"{sorted(SUPPORTED_ASSIGNMENT_LIFECYCLE_PROFILES)!r}, got {profile!r}."
+    profile_present, profile_raw = _setting_presence(args, "assignment_lifecycle_profile")
+    if profile_present:
+        profile = normalize_assignment_lifecycle_profile_primitive(
+            profile_raw,
+            source="args.assignment_lifecycle_profile",
+        )
+        validate_assignment_lifecycle_profile_prerequisites(
+            profile,
+            args,
+            source="args.assignment_lifecycle_profile",
         )
 
 
@@ -1421,6 +1814,59 @@ def _validate_assignment_failed_pair_memory_values(values: Mapping[str, Any]) ->
     if values.get("assignment_failed_pair_memory_enabled") is True and duration_steps == 0:
         raise ValueError(
             "assignment_failed_pair_memory_duration_steps must be positive when failed-pair memory is enabled."
+        )
+
+
+def _setting_presence(
+    settings: Namespace | Mapping[str, Any],
+    key: str,
+) -> tuple[bool, Any]:
+    if isinstance(settings, Mapping):
+        return key in settings, settings.get(key)
+    return hasattr(settings, key), getattr(settings, key, None)
+
+
+def _setting_value(
+    settings: Namespace | Mapping[str, Any],
+    key: str,
+    default: Any,
+) -> Any:
+    present, value = _setting_presence(settings, key)
+    return value if present and value is not None else default
+
+
+def _present_settings(
+    settings: Namespace | Mapping[str, Any],
+    keys: tuple[str, ...],
+) -> dict[str, Any]:
+    values: dict[str, Any] = {}
+    for key in keys:
+        present, value = _setting_presence(settings, key)
+        if present and value is not None:
+            values[key] = value
+    return values
+
+
+def _require_assignment_profile_setting(
+    profile: str,
+    source: str,
+    field: str,
+    expected: Any,
+    actual: Any,
+    *,
+    allowed: tuple[Any, ...] | None = None,
+    condition: bool | None = None,
+) -> None:
+    accepted = (
+        condition
+        if condition is not None
+        else (actual in allowed if allowed is not None else actual == expected)
+    )
+    if not accepted:
+        raise ValueError(
+            f"{ASSIGNMENT_LIFECYCLE_PROFILE_PREREQUISITE_ERROR}: "
+            f"profile={profile!r}; source={source!r}; field={field!r}; "
+            f"expected={expected!r}; actual={actual!r}."
         )
 
 

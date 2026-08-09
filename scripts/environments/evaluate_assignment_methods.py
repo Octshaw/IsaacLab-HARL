@@ -38,7 +38,14 @@ for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
     if str(source_path) not in sys.path:
         sys.path.insert(0, str(source_path))
 
-from scenario_config import load_scenario_config, smoke_defaults_from_config, validate_smoke_args
+from scenario_config import (
+    apply_scenario_config_to_env_cfg,
+    finalize_assignment_lifecycle_profile_runtime_primitive,
+    load_scenario_config,
+    preflight_assignment_lifecycle_profile_runtime_primitive,
+    smoke_defaults_from_config,
+    validate_smoke_args,
+)
 
 from isaaclab.app import AppLauncher
 
@@ -277,6 +284,12 @@ parser.add_argument(
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli, hydra_args = parser.parse_known_args()
+preflight_assignment_lifecycle_profile_runtime_primitive(
+    getattr(args_cli, "assignment_lifecycle_profile", None),
+    raw_profile_present=hasattr(args_cli, "assignment_lifecycle_profile"),
+    hydra_overrides=hydra_args,
+    entrypoint="scripts/environments/evaluate_assignment_methods.py",
+)
 validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
 sys.argv = [sys.argv[0]] + hydra_args
 print(
@@ -341,6 +354,11 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_lifecycle_resolver
     AssignmentLifecycleResolverRuntimeAdapter,
     build_resolver_budget_failure_diagnostics,
     select_assignment_lifecycle_passive_input,
+)
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (
+    AssignmentProfileResolutionOrigin,
+    require_assignment_profile_runtime_ready,
+    resolve_assignment_profile,
 )
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_rl_interface import compute_assignment_duplicate_count
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_state import status_counts
@@ -5773,7 +5791,15 @@ def _evaluate_assignment_rl(env_cfg, agent_cfg: dict) -> list[dict]:
     if not model_dir.exists():
         raise FileNotFoundError(f"Assignment checkpoint directory does not exist: {model_dir}")
 
-    wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
+    wrapper = make_assignment_harl_env(
+        args_cli.task,
+        cfg=env_cfg,
+        resolved_assignment_profile=None,
+        profile_resolution_origin=AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+        assignment_profile_entrypoint=(
+            "scripts/environments/evaluate_assignment_methods.py:hard-blocked-assignment-rl"
+        ),
+    )
     prereset_coverage_snapshots, original_reset_idx = _install_prereset_coverage_capture(wrapper.unwrapped)
     device = init_device(agent_cfg["device"])
     raise AssertionError("unreachable: assignment checkpoint loading is disabled above")
@@ -6610,6 +6636,24 @@ def _print_summary(rows: list[dict]) -> None:
 
 @hydra_task_config(args_cli.task, agent_cfg_entry_point)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: dict) -> None:
+    if args_cli.scenario_config is not None:
+        apply_scenario_config_to_env_cfg(env_cfg, args_cli)
+    canonical_profile = finalize_assignment_lifecycle_profile_runtime_primitive(
+        env_cfg,
+        declaration_settings=args_cli,
+        entrypoint="scripts/environments/evaluate_assignment_methods.py",
+    )
+    resolved_assignment_profile = resolve_assignment_profile(
+        canonical_profile,
+        AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+    )
+    require_assignment_profile_runtime_ready(
+        resolved_assignment_profile,
+        consumer="evaluate_assignment_methods.py",
+        entrypoint="scripts/environments/evaluate_assignment_methods.py",
+        barrier="post-AppLauncher pre-seed/environment/output/evaluation",
+    )
+
     if args_cli.num_envs <= 0:
         raise ValueError("--num_envs must be positive")
     if args_cli.num_episodes <= 0:

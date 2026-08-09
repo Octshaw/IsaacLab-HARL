@@ -13,11 +13,15 @@ model, CUDA, or checkpoint-deserialization dependency.
 """
 
 import hashlib
+import importlib
+import importlib.util
 import json
 import math
 import os
 import re
 import statistics
+import sys
+import types
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -153,6 +157,124 @@ _LEGACY_ACTOR = re.compile(
 )
 _HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _MISSING = object()
+_CANONICAL_SCAN_PACKAGE = "isaaclab_tasks.direct.scan_mobile_manipulator"
+_CANONICAL_GUARD_MODULE = f"{_CANONICAL_SCAN_PACKAGE}.assignment_checkpoint_entry_guard"
+_PURE_GUARD_DEPENDENCY_ORDER = (
+    "assignment_lifecycle_transition_contract",
+    "assignment_event_contract",
+    "assignment_mrta_contract",
+    "assignment_team_reward_contract",
+    "assignment_profile_contract",
+    "assignment_event_gated_diagnostics_contract",
+    "assignment_event_profile_schema_contract",
+    "assignment_checkpoint_contract",
+    "assignment_checkpoint_contract_v3",
+    "assignment_checkpoint_semantic_dispatch",
+    "assignment_checkpoint_entry_guard",
+)
+
+
+def _validate_canonical_guard_source_graph(task_dir: Path) -> Any:
+    package_paths = {
+        "isaaclab_tasks": task_dir.parents[1],
+        "isaaclab_tasks.direct": task_dir.parent,
+        _CANONICAL_SCAN_PACKAGE: task_dir,
+    }
+    for key, expected_root in package_paths.items():
+        module = sys.modules.get(key)
+        paths = () if module is None else getattr(module, "__path__", ())
+        if str(expected_root.resolve()) not in {
+            str(Path(item).resolve()) for item in paths
+        }:
+            raise AuditPreflightError(
+                f"canonical namespace {key!r} is not rooted at {expected_root}"
+            )
+    for basename in _PURE_GUARD_DEPENDENCY_ORDER:
+        key = f"{_CANONICAL_SCAN_PACKAGE}.{basename}"
+        module = sys.modules.get(key)
+        actual_path = None if module is None else getattr(module, "__file__", None)
+        expected_path = task_dir / f"{basename}.py"
+        if actual_path is None or Path(actual_path).resolve() != expected_path.resolve():
+            raise AuditPreflightError(
+                f"canonical semantic module {key!r} is bound to unexpected "
+                f"source {actual_path!r}"
+            )
+    return sys.modules[_CANONICAL_GUARD_MODULE]
+
+
+def _load_canonical_checkpoint_entry_guard() -> Any:
+    """Load the pure canonical guard without importing Isaac task registration.
+
+    The offline CLI historically imports this audit module directly from its
+    source directory.  Importing ``isaaclab_tasks`` normally would recursively
+    register environments and violate the offline boundary, so that legacy CLI
+    shape gets a small namespace-only loader for the already pure Phase-A
+    authority modules.  Canonical package imports use the normal import path.
+    """
+
+    task_dir = Path(__file__).resolve().parent
+    existing = sys.modules.get(_CANONICAL_GUARD_MODULE)
+    if existing is not None:
+        return _validate_canonical_guard_source_graph(task_dir)
+    if __package__:
+        importlib.import_module(_CANONICAL_GUARD_MODULE)
+        return _validate_canonical_guard_source_graph(task_dir)
+
+    package_paths = {
+        "isaaclab_tasks": task_dir.parents[1],
+        "isaaclab_tasks.direct": task_dir.parent,
+        _CANONICAL_SCAN_PACKAGE: task_dir,
+    }
+    created_keys: list[str] = []
+    try:
+        for key, path in package_paths.items():
+            module = sys.modules.get(key)
+            if module is None:
+                module = types.ModuleType(key)
+                module.__package__ = key
+                module.__path__ = [str(path)]  # type: ignore[attr-defined]
+                sys.modules[key] = module
+                created_keys.append(key)
+            elif not hasattr(module, "__path__"):
+                raise AuditPreflightError(
+                    f"canonical namespace {key!r} exists but is not a package"
+                )
+            elif str(Path(path).resolve()) not in {
+                str(Path(item).resolve()) for item in module.__path__  # type: ignore[attr-defined]
+            }:
+                raise AuditPreflightError(
+                    f"canonical namespace {key!r} is not rooted at {path}"
+                )
+        for basename in _PURE_GUARD_DEPENDENCY_ORDER:
+            key = f"{_CANONICAL_SCAN_PACKAGE}.{basename}"
+            expected_path = task_dir / f"{basename}.py"
+            existing_module = sys.modules.get(key)
+            if existing_module is not None:
+                existing_path = getattr(existing_module, "__file__", None)
+                if (
+                    existing_path is None
+                    or Path(existing_path).resolve() != expected_path.resolve()
+                ):
+                    raise AuditPreflightError(
+                        f"canonical semantic module {key!r} is bound to "
+                        f"unexpected source {existing_path!r}"
+                    )
+                continue
+            path = expected_path
+            spec = importlib.util.spec_from_file_location(key, path)
+            if spec is None or spec.loader is None:
+                raise AuditPreflightError(
+                    f"cannot create pure semantic module spec for {path}"
+                )
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[key] = module
+            created_keys.append(key)
+            spec.loader.exec_module(module)
+        return _validate_canonical_guard_source_graph(task_dir)
+    except Exception:
+        for key in reversed(created_keys):
+            sys.modules.pop(key, None)
+        raise
 
 
 class AuditPreflightError(RuntimeError):
@@ -275,6 +397,70 @@ def _read_json(path: Path) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise ValueError(f"JSON root must be an object: {path}")
     return value
+
+
+def _checkpoint_entry_guard_result_mapping(result: Any) -> dict[str, Any]:
+    decision = result.semantic_decision
+    runtime_ready = (
+        None if decision is None else getattr(decision, "runtime_ready", None)
+    )
+    interface_valid = (
+        result.semantic_allowed if result.semantic_family == "v3" else None
+    )
+    return {
+        "metadata_mode": result.metadata_mode.value,
+        "manifest_version": result.manifest_version,
+        "manifest_kind": result.manifest_kind,
+        "semantic_family": result.semantic_family,
+        "requested_purpose": result.requested_purpose.value,
+        "fingerprint_verified": result.fingerprint_verified,
+        "stored_fingerprint": result.stored_fingerprint,
+        "semantic_allowed": result.semantic_allowed,
+        "weight_io_authorized": result.weight_io_authorized,
+        "fallback_mode": result.fallback_mode,
+        "decision_classification": result.decision_classification,
+        "reason": result.reason,
+        "interface_valid": interface_valid,
+        "interface_status": (
+            "interface-valid"
+            if interface_valid is True
+            else "interface-invalid"
+            if interface_valid is False
+            else "not-applicable"
+        ),
+        "runtime_ready": runtime_ready,
+        "runtime_status": (
+            "runtime-not-ready"
+            if result.semantic_family == "v3" and runtime_ready is False
+            else "not-applicable"
+        ),
+        "checkpoint_ready": (
+            False if result.semantic_family == "v3" else None
+        ),
+        "weight_status": (
+            "weight-authorized"
+            if result.weight_io_authorized
+            else "weight-unauthorized"
+        ),
+    }
+
+
+def audit_assignment_checkpoint_semantic_metadata(
+    checkpoint_directory: str | Path,
+) -> dict[str, Any]:
+    """Perform a metadata-only V2/V3 checkpoint semantic audit.
+
+    This helper never opens checkpoint artifact payloads.  In particular, a V3
+    interface descriptor may be reported as interface-valid while remaining
+    explicitly runtime-not-ready and weight-unauthorized.
+    """
+
+    guard = _load_canonical_checkpoint_entry_guard()
+    result = guard.read_and_evaluate_checkpoint_entry_guard(
+        checkpoint_directory=Path(checkpoint_directory),
+        purpose=guard.AssignmentCheckpointEntryPurpose.OFFLINE_AUDIT,
+    )
+    return _checkpoint_entry_guard_result_mapping(result)
 
 
 def _sha256_file(path: Path) -> str:
@@ -1087,6 +1273,19 @@ def _audit_checkpoint_child(
 ) -> dict[str, Any]:
     child = run_dir / child_name
     label = child_name
+    child_semantic_guard: dict[str, Any] | None = None
+    try:
+        child_semantic_guard = audit_assignment_checkpoint_semantic_metadata(
+            child
+        )
+    except Exception as exc:
+        issues.error(
+            "checkpoint_child_semantic_guard_rejected",
+            "checkpoint child semantic metadata failed the shared entry guard",
+            checkpoint=label,
+            path=child,
+            error=repr(exc),
+        )
     required_files = {
         *(f"actor_agent_robot_{index}.pt" for index in range(expectations.num_agents)),
         "critic_agent.pt",
@@ -1256,6 +1455,7 @@ def _audit_checkpoint_child(
         "artifact_hashes": artifacts,
         "artifact_count": len(artifacts),
         "tensor_inventory_metadata_valid": tensor_inventory_metadata_valid,
+        "semantic_guard": child_semantic_guard,
     }
 
 
@@ -1303,10 +1503,85 @@ def _audit_checkpoints(
 ) -> dict[str, Any]:
     root_manifest_path = run_dir / CONTRACT_MANIFEST_FILE
     root_fingerprint_path = run_dir / CONTRACT_FINGERPRINT_FILE
+    semantic_guard: dict[str, Any] | None = None
+    try:
+        semantic_guard = audit_assignment_checkpoint_semantic_metadata(run_dir)
+    except Exception as exc:
+        issues.error(
+            "checkpoint_semantic_guard_rejected",
+            "checkpoint semantic metadata failed the shared entry guard",
+            path=run_dir,
+            error=repr(exc),
+        )
     if not root_manifest_path.is_file():
         issues.error("run_root_manifest_missing", "run-root contract manifest is missing", path=root_manifest_path)
     if not root_fingerprint_path.is_file():
         issues.error("run_root_fingerprint_missing", "run-root contract fingerprint is missing", path=root_fingerprint_path)
+
+    if semantic_guard is not None and semantic_guard["semantic_family"] == "v3":
+        issues.error(
+            "v3_interface_not_checkpoint_ready",
+            "V3 interface metadata is valid for offline semantic audit but cannot represent a weight-usable training checkpoint",
+            manifest_version=semantic_guard["manifest_version"],
+            manifest_kind=semantic_guard["manifest_kind"],
+            runtime_ready=semantic_guard["runtime_ready"],
+            weight_io_authorized=semantic_guard["weight_io_authorized"],
+        )
+
+        def interface_only_child(name: str) -> dict[str, Any]:
+            return {
+                "path": str(run_dir / name),
+                "expected_kind": None,
+                "required_files": [],
+                "missing_files": [],
+                "extra_files": [],
+                "contract_manifest_valid": False,
+                "computed_fingerprint": None,
+                "fingerprint_file": None,
+                "training_state_manifest_valid": False,
+                "checkpoint_kind": None,
+                "checkpoint_generation": None,
+                "continuation_classification": None,
+                "artifact_hashes": [],
+                "artifact_count": 0,
+                "tensor_inventory_metadata_valid": False,
+                "semantic_guard": None,
+                "audit_mode": "not-applicable-v3-interface-only",
+            }
+
+        best = interface_only_child("best_model")
+        final = interface_only_child("models")
+        return {
+            "run_root_contract": {
+                "manifest_path": str(root_manifest_path),
+                "fingerprint_path": str(root_fingerprint_path),
+                "manifest_valid": True,
+                "computed_fingerprint": semantic_guard["stored_fingerprint"],
+                "fingerprint_file": semantic_guard["stored_fingerprint"],
+                "contract_checks": [],
+                "semantic_guard": semantic_guard,
+            },
+            "best_model": best,
+            "final_models": final,
+            "generation_order": {
+                "best_generation": None,
+                "final_generation": None,
+                "final_newer_than_best": False,
+                "regular_save_opportunities": expectations.rollouts
+                // expectations.save_interval,
+                "source_derived_minimum_final_generation": None,
+                "minimum_result": "NOT_APPLICABLE_V3_INTERFACE_ONLY",
+            },
+            "artifact_hashes": {"best_model": [], "models": []},
+            "legacy_or_temp_scan": {
+                "temporary_or_partial_files": [],
+                "legacy_actor_files": [],
+                "full_model_files": [],
+                "wrong_manifest_versions": [],
+                "result": "NOT_APPLICABLE_V3_INTERFACE_ONLY",
+            },
+        }
+
     run_manifest, computed = _load_contract_manifest(
         root_manifest_path, issues, "run_root"
     ) if root_manifest_path.is_file() else (None, None)
@@ -1362,6 +1637,7 @@ def _audit_checkpoints(
             "computed_fingerprint": computed,
             "fingerprint_file": fingerprint,
             "contract_checks": contract_checks,
+            "semantic_guard": semantic_guard,
         },
         "best_model": best,
         "final_models": final,
@@ -1640,6 +1916,7 @@ __all__ = [
     "PRINCIPAL_TAG_DIRECTIONS",
     "AuditExpectations",
     "AuditPreflightError",
+    "audit_assignment_checkpoint_semantic_metadata",
     "audit_assignment_training_run",
     "render_assignment_training_run_audit_json",
     "render_assignment_training_run_audit_markdown",

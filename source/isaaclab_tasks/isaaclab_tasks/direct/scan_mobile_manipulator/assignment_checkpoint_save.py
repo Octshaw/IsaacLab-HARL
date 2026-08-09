@@ -65,6 +65,22 @@ except ImportError:  # Allows direct lightweight tests with this directory on sy
     )
 
 
+# The semantic dispatcher intentionally requires the canonical package identity.
+# Keep the historical bare-import path above available only for lightweight V2
+# tests; production package imports must use the shared A4b entry guard and must
+# propagate any import failure instead of silently degrading to the bare path.
+_CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD = bool(__package__)
+if _CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD:
+    from .assignment_checkpoint_entry_guard import (
+        AssignmentCheckpointEntryGuardError,
+        AssignmentCheckpointEntryPurpose,
+        AssignmentCheckpointMetadataMode,
+        evaluate_checkpoint_save_entry_guard,
+        read_and_evaluate_checkpoint_entry_guard,
+        require_checkpoint_weight_io_authorized,
+    )
+
+
 CONTRACT_MANIFEST_FILE = "assignment_contract_manifest.json"
 CONTRACT_FINGERPRINT_FILE = "assignment_contract_fingerprint.txt"
 TRAINING_STATE_MANIFEST_FILE = "assignment_training_state_manifest.json"
@@ -811,18 +827,80 @@ class AssignmentCheckpointSaveCoordinator:
         if self.failure_injector is not None:
             self.failure_injector(point)
 
+    @staticmethod
+    def _guard_existing_metadata_pair(
+        directory: Path,
+        *,
+        expected_fingerprint: str,
+    ) -> None:
+        """Reject existing native metadata drift before tensor inventory work."""
+
+        result = read_and_evaluate_checkpoint_entry_guard(
+            checkpoint_directory=directory,
+            purpose=AssignmentCheckpointEntryPurpose.SAVE,
+        )
+        if result.metadata_mode is AssignmentCheckpointMetadataMode.BOTH_ABSENT:
+            return
+        require_checkpoint_weight_io_authorized(result)
+        if result.stored_fingerprint != expected_fingerprint:
+            raise AssignmentCheckpointEntryGuardError(
+                "existing native metadata fingerprint differs from the incoming "
+                "V2 save manifest"
+            )
+
     def save_checkpoint(
         self,
         *,
         checkpoint_directory: Path,
         checkpoint_kind: str,
         checkpoint_generation: int,
-        manifest: AssignmentCheckpointContractManifest,
+        manifest: Any,
         actor_state_dicts: Sequence[tuple[str, Mapping[str, Any]]],
         critic_state_dict: Mapping[str, Any],
         value_normalizer_state_dict: Mapping[str, Any] | None,
         episode_or_update_index: int | None = None,
     ) -> AssignmentCheckpointSaveResult:
+        # This must remain the first save operation: V3 interface descriptors
+        # are audit-only and must be rejected before manifest field access,
+        # state-dict inspection, directory creation, or any artifact write.
+        if _CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD:
+            try:
+                manifest_mapping = (
+                    manifest.to_mapping()
+                    if hasattr(manifest, "to_mapping")
+                    else manifest
+                )
+                entry_guard_result = evaluate_checkpoint_save_entry_guard(
+                    manifest_mapping
+                )
+                require_checkpoint_weight_io_authorized(
+                    entry_guard_result
+                )
+                guarded_manifest = entry_guard_result.parsed_manifest
+                if not isinstance(
+                    guarded_manifest,
+                    AssignmentCheckpointContractManifest,
+                ):
+                    raise AssignmentCheckpointEntryGuardError(
+                        "weight-authorized save guard did not return a parsed V2 manifest"
+                    )
+                manifest = guarded_manifest
+            except AssignmentCheckpointEntryGuardError as exc:
+                raise AssignmentCheckpointSaveError(
+                    f"assignment checkpoint semantic save guard denied the request: {exc}"
+                ) from exc
+            except Exception as exc:
+                raise AssignmentCheckpointSaveError(
+                    f"assignment checkpoint semantic save guard rejected the manifest: {exc}"
+                ) from exc
+        elif not isinstance(manifest, AssignmentCheckpointContractManifest):
+            # Direct module imports exist only for the established lightweight
+            # V2 tests.  They must still fail closed for non-V2 save requests.
+            raise AssignmentCheckpointSaveError(
+                "direct-import compatibility mode accepts only a validated V2 "
+                "assignment checkpoint manifest"
+            )
+
         if checkpoint_kind not in CHECKPOINT_KINDS:
             raise AssignmentCheckpointSaveError(f"unsupported assignment checkpoint kind {checkpoint_kind!r}")
         if isinstance(checkpoint_generation, bool) or checkpoint_generation < 0:
@@ -834,6 +912,28 @@ class AssignmentCheckpointSaveCoordinator:
             checkpoint_kind,
             episode_or_update_index,
         )
+
+        if _CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD:
+            try:
+                expected_fingerprint = entry_guard_result.stored_fingerprint
+                if expected_fingerprint is None:
+                    raise AssignmentCheckpointEntryGuardError(
+                        "weight-authorized save guard omitted the V2 fingerprint"
+                    )
+                self._guard_existing_metadata_pair(
+                    self.run_root,
+                    expected_fingerprint=expected_fingerprint,
+                )
+                if checkpoint_directory != self.run_root:
+                    self._guard_existing_metadata_pair(
+                        checkpoint_directory,
+                        expected_fingerprint=expected_fingerprint,
+                    )
+            except Exception as exc:
+                raise AssignmentCheckpointSaveError(
+                    "assignment checkpoint existing-metadata guard rejected the "
+                    f"save before tensor inventory: {exc}"
+                ) from exc
 
         expected_names = tuple(manifest.scale["ordered_agent_names"])
         supplied_names = tuple(str(name) for name, _ in actor_state_dicts)

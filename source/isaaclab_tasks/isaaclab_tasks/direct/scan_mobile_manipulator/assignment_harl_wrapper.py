@@ -13,6 +13,25 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+if __package__:
+    from .assignment_profile_contract import (
+        AssignmentProfileName,
+        AssignmentProfileResolutionOrigin,
+        ResolvedAssignmentProfile,
+        ResolvedExistingAssignmentProfile,
+        require_assignment_profile_runtime_ready,
+        resolve_or_validate_assignment_profile_authority,
+    )
+else:  # Direct/fake test compatibility without a second contract module key.
+    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (  # type: ignore
+        AssignmentProfileName,
+        AssignmentProfileResolutionOrigin,
+        ResolvedAssignmentProfile,
+        ResolvedExistingAssignmentProfile,
+        require_assignment_profile_runtime_ready,
+        resolve_or_validate_assignment_profile_authority,
+    )
+
 try:
     from .assignment_harl_adapter import (
         AssignmentHarlAdapter,
@@ -97,9 +116,49 @@ class AssignmentHarlWrapper:
     calls the existing assignment controller, then forwards the resulting 9D action dict.
     """
 
-    def __init__(self, env: Any, include_noop: bool = True, strict_decode: bool = True) -> None:
+    def __init__(
+        self,
+        env: Any,
+        include_noop: bool = True,
+        strict_decode: bool = True,
+        *,
+        resolved_assignment_profile: ResolvedAssignmentProfile | None = None,
+        profile_resolution_origin: AssignmentProfileResolutionOrigin = (
+            AssignmentProfileResolutionOrigin.DIRECT_WRAPPER_FALLBACK
+        ),
+        assignment_profile_entrypoint: str = "AssignmentHarlWrapper.direct",
+    ) -> None:
         self._env = env
         self._unwrapped = getattr(env, "unwrapped", env)
+        cfg = getattr(self._unwrapped, "cfg", None)
+        raw_profile_present = cfg is not None and hasattr(
+            cfg,
+            "assignment_lifecycle_profile",
+        )
+        raw_profile = (
+            getattr(cfg, "assignment_lifecycle_profile")
+            if raw_profile_present
+            else None
+        )
+        authoritative_profile = resolve_or_validate_assignment_profile_authority(
+            raw_profile=raw_profile,
+            raw_profile_present=raw_profile_present,
+            resolved_assignment_profile=resolved_assignment_profile,
+            expected_origin=profile_resolution_origin,
+            allow_direct_fallback=(
+                profile_resolution_origin
+                is AssignmentProfileResolutionOrigin.DIRECT_WRAPPER_FALLBACK
+            ),
+            consumer="AssignmentHarlWrapper",
+            entrypoint=assignment_profile_entrypoint,
+        )
+        self._resolved_assignment_profile = require_assignment_profile_runtime_ready(
+            authoritative_profile,
+            consumer="AssignmentHarlWrapper",
+            entrypoint=assignment_profile_entrypoint,
+            barrier="before wrapper profile branches, resolver, observation, mask, logger, and controller",
+        )
+        self._assignment_profile_entrypoint = assignment_profile_entrypoint
         self.include_noop = include_noop
         self.strict_decode = strict_decode
 
@@ -224,6 +283,12 @@ class AssignmentHarlWrapper:
     @property
     def unwrapped(self) -> Any:
         return self._unwrapped
+
+    @property
+    def resolved_assignment_profile(self) -> ResolvedExistingAssignmentProfile:
+        """Return the process-local authority object without copying it."""
+
+        return self._resolved_assignment_profile
 
     @property
     def env(self) -> Any:
@@ -689,93 +754,41 @@ class AssignmentHarlWrapper:
 
     def _build_assignment_lifecycle_profile_config(self) -> dict[str, Any]:
         cfg = getattr(self._unwrapped, "cfg", None)
-        profile = str(getattr(cfg, "assignment_lifecycle_profile", "legacy")).strip().lower()
-        if profile not in ASSIGNMENT_LIFECYCLE_PROFILES:
-            raise ValueError(
-                "assignment_lifecycle_profile must be one of "
-                f"{sorted(ASSIGNMENT_LIFECYCLE_PROFILES)}, got {profile!r}"
+        resolved_profile = self._resolved_assignment_profile
+        if type(resolved_profile) is not ResolvedExistingAssignmentProfile:
+            raise TypeError(
+                "AssignmentHarlWrapper existing route requires the canonical "
+                "ResolvedExistingAssignmentProfile class identity"
             )
-
+        profile_name = resolved_profile.profile_name
         cfg_resolver_enabled = bool(getattr(cfg, "assignment_lifecycle_resolver_enabled", False))
-        if profile == "legacy":
+        if profile_name is AssignmentProfileName.LEGACY:
             if cfg_resolver_enabled:
                 raise ValueError(
                     "assignment_lifecycle_profile='legacy' requires "
                     "assignment_lifecycle_resolver_enabled=False. Use a lifecycle profile instead."
                 )
-            return {
-                "profile_name": "legacy",
-                "actor_schema_version": ASSIGNMENT_OBSERVATION_SCHEMA_LEGACY,
-                "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LEGACY,
-                "shared_construction_mode": "actor_concat",
-                "mask_contract_version": ASSIGNMENT_MASK_SCHEMA_LEGACY,
-                "budget_release_contract": ASSIGNMENT_BUDGET_RELEASE_DISABLED,
-                "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_LEGACY,
-                "resolver_enabled": False,
-                "lifecycle_observation_enabled": False,
-                "lifecycle_mask_enabled": False,
-                "training_allowed": True,
-            }
-
-        if profile == "lifecycle_ablation":
+        elif profile_name is AssignmentProfileName.LIFECYCLE_ABLATION:
             if cfg_resolver_enabled:
                 raise ValueError(
                     "assignment_lifecycle_profile='lifecycle_ablation' requires "
                     "assignment_lifecycle_resolver_enabled=False."
                 )
             self._validate_lifecycle_ablation_profile_config()
-            return {
-                "profile_name": "lifecycle_ablation",
-                "actor_schema_version": ACTOR_SCHEMA_VERSION,
-                "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LIFECYCLE_OPTION_A,
-                "shared_construction_mode": "actor_concat_plus_critic_budget_2m",
-                "mask_contract_version": LIFECYCLE_ABLATION_MASK_VERSION,
-                "budget_release_contract": ASSIGNMENT_BUDGET_RELEASE_DISABLED,
-                "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_LIFECYCLE_NONE,
-                "resolver_enabled": False,
-                "lifecycle_observation_enabled": True,
-                "lifecycle_mask_enabled": False,
-                "training_allowed": False,
-                "training_blocked_reason": (
-                    "assignment_lifecycle_profile='lifecycle_ablation' is an explicit "
-                    "observation/mask ablation profile and is not enabled for normal training."
-                ),
-            }
-
-        if profile == "lifecycle_contract_c":
+        elif profile_name is AssignmentProfileName.LIFECYCLE_CONTRACT_C:
             self._validate_lifecycle_contract_c_profile_config()
-            return {
-                "profile_name": "lifecycle_contract_c",
-                "actor_schema_version": ACTOR_SCHEMA_VERSION,
-                "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LIFECYCLE_OPTION_A,
-                "shared_construction_mode": "actor_concat_plus_critic_budget_2m",
-                "mask_contract_version": LIFECYCLE_CONTRACT_C_MASK_VERSION,
-                "budget_release_contract": ASSIGNMENT_BUDGET_RELEASE_V1,
-                "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_LIFECYCLE_NONE,
-                "resolver_enabled": True,
-                "lifecycle_observation_enabled": True,
-                "lifecycle_mask_enabled": True,
-                "training_allowed": True,
-            }
-
-        if not cfg_resolver_enabled:
-            raise ValueError(
-                "assignment_lifecycle_profile='diagnostics_hidden_state' requires "
-                "assignment_lifecycle_resolver_enabled=True."
+        elif profile_name is AssignmentProfileName.DIAGNOSTICS_HIDDEN_STATE:
+            if not cfg_resolver_enabled:
+                raise ValueError(
+                    "assignment_lifecycle_profile='diagnostics_hidden_state' requires "
+                    "assignment_lifecycle_resolver_enabled=True."
+                )
+        else:
+            raise TypeError(
+                "AssignmentHarlWrapper existing-profile dispatch is not exhaustive: "
+                f"{profile_name!r}"
             )
-        return {
-            "profile_name": "diagnostics_hidden_state",
-            "actor_schema_version": ASSIGNMENT_OBSERVATION_SCHEMA_LEGACY,
-            "shared_schema_version": ASSIGNMENT_SHARED_SCHEMA_LEGACY,
-            "shared_construction_mode": "actor_concat",
-            "mask_contract_version": ASSIGNMENT_MASK_SCHEMA_DIAGNOSTICS,
-            "budget_release_contract": "diagnostics_only",
-            "legacy_guardrail_profile": ASSIGNMENT_GUARDRAIL_DIAGNOSTICS,
-            "resolver_enabled": True,
-            "lifecycle_observation_enabled": False,
-            "lifecycle_mask_enabled": False,
-            "training_allowed": False,
-        }
+        return resolved_profile.to_legacy_wrapper_mapping()
 
     def _validate_lifecycle_ablation_profile_config(self) -> None:
         if bool(self._assignment_cooldown_config["enabled"]):
@@ -884,13 +897,16 @@ class AssignmentHarlWrapper:
 
     def _lifecycle_available_actions_from_snapshot(self) -> torch.Tensor:
         snapshot = self._require_lifecycle_decision_snapshot()
-        profile_name = str(self._assignment_lifecycle_profile_config["profile_name"])
-        if profile_name == "lifecycle_contract_c":
+        profile_name = self._resolved_assignment_profile.profile_name
+        if profile_name is AssignmentProfileName.LIFECYCLE_CONTRACT_C:
             result = build_lifecycle_contract_c_available_action_tensors(snapshot)
-        elif profile_name == "lifecycle_ablation":
+        elif profile_name is AssignmentProfileName.LIFECYCLE_ABLATION:
             result = build_lifecycle_ablation_available_action_tensors(snapshot)
         else:
-            raise RuntimeError(f"lifecycle available-actions are not defined for profile {profile_name!r}")
+            raise RuntimeError(
+                "lifecycle available-actions are not defined for profile "
+                f"{profile_name.value!r}"
+            )
         self._last_available_actions_lifecycle_result = result
         if result.snapshot_generation != snapshot.snapshot_generation:
             raise RuntimeError("available-actions generation does not match lifecycle snapshot generation")
@@ -1000,8 +1016,10 @@ class AssignmentHarlWrapper:
         return snapshot
 
     def _build_assignment_observation_schema_manifest(self) -> dict[str, Any]:
-        profile_name = str(self._assignment_lifecycle_profile_config["profile_name"])
-        policy_sequence_contract = policy_sequence_contract_for_profile(profile_name)
+        profile_name = self._resolved_assignment_profile.profile_name.value
+        policy_sequence_contract = policy_sequence_contract_for_profile(
+            self._resolved_assignment_profile
+        )
         actor_dims = {agent: self._actor_observation_dim(agent) for agent in self._agents}
         actor_dim_values = tuple(actor_dims.values())
         actor_dimension = actor_dim_values[0] if len(set(actor_dim_values)) == 1 else None
@@ -2752,16 +2770,55 @@ def make_assignment_harl_env(
     render_mode: str | None = None,
     include_noop: bool = True,
     strict_decode: bool = True,
+    resolved_assignment_profile: ResolvedAssignmentProfile | None = None,
+    profile_resolution_origin: AssignmentProfileResolutionOrigin = (
+        AssignmentProfileResolutionOrigin.DIRECT_WRAPPER_FALLBACK
+    ),
+    assignment_profile_entrypoint: str = "make_assignment_harl_env.direct",
     **gym_kwargs,
 ) -> AssignmentHarlWrapper:
     """Construct the normal IsaacLab scan env and wrap it with assignment Discrete actions."""
 
+    raw_profile_present = cfg is not None and hasattr(
+        cfg,
+        "assignment_lifecycle_profile",
+    )
+    raw_profile = (
+        getattr(cfg, "assignment_lifecycle_profile")
+        if raw_profile_present
+        else None
+    )
+    authoritative_profile = resolve_or_validate_assignment_profile_authority(
+        raw_profile=raw_profile,
+        raw_profile_present=raw_profile_present,
+        resolved_assignment_profile=resolved_assignment_profile,
+        expected_origin=profile_resolution_origin,
+        allow_direct_fallback=(
+            profile_resolution_origin
+            is AssignmentProfileResolutionOrigin.DIRECT_WRAPPER_FALLBACK
+        ),
+        consumer="make_assignment_harl_env",
+        entrypoint=assignment_profile_entrypoint,
+    )
+    require_assignment_profile_runtime_ready(
+        authoritative_profile,
+        consumer="make_assignment_harl_env",
+        entrypoint=assignment_profile_entrypoint,
+        barrier="before gymnasium.make",
+    )
     if cfg is not None:
         gym_kwargs["cfg"] = cfg
     if render_mode is not None:
         gym_kwargs["render_mode"] = render_mode
     env = gymnasium.make(task, **gym_kwargs)
-    return AssignmentHarlWrapper(env, include_noop=include_noop, strict_decode=strict_decode)
+    return AssignmentHarlWrapper(
+        env,
+        include_noop=include_noop,
+        strict_decode=strict_decode,
+        resolved_assignment_profile=authoritative_profile,
+        profile_resolution_origin=profile_resolution_origin,
+        assignment_profile_entrypoint=assignment_profile_entrypoint,
+    )
 
 
 __all__ = [

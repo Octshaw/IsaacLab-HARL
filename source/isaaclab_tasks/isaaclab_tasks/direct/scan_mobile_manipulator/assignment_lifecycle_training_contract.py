@@ -9,6 +9,25 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+if __package__:
+    from .assignment_profile_contract import (
+        LIFECYCLE_ABLATION_TRAINING_BLOCKED_REASON,
+        AssignmentProfileName,
+        AssignmentProfileSupport,
+        ResolvedAssignmentProfile,
+        ResolvedExistingAssignmentProfile,
+        require_assignment_profile_runtime_ready,
+    )
+else:  # Direct test compatibility while retaining one canonical contract key.
+    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (  # type: ignore
+        LIFECYCLE_ABLATION_TRAINING_BLOCKED_REASON,
+        AssignmentProfileName,
+        AssignmentProfileSupport,
+        ResolvedAssignmentProfile,
+        ResolvedExistingAssignmentProfile,
+        require_assignment_profile_runtime_ready,
+    )
+
 
 LIFECYCLE_CONTRACT_C_PROFILE = "lifecycle_contract_c"
 LIFECYCLE_POLICY_SEQUENCE_CONTRACT_VERSION = "lifecycle_feed_forward_v1"
@@ -29,20 +48,6 @@ Set:
   use_naive_recurrent_policy = False
 
 No installed HARL package modification is required."""
-
-
-def _profile_name_from_config(config: Any) -> str:
-    if isinstance(config, Mapping):
-        value = config.get("assignment_lifecycle_profile", "legacy")
-    else:
-        value = getattr(config, "assignment_lifecycle_profile", "legacy")
-    return str(value).strip().lower()
-
-
-def assignment_lifecycle_profile_from_env_args(env_args: Mapping[str, Any]) -> str:
-    """Read the resolved lifecycle profile without mutating the environment config."""
-
-    return _profile_name_from_config(env_args.get("config"))
 
 
 def _require_resolved_bool(model_args: Mapping[str, Any], field: str) -> bool:
@@ -103,11 +108,19 @@ def resolve_installed_harl_actor_buffer_generator(
     return FEED_FORWARD_GENERATOR
 
 
-def policy_sequence_contract_for_profile(profile_name: str) -> dict[str, Any]:
+def policy_sequence_contract_for_profile(
+    resolved_assignment_profile: ResolvedAssignmentProfile,
+) -> dict[str, Any]:
     """Return immutable-by-convention sequence metadata for an observation manifest."""
 
-    profile = str(profile_name).strip().lower()
-    if profile == LIFECYCLE_CONTRACT_C_PROFILE:
+    profile = require_assignment_profile_runtime_ready(
+        resolved_assignment_profile,
+        consumer="policy_sequence_contract_for_profile",
+        entrypoint="resolved-profile consumer",
+        barrier="before existing policy-sequence dispatch",
+    )
+    profile_name = profile.profile_name
+    if profile_name is AssignmentProfileName.LIFECYCLE_CONTRACT_C:
         return {
             "policy_sequence_contract_version": LIFECYCLE_POLICY_SEQUENCE_CONTRACT_VERSION,
             "policy_sequence_mode": "feed_forward",
@@ -119,7 +132,7 @@ def policy_sequence_contract_for_profile(profile_name: str) -> dict[str, Any]:
                 CHUNKED_RECURRENT_GENERATOR,
             ],
         }
-    if profile == "legacy":
+    if profile_name is AssignmentProfileName.LEGACY:
         return {
             "policy_sequence_contract_version": "legacy_existing_policy_sequence_v1",
             "policy_sequence_mode": "existing_legacy_behavior",
@@ -128,7 +141,7 @@ def policy_sequence_contract_for_profile(profile_name: str) -> dict[str, Any]:
             "supported_actor_buffer_generator": "resolved_by_legacy_harl_config",
             "unsupported_actor_buffer_generators": [],
         }
-    if profile == "lifecycle_ablation":
+    if profile_name is AssignmentProfileName.LIFECYCLE_ABLATION:
         return {
             "policy_sequence_contract_version": "lifecycle_ablation_no_training_v1",
             "policy_sequence_mode": "not_training_enabled",
@@ -137,26 +150,56 @@ def policy_sequence_contract_for_profile(profile_name: str) -> dict[str, Any]:
             "supported_actor_buffer_generator": None,
             "unsupported_actor_buffer_generators": [],
         }
-    return {
-        "policy_sequence_contract_version": "diagnostics_only_no_training_v1",
-        "policy_sequence_mode": "diagnostics_only",
-        "use_recurrent_policy": None,
-        "use_naive_recurrent_policy": None,
-        "supported_actor_buffer_generator": None,
-        "unsupported_actor_buffer_generators": [],
-    }
+    if profile_name is AssignmentProfileName.DIAGNOSTICS_HIDDEN_STATE:
+        return {
+            "policy_sequence_contract_version": "diagnostics_only_no_training_v1",
+            "policy_sequence_mode": "diagnostics_only",
+            "use_recurrent_policy": None,
+            "use_naive_recurrent_policy": None,
+            "supported_actor_buffer_generator": None,
+            "unsupported_actor_buffer_generators": [],
+        }
+    raise TypeError(
+        "existing assignment policy-sequence dispatch is not exhaustive: "
+        f"{profile_name!r}"
+    )
+
+
+def _require_training_enabled(
+    profile: ResolvedExistingAssignmentProfile,
+) -> None:
+    if profile.training_support is AssignmentProfileSupport.ALLOWED:
+        return
+    if profile.profile_name is AssignmentProfileName.LIFECYCLE_ABLATION:
+        raise RuntimeError(LIFECYCLE_ABLATION_TRAINING_BLOCKED_REASON)
+    if profile.profile_name is AssignmentProfileName.DIAGNOSTICS_HIDDEN_STATE:
+        raise RuntimeError(
+            "assignment_lifecycle_profile='diagnostics_hidden_state' is not training-ready."
+        )
+    raise RuntimeError(
+        "resolved existing assignment profile is not training-enabled: "
+        f"profile={profile.profile_name.value!r}; "
+        f"training_support={profile.training_support.value!r}."
+    )
 
 
 def validate_assignment_lifecycle_policy_sequence(
     *,
+    resolved_assignment_profile: ResolvedAssignmentProfile,
     algo_args: Mapping[str, Any],
     env_args: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Reject unsupported lifecycle recurrent modes from fully resolved runtime config."""
 
-    profile = assignment_lifecycle_profile_from_env_args(env_args)
+    profile = require_assignment_profile_runtime_ready(
+        resolved_assignment_profile,
+        consumer="validate_assignment_lifecycle_policy_sequence",
+        entrypoint="assignment training",
+        barrier="before runner RNG, output, environment, actor, and checkpoint initialization",
+    )
     contract = policy_sequence_contract_for_profile(profile)
-    if profile != LIFECYCLE_CONTRACT_C_PROFILE:
+    _require_training_enabled(profile)
+    if profile.profile_name is not AssignmentProfileName.LIFECYCLE_CONTRACT_C:
         return contract
 
     algorithm_name = _algorithm_name_from_runtime(algo_args=algo_args, env_args=env_args)
@@ -229,7 +272,6 @@ __all__ = [
     "LIFECYCLE_SUPPORTED_ALGORITHM",
     "LIFECYCLE_SUPPORTED_STATE_TYPE",
     "NAIVE_RECURRENT_GENERATOR",
-    "assignment_lifecycle_profile_from_env_args",
     "policy_sequence_contract_for_profile",
     "resolve_installed_harl_actor_buffer_generator",
     "validate_assignment_lifecycle_policy_sequence",

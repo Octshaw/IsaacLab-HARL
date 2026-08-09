@@ -37,7 +37,9 @@ for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
 
 from scenario_config import (
     apply_scenario_config_to_env_cfg,
+    finalize_assignment_lifecycle_profile_runtime_primitive,
     load_scenario_config,
+    preflight_assignment_lifecycle_profile_runtime_primitive,
     smoke_defaults_from_config,
     validate_smoke_args,
 )
@@ -172,6 +174,12 @@ parser.add_argument(
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli, hydra_args = parser.parse_known_args()
+preflight_assignment_lifecycle_profile_runtime_primitive(
+    SCENARIO_DEFAULTS.get("assignment_lifecycle_profile"),
+    raw_profile_present="assignment_lifecycle_profile" in SCENARIO_DEFAULTS,
+    hydra_overrides=hydra_args,
+    entrypoint="scripts/reinforcement_learning/harl/play_assignment.py",
+)
 if args_cli.scenario_config is not None:
     validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
 ASSIGNMENT_ATTRIBUTION_OUTPUT_DIR = validate_assignment_playback_attribution_cli(
@@ -228,11 +236,19 @@ from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_initial_condition 
 )
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_adapter import make_harl_action_tensor
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_contract import CompatibilityPurpose
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_entry_guard import (
+    AssignmentCheckpointEntryPurpose,
+)
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_checkpoint_load import (
     build_assignment_evaluation_contract_manifest,
     load_assignment_checkpoint,
 )
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import make_assignment_harl_env
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (
+    AssignmentProfileResolutionOrigin,
+    require_assignment_profile_runtime_ready,
+    resolve_assignment_profile,
+)
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 
@@ -390,6 +406,7 @@ def _build_and_load_assignment_actors(wrapper, algo_args: dict, model_dir: Path,
     result = load_assignment_checkpoint(
         checkpoint_directory=model_dir,
         purpose=purpose,
+        entry_purpose=AssignmentCheckpointEntryPurpose.LOAD_PLAYBACK,
         current_manifest=current_manifest,
         actor_modules=tuple(
             (name, actors[index].actor)
@@ -586,6 +603,24 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if args_cli.diagnostic_interval <= 0:
         raise ValueError("--diagnostic_interval must be positive")
 
+    if args_cli.scenario_config is not None:
+        apply_scenario_config_to_env_cfg(env_cfg, args_cli)
+    canonical_assignment_profile = finalize_assignment_lifecycle_profile_runtime_primitive(
+        env_cfg,
+        declaration_settings=args_cli,
+        entrypoint="scripts/reinforcement_learning/harl/play_assignment.py",
+    )
+    resolved_assignment_profile = resolve_assignment_profile(
+        canonical_assignment_profile,
+        AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+    )
+    require_assignment_profile_runtime_ready(
+        resolved_assignment_profile,
+        consumer="play_assignment.main",
+        entrypoint="scripts/reinforcement_learning/harl/play_assignment.py",
+        barrier="post-AppLauncher before model/output/env/actor/checkpoint/playback",
+    )
+
     if not args_cli.assignment_rl:
         print("[INFO]: play_assignment.py is assignment-only; proceeding in assignment mode.")
     print(
@@ -601,14 +636,19 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if args_cli.seed is not None:
         env_cfg.seed = args_cli.seed
     if args_cli.scenario_config is not None:
-        apply_scenario_config_to_env_cfg(env_cfg, args_cli)
         print(f"[INFO]: Assignment play scenario_config applied: {getattr(env_cfg, 'scenario_config_path', None)}")
     _attach_initial_condition_request(env_cfg, agent_cfg)
 
     wrapper = None
     attribution_collector = None
     try:
-        wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
+        wrapper = make_assignment_harl_env(
+            args_cli.task,
+            cfg=env_cfg,
+            resolved_assignment_profile=resolved_assignment_profile,
+            profile_resolution_origin=AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+            assignment_profile_entrypoint="scripts/reinforcement_learning/harl/play_assignment.py",
+        )
         initial_condition_result = _validated_initial_condition_result(wrapper)
         device = init_device(agent_cfg["device"])
         actors, checkpoint_load_result = _build_and_load_assignment_actors(

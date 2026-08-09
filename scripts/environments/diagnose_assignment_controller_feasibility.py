@@ -28,7 +28,14 @@ for source_path in (ISAACLAB_TASKS_SOURCE, SCAN_TASK_SOURCE):
     if str(source_path) not in sys.path:
         sys.path.insert(0, str(source_path))
 
-from scenario_config import load_scenario_config, smoke_defaults_from_config, validate_smoke_args
+from scenario_config import (
+    apply_scenario_config_to_env_cfg,
+    finalize_assignment_lifecycle_profile_runtime_primitive,
+    load_scenario_config,
+    preflight_assignment_lifecycle_profile_runtime_primitive,
+    smoke_defaults_from_config,
+    validate_smoke_args,
+)
 
 from isaaclab.app import AppLauncher
 
@@ -99,6 +106,12 @@ parser.add_argument(
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(**SCENARIO_DEFAULTS)
 args_cli = parser.parse_args()
+preflight_assignment_lifecycle_profile_runtime_primitive(
+    getattr(args_cli, "assignment_lifecycle_profile", None),
+    raw_profile_present=hasattr(args_cli, "assignment_lifecycle_profile"),
+    hydra_overrides=(),
+    entrypoint="scripts/environments/diagnose_assignment_controller_feasibility.py",
+)
 validate_smoke_args(args_cli, repo_root=REPO_ROOT, config=SCENARIO_CONFIG)
 print(
     "[controller-feasibility] "
@@ -114,6 +127,11 @@ import torch  # noqa: E402
 
 import isaaclab_tasks  # noqa: F401, E402
 from isaaclab.utils.math import quat_apply, quat_error_magnitude  # noqa: E402
+from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (  # noqa: E402
+    AssignmentProfileResolutionOrigin,
+    require_assignment_profile_runtime_ready,
+    resolve_assignment_profile,
+)
 from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_harl_wrapper import (  # noqa: E402
     make_assignment_harl_env,
 )
@@ -462,10 +480,35 @@ def main() -> None:
         num_envs=args_cli.num_envs,
         use_fabric=not args_cli.disable_fabric,
     )
+    if args_cli.scenario_config is not None:
+        apply_scenario_config_to_env_cfg(env_cfg, args_cli)
     env_cfg = _apply_args_to_env_cfg(env_cfg)
+    canonical_profile = finalize_assignment_lifecycle_profile_runtime_primitive(
+        env_cfg,
+        declaration_settings=args_cli,
+        entrypoint="scripts/environments/diagnose_assignment_controller_feasibility.py",
+    )
+    resolved_assignment_profile = resolve_assignment_profile(
+        canonical_profile,
+        AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+    )
+    require_assignment_profile_runtime_ready(
+        resolved_assignment_profile,
+        consumer="diagnose_assignment_controller_feasibility.py",
+        entrypoint="scripts/environments/diagnose_assignment_controller_feasibility.py",
+        barrier="post-AppLauncher pre-environment/output/controller-diagnostic",
+    )
     env_cfg.enable_reset_diagnostics = False
 
-    wrapper = make_assignment_harl_env(args_cli.task, cfg=env_cfg)
+    wrapper = make_assignment_harl_env(
+        args_cli.task,
+        cfg=env_cfg,
+        resolved_assignment_profile=resolved_assignment_profile,
+        profile_resolution_origin=AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+        assignment_profile_entrypoint=(
+            "scripts/environments/diagnose_assignment_controller_feasibility.py"
+        ),
+    )
     try:
         pairs = _requested_pairs(wrapper.unwrapped)
         if args_cli.expect_num_viewpoints is not None:

@@ -2,269 +2,422 @@
 
 ## Current status
 
-Phase 10A Authoritative V2.1 targeted 文档修订已完成。
-
-```text
-V2.1 targeted revision:
-  complete
-
+~~~text
 classification:
-  TARGETED-REVISION-COMPLETE-AWAITING-USER-APPROVAL
-
-document status:
-  AUTHORITATIVE-DESIGN-CANDIDATE-V2.1
-
-original findings:
-  DR-01–DR-21 remain resolved
-
-targeted residual findings:
-  TR-01–TR-03 resolved
-
-unresolved CRITICAL/HIGH:
-  0
-
-V2 and original 20260724 memo:
+  PHASE-A-PURE-INTERFACE-IDENTITY-DIAGNOSTICS-COMPLETE-AWAITING-GPT-REVIEW
+Phase10A authoritative method design:
+  AUTHORITATIVE-DESIGN-APPROVED
+latest authorization:
+  PHASE-A6R-TARGETED-DEFAULT-OFF-REPAIR-AUTHORIZED
+A1:
+  complete
+  review passed
+A2:
+  complete
+  review passed
+A3:
+  complete after targeted schema-freeze extension
+  review passed
+A3x-0:
+  design accepted
+A3x-1:
+  complete by pure/descriptor evidence
+  prerequisite review passed
+A4a:
+  complete
+  review passed
+A4b:
+  complete by pure metadata, callback-spy, AST, and regression evidence
+  review passed
+A5:
+  complete
+  review passed
+A6:
+  original authorized closeout stopped at 13/15
+  STOP — PHASE-A DEFAULT-OFF IDENTITY GAP preserved as history
+A6-R:
+  targeted one-line production repair complete
+  hardened dedicated pure/static/manifest suite: 16/16 passed
+  H1/H2/H3/H4 identity evidence passed
+repaired interface:
+  AssignmentHarlWrapper.assignment_observation_schema_manifest
+repaired implementation:
+  AssignmentHarlWrapper._build_assignment_observation_schema_manifest
+canonical binding:
+  self._resolved_assignment_profile.profile_name.value
+existing-profile manifest identity:
+  legacy / lifecycle_contract_c / lifecycle_ablation / diagnostics_hidden_state passed
+event profile:
+  remains typed fail-closed before schema-manifest access
+Phase B0/B/C/D/E:
+  not entered
+  not authorized
+event-profile schema descriptor:
+  implemented
+MRTA/event/transition descriptors:
+  v2 / v2 / v2
+DTO/record schemas:
   unchanged
-  superseded for design recovery
-
-enter Phase A:
-  no -- wait for explicit user approval
-
-runtime behavior changed:
-  no
-
-training/playback/evaluation/checkpoint load:
-  none
-
+runtime assignment behavior:
+  not implemented
+V3 manifest/fingerprint:
+  interface_semantic_descriptor implemented
+  03c33620e8324c034de5f9014dfd0cb76bef2fc06c99b15895f94b9981cb2b6a
+V3 checkpoint-ready/weight use:
+  Phase-A fail-closed / unauthorized
+checkpoint semantic guard:
+  integrated at save/load/playback/offline-audit boundaries
+diagnostics schema:
+  unchanged; typed payload/availability closeout passed
+diagnostics runtime producer/sink:
+  not implemented
+team reward schema:
+  unchanged; semantic formula closeout passed
+team reward runtime:
+  not implemented
+rejection_penalty_scale:
+  unresolved; phase_d_e
+V2 native behavior:
+  preserved through unchanged semantic authority
+V2 metadata-free fallback:
+  preserved and not expanded
+V3 interface checkpoint metadata:
+  offline semantic audit only
+V3 save/load/continuation/evaluation/playback:
+  fail-closed
+Isaac/AppLauncher:
+  not run
+training/playback/evaluation:
+  not run
+checkpoint I/O:
+  temporary text metadata only
+  no real tensor serialization/deserialization or live mutation
+installed HARL:
+  unchanged
 commit:
   none
-```
+~~~
 
-V2.1 只修正三个 residual contracts：
+The original A6 run reached its explicit stop condition at `13/15`: both
+legacy and Contract-C observation/shared/action-mask groups reached the public
+schema-manifest property and exposed an undefined local `profile_name`.
+A6-R was separately authorized and restored exactly one canonical binding from
+the readiness-narrowed resolved-profile authority. The hardened dedicated
+suite now passes `16/16`; the original stop remains part of the audit history.
+This closes Phase A only at its declared pure-interface/static/manifest level.
+It does not authorize or establish runtime identity, event execution, B0, or
+any later phase.
 
-- raw `ExecutionTransitionFacts` 与 derived `LifecycleTransitionResult` 分层；
-- event-gated default-off 按 resolved pre-event-gated profile 精确分派；
-- `RESOLVER_COMMIT_DIAGNOSTIC` 不自触发下一 assignment tick。
+## Repository state
 
-原始 20260724 memo 与 V2 均未修改。V2.1 无需再次 broad review，但在用户确认前仍不是
-实现授权。`[NUMERIC-TBD]` 与 `[IMPLEMENTATION-EVIDENCE-TBD]` 继续是受控后续工作，
-不是 unresolved review finding。
+~~~text
+starting/ending HEAD:
+  dca976001d8c53a9cfb424b468fa58d9fca367f6
 
-Phase 10A event-gated local MRTA 与现有 HAPPO/HARL 训练接口兼容性审计已完成。
+active interpreter:
+  C:\isaacenvs\isaac45_harl\python.exe
 
-```text
-audit classification:
-  RUNNER-CHANGES-REQUIRED
+index at preflight/final:
+  empty
 
-repository baseline:
-  e3febe417c5323e28ceb9e256ba71dcd44f3c457
+Phase A6 preflight/final worktree:
+  49 -> 51 entries after the authorized A6 test and blocker report
 
-runtime behavior changed:
-  no
+Phase A6-R preflight/final worktree:
+  51 -> 52 entries after the targeted repair and A6-R report
+  13 tracked modifications + 39 untracked paths
+  no unknown path
 
-training/playback/evaluation launched:
-  no
+A6-R authorized delta:
+  one-line canonical repair in assignment_harl_wrapper.py
+  hardened standalone pure/static/manifest identity test
+  one new AgentRead A6-R repair report
+  Phase-A final report updated while preserving the original blocker history
+  TASK_PROGRESS updated in place
+~~~
 
-commit:
-  none
-```
-
-Phase 9G-8 已由当前 HEAD 的文档 commit 关闭，本审计没有重开其训练或评估结论。
-
-## Latest completed phase
-
-创建了 Phase 10A 之后、Phase A 之前的 V2.1 authoritative design candidate：
-
-- 继承 DR-01～DR-21 的 21/21 resolved 状态；
-- TR-01～TR-03 targeted residual findings 3/3 resolved；
-- 将 raw execution facts 与 lifecycle-derived result 拆成两个权威对象；
-- default-off 保留 resolved legacy、Contract C 或其他既有 profile 的精确路径；
-- resolver commit event 仅为 diagnostic，不独立进入 trigger set；
-- candidate 尚需用户显式批准。
-
-完成了 environment、assignment wrapper、lifecycle resolver、observation/action
-mask、reward、repo-local training facade、installed HARL runner/HAPPO/buffer/critic、
-GAE、ValueNorm、checkpoint、config、logger 和 playback 的静态调用链审计。
-
-核心结论：
-
-- 当前 base reward 是 shared + individual 组合；wrapper 输出 `[E,M,1]`，
-  但 EP critic 实际只写入 `rewards[:,0]`。
-- 当前每个物理 step 对所有 actor、所有 rollout thread 采样 action/log-prob。
-- PPO actor buffer 当前保存 proposal，effective assignment 没有覆盖 proposal；
-  controller 只消费 effective。
-- global fixed-width observation、global task ID、historical action-mask replay、
-  固定物理 step GAE 和 centralized critic 骨架可复用。
-- `decision_valid_mask` 必须进入 repo-local actor buffer、runner collect/insert、
-  HAPPO loss/entropy/advantage normalization 和 sequential factor。
-- 非决策 HAPPO ratio 必须为 1；只在最终 policy loss 外乘 mask 不足。
-- zero-valid actor 必须跳过 optimizer；single-valid advantage 需要 finite fallback。
-- 当前 DirectMARLEnv 在 wrapper 读取 post-step problem 前自动 reset done env；Phase B0
-  需要 pre-reset `ExecutionTransitionFacts` hook 和唯一 lifecycle authority/result。
-- 当前 resolver 只有 continue/idle claim/conflict，禁止 switch；没有 local-set、
-  Top-K、preemption 或 staged atomic transfer component。
-- 最终分类不是 architectural blocker，而是明确且可控的 runner/trainer/buffer
-  与 lifecycle/resolver 改造。
-
-## Active architecture / implementation path
-
-推荐路径：
-
-1. Phase A：resolved-profile dispatcher、两个 transition object schema、typed
-   event/cost/local-set/component contract、checkpoint identity 和 diagnostics，
-   不改变行为。
-2. Phase B0：pre-reset raw-facts hook、lifecycle authority/result、terminal pair
-   failure、release、`NEEDS_ASSIGNMENT`、availability、`TEAM_INFEASIBLE` 和
-   termination reason。
-3. Phase B：trigger-source filtering、event-gated local Top-K/mask、DVM sidecar、
-   atomic component resolver；只做 deterministic smoke。
-4. Phase C：repo-local buffer/runner/HAPPO valid-only update 与 factor identity。
-5. Phase D：explicit team reward、component rejection penalty、termination reason。
-6. Phase E：完成全部 gate 后才设计并执行训练/消融。
-
-不得直接修改 installed
-`C:\isaacenvs\isaac45_harl\Lib\site-packages\harl`；使用 repo-local
-subclass/shim/registry。
-
-## Changed files
-
-Documentation only:
-
-- Added
-  `AgentRead/20260724/PHASE10A_EVENT_GATED_LOCAL_MRTA_HAPPO_INTERFACE_AUDIT.md`
-- Added
-  `AgentRead/20260724/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_EVENT_GATED_LOCAL_MRTA_HAPPO_INTERFACE_AUDIT_20260724.md`
-- Added
-  `AgentRead/20260724/PHASE10A_EVENT_GATED_LOCAL_MRTA_DESIGN_BACKUP_REVIEW.md`
-- Added
-  `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_EVENT_GATED_LOCAL_MRTA_DESIGN_BACKUP_REVIEW_20260727.md`
-- Added
-  `AgentRead/20260727/Lifecycle_Aware_Event_Gated_Local_MRTA_Design_Authoritative_V2_20260727.md`
-- Added
-  `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_REVISION_SUMMARY.md`
-- Added
-  `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_REVISION_20260727.md`
-- Added
-  `AgentRead/20260727/Lifecycle_Aware_Event_Gated_Local_MRTA_Design_Authoritative_V2_1_20260727.md`
-- Added
-  `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_SUMMARY.md`
-- Added
-  `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_20260727.md`
-- Updated `AgentRead/TASK_PROGRESS.md`
-
-No source, test, YAML/data, result, checkpoint, installed HARL, Conda environment,
-training, simulation, controller, reward, buffer, trainer or runner behavior changed.
-
-## Latest verification
-
-Read-only/static checks:
-
-```text
-git rev-parse HEAD
-git log -3 --oneline
-git status --short --untracked-files=all
-git diff --name-status
-git diff --check
-git diff --cached --name-status
-
-D:\miniconda3\Scripts\conda.exe run -p C:\isaacenvs\isaac45_harl \
-  python -c "import sys; print(sys.executable)"
-
-D:\miniconda3\Scripts\conda.exe run -p C:\isaacenvs\isaac45_harl \
-  python -c "import harl; print(harl.__file__)"
-```
-
-2026-07-27 V2 revision closeout：
-
-- V2 和 revision summary 的 finding matrix 均为 21/21 `RESOLVED`，
-  无 unresolved CRITICAL/HIGH documentation finding；
-- V2、summary 和 TASK_PROGRESS 的相对 Markdown links 均可解析；
-- 原始 memo SHA256 仍为
-  `A9DD70253EC78575C14394B4F566505A5C85F0BFD0440D76E2F44403E55A42FC`；
-- HEAD 仍为 `e3febe417c5323e28ceb9e256ba71dcd44f3c457`；
-- `git diff --check` exit 0，`git diff --cached --name-status` 为空；
-- worktree 中没有 AgentRead 外的本轮修改。
-
-2026-07-27 V2.1 targeted revision closeout：
-
-- V2.1 与 targeted summary 的 TR matrix 均为 3/3 `RESOLVED`；
-- V2.1 的 DR-01～DR-21 rows 与 V2 逐行一致，仍为 21/21 `RESOLVED`；
-- V2.1、targeted summary 和 TASK_PROGRESS 的相对 Markdown links 均可解析；
-- backup、V2 和原 V2 summary SHA256 分别保持
-  `A9DD70253EC78575C14394B4F566505A5C85F0BFD0440D76E2F44403E55A42FC`、
-  `39F6C9F4857135E790DC897A2820FD83AA03CBA1CEAF93FC6824F7326899D517` 和
-  `E55DDDE44B4D1CFA8FA1B84FA09606F209BDA048286CB7314CDA14530BE9D517`；
-- V2.1 前 TASK_PROGRESS archive SHA256 为
-  `26EA9180AE7EF3FF531A2E0C679D108A9343A16BC2FEC372C7073A1038B61827`；
-- HEAD 未变，`git diff --check` exit 0，staged files 为空；
-- worktree 没有 AgentRead 外的变化。
-
-Interpreter and HARL import paths matched `C:\isaacenvs\isaac45_harl`.
-Pure tensor-level inspection confirmed unique-action sampling still occurs,
-zero-mask reductions are unsafe, and current unbiased nan-std is NaN for one
-valid sample.
-
-No AppLauncher, Isaac Sim, environment construction, training, playback,
-evaluation or checkpoint load was run.
-
-## Known issues / blockers
-
-- V2.1 contracts are candidate-frozen and require explicit user approval before Phase A.
-- Explicit team reward remains unimplemented; current EP learner uses robot 0 reward.
-- `ExecutionTransitionFacts` / `LifecycleTransitionResult` and the pre-reset hook remain
-  unimplemented.
-- Real navigation/alignment estimated-time sources are not present.
-- Scenario YAML lifecycle profile is parsed but not propagated by the current
-  `apply_scenario_config_to_env_cfg` path.
-- Assignment facade returns empty infos, so proper-time-limit `bad_masks` are
-  effectively always 1.
-- Checkpoint v2 does not fingerprint event/DVM/component/factor/reward semantics.
-
-These are implementation prerequisites, not architectural blockers.
-
-## Do not do
-
-- Do not start training, playback or formal evaluation from this audit alone.
-- Do not treat the V2.1 candidate as implementation authorization before user approval.
-- Do not modify or load old checkpoints under a new event-gated semantic profile.
-- Do not edit installed HARL; add repo-local subclasses/shims.
-- Do not use `active_masks` as `decision_valid_mask`.
-- Do not write effective assignment into PPO action storage.
-- Do not put all failure/TEAM_INFEASIBLE state work after local-set Phase B.
-- Do not commit unless the user explicitly requests it.
-
-## Next step
-
-Wait for explicit user approval. No further broad review is required for V2.1.
-
-After explicit user approval, implement **Phase A only**:
-
-- freeze the event-gated gate and resolved-profile dispatcher;
-- define/version `ExecutionTransitionFacts` and `LifecycleTransitionResult`;
-- freeze generation、consume-once、authority and event-source provenance;
-- freeze explicit EP team reward reducer/broadcast semantics;
-- define typed event/fact/cost/local-set/DVM/component interfaces;
-- add versioned checkpoint semantic fields with v2 backward parsing;
-- add structured correctness diagnostics;
-- prove feature-off identity separately for supported pre-event-gated profiles before Phase B0.
-
-The team reward reducer、singleton fallback、two-layer transition authority、
-profile-aware default-off dispatcher and resolver-commit trigger suppression are frozen
-as candidate contracts in V2.1. They still require user approval and later implementation
-evidence.
+No TASK archive was created: this is a targeted blocker update, not a
+substantial rewrite/condensation, and the A6-R allowed-file list did not
+authorize a new archive. Apart from the single wrapper binding, A6-R changed no
+production/runtime/config/HARL/checkpoint artifact or golden.
 
 ## Detailed reports / archives
 
-- `AgentRead/20260727/Lifecycle_Aware_Event_Gated_Local_MRTA_Design_Authoritative_V2_1_20260727.md`
-- `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_SUMMARY.md`
-- `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_1_TARGETED_REVISION_20260727.md`
-- `AgentRead/20260727/Lifecycle_Aware_Event_Gated_Local_MRTA_Design_Authoritative_V2_20260727.md`
-- `AgentRead/20260727/PHASE10A_AUTHORITATIVE_V2_REVISION_SUMMARY.md`
-- `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_AUTHORITATIVE_V2_REVISION_20260727.md`
-- `AgentRead/20260724/PHASE10A_EVENT_GATED_LOCAL_MRTA_DESIGN_BACKUP_REVIEW.md`
-- `AgentRead/20260727/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_EVENT_GATED_LOCAL_MRTA_DESIGN_BACKUP_REVIEW_20260727.md`
-- `AgentRead/20260724/PHASE10A_EVENT_GATED_LOCAL_MRTA_HAPPO_INTERFACE_AUDIT.md`
-- `AgentRead/20260724/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE10A_EVENT_GATED_LOCAL_MRTA_HAPPO_INTERFACE_AUDIT_20260724.md`
-- `AgentRead/20260722/PHASE9G8I320_MULTI_CONDITION_BEST_FINAL_EVIDENCE_SYNTHESIS_AND_COMMIT_READINESS_REVIEW.md`
-- `AgentRead/20260722/PHASE9G8I31_PAIRED_BEST_FINAL_MULTI_CONDITION_ROBUSTNESS_COMPARISON_EXECUTION.md`
-- `AgentRead/20260722/PHASE9G8I310_PAIRED_BEST_FINAL_MULTI_CONDITION_ROBUSTNESS_COMPARISON_DESIGN.md`
+Report:
+
+- AgentRead/20260809/PHASE_A6R_TARGETED_DEFAULT_OFF_IDENTITY_REPAIR_REPORT.md;
+- AgentRead/20260809/PHASE_A_PURE_INTERFACE_IDENTITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md;
+- AgentRead/20260808/PHASE_A5_DIAGNOSTICS_AND_REWARD_SEMANTIC_CONFIGURATION_REPORT.md;
+- AgentRead/20260808/PHASE_A4B_CHECKPOINT_ENTRY_SEMANTIC_GUARD_INTEGRATION_REPORT.md;
+- AgentRead/20260807/PHASE_A4A_V3_INTERFACE_DESCRIPTOR_AND_SEMANTIC_DISPATCH_IMPLEMENTATION_REPORT.md;
+- AgentRead/20260803/PHASE_A3X1_EVENT_PROFILE_SCHEMA_DESCRIPTOR_IMPLEMENTATION_REPORT.md;
+- AgentRead/20260803/PHASE_A3X0_EVENT_SCHEMA_FREEZE_DESIGN.md.
+
+The A6-R report preserves the exact original `13/15` blocker, records the
+separately authorized one-line repair, and closes H1--H4 with final `16/16`
+evidence. The Phase-A final report retains the blocker chronology while
+updating the current classification. Together they record the 19-surface
+matrix, 23 deferred runtime rows, 11 numeric TBDs, canonical/historical
+regression inventory, and the save/load/playback public-consumer audit.
+
+The A4b report records the exact native filenames and pair-state matrix, shared
+guard architecture, V2 direct/guard equivalence, unchanged metadata-free
+fallback, V3 audit-only behavior, save/load pre-I/O ordering, playback AST
+routing, offline-audit integration, callback-spy evidence, and the remaining
+post-AppLauncher/pre-checkpoint-tensor limitation.
+
+The A4a-R report records the frozen V2 golden package, exact 21-key/19-section
+V3 typed manifest, ownership-driven assembly, strict V2/V3 dispatcher, first
+interface-only V3 fingerprint, fail-closed readiness matrix, side-effect audit,
+and all required phase boundaries. The underlying frozen schema remains:
+
+~~~text
+actor schema:
+  event_gated_global_actor_observation_v1
+actor blocks:
+  15
+actor dimension:
+  6MN + 30M + 14N + 2
+  M=3,N=50 -> 1692
+
+shared schema:
+  event_gated_global_centralized_observation_v1
+shared construction:
+  global_fixed_width_centralized_v1
+shared blocks:
+  19
+shared semantic dimension:
+  6MN + 31M + 15N + 8
+  M=3,N=50 -> 1751
+shared semantic/transport/critic shapes:
+  [E,S] / [E,M,S] / [B,S]
+~~~
+
+The actor sees fixed global IDs, physical/lifecycle state, policy-before a0,
+failed/path/nominal-cost matrices, pre-policy masks/DVM, minimal workload and
+episode context. Same-tick proposal/resolver/effective outcome, future facts,
+private detector state and local repacking are excluded.
+
+The shared state stores global facts once; agent-axis repetition is transport,
+not semantic state. Contract-C supplies selected primitives only. Its nearest-8
+packing, field order, dimensions, budget semantics and actor-concat shared
+identity are not reused.
+
+## Numeric-TBD identity
+
+There are exactly 11 ordered method numeric-TBDs:
+
+~~~text
+top_k_tasks_per_robot
+local_robot_cap
+local_task_cap
+pair_abs_threshold
+pair_rel_threshold
+component_abs_threshold
+component_rel_threshold
+transfer_penalty
+rejection_penalty_scale
+alignment_time_constant
+assignment_retry_cadence
+~~~
+
+Typed owner values are phase_b, phase_d, phase_e, phase_b_e and phase_d_e.
+Phase A selects no number. Multi-stage owner values are explicit; free strings
+are forbidden. The aggregate references each domain owner and drift-checks the
+exact triple; it does not duplicate authority.
+
+Alignment fallback is robot-specific seconds inside cost/path; retry cadence
+counts physical-transition deltas; transfer penalty belongs only to equal-count
+component Jp; rejection penalty belongs only to once-per-eligible-component
+team reward.
+
+## Descriptor/projection freeze
+
+A3x-1 implements immutable descriptor projections for the exact A3x-0R key
+orders and equations covering:
+
+1. local seed/Top-K/current retention/one owner expansion/overlap merge/
+   recomputation/fail-closed overflow/request-result association;
+2. expected-time cost/current-owner remaining cost/path-valid/NaN/fallback;
+3. component contention/pair and component gates/count/transfer/covered
+   CONTINUE/whole outcome/rejection attribution;
+4. cumulative failed pair/TEAM_INFEASIBLE/release-before-a0/termination/
+   physical fail-closed/generation;
+5. model structure and state-dict identity;
+6. HAPPO EP feed-forward training, DVM-only actor, zero/singleton handling,
+   all-step critic GAE/ValueNorm, and nondecision factor identity.
+
+~~~text
+STATE ENUM OWNER GAP:
+  resolved
+
+unique owner:
+  assignment_lifecycle_transition_contract.py
+
+TaskLifecycleState order:
+  AVAILABLE, CLAIMED, NAVIGATING, ALIGNING, COMPLETED, TEAM_INFEASIBLE
+
+RobotLifecycleState order:
+  EXECUTING, NEEDS_ASSIGNMENT, WAITING_FOR_TASK, UNAVAILABLE
+
+TerminationReason order unchanged:
+  NONE, ALL_TASKS_COMPLETED, NO_FEASIBLE_TASKS_REMAIN, TIME_LIMIT
+~~~
+
+The V3 count is 21 top-level keys: two discriminators plus 19 typed semantic
+section dataclasses. “20 entries after manifest_format_version” includes
+manifest_kind; no twentieth semantic section is invented.
+
+## Model/training finding
+
+The assignment runner reads model.hidden_sizes for both networks, so its actual
+current actor/critic projection is (256,256)/(256,256). YAML
+hidden_sizes_critic [512,256] is not consumed. The proposal binds the actual
+route as interface_identity_only_not_runtime_verified. A 512/256 event critic
+would be a new architecture decision.
+
+Training numeric config is current-config identity only, not a paper default or
+an addition to the 11 method numeric-TBDs. No model/state dict was constructed.
+
+## Implemented versions
+
+~~~text
+new in A4a-R:
+  assignment_checkpoint_contract_v3
+  assignment_checkpoint_semantic_dispatch
+
+new authority consumed from A3x-1:
+  assignment_event_profile_schema_contract_v1
+
+descriptor version bumps:
+  assignment_mrta_contract_v1 -> v2
+  assignment_event_contract_v1 -> v2
+  assignment_lifecycle_transition_contract_v1 -> v2
+
+unchanged:
+  profile and actor/shared v1 identity strings
+  all A2/A3 DTO/record schemas and field orders
+  reward v1 and diagnostics v1
+  V2 checkpoint bytes/hash/semantics
+~~~
+
+The first V3 golden is the interface-only descriptor for M=3, N=50 and has
+canonical byte length 67794 and SHA-256
+`03c33620e8324c034de5f9014dfd0cb76bef2fc06c99b15895f94b9981cb2b6a`.
+It is not checkpoint-ready and does not authorize runtime or weight use.
+
+## Latest verification
+
+All final pure evidence used the required conda interpreter.
+
+~~~text
+A6 original standalone default-off identity:
+  py_compile passed
+  13/15 passed; exit 1; prescribed STOP
+  failed: legacy_observation_shared_action_mask
+          contract_c_observation_shared_action_mask
+A6-R hardened standalone identity:
+  py_compile passed
+  16/16 passed
+H1 independent tensor oracle:
+  legacy and nonzero Contract-C actor/shared/action-mask torch.equal passed
+H2 evidence inventory:
+  exact 19-surface tuple and label counts passed
+H3 resolver discriminator:
+  proposal [[5,5,-1],[7,7,7]]
+  effective [[5,-1,-1],[7,-1,-1]]
+H4 isolated clean child:
+  -I -B full state snapshot passed
+canonical required matrix:
+  143/143 passed
+audited-safe historical matrix:
+  7 scripts / 100/100 passed
+five deferred historical scripts:
+  not run
+V2 source SHA-256:
+  8f220bb62bcacf108876bf02d97141f77af8761cced7669e9f73406d00b90bc0
+V2 legacy bytes / SHA-256:
+  5509 / 1b525f3d577f0064dc86e1f2231c7569bf0e46fa9735960937d475323d5cf60f
+V2 Contract-C bytes / SHA-256:
+  7234 / 88c8000cae494af36c441288659cf84fa428324784d1ea807a0d8e48654ae398
+V3 bytes / SHA-256:
+  67794 / 03c33620e8324c034de5f9014dfd0cb76bef2fc06c99b15895f94b9981cb2b6a
+protected production inventory:
+  25 non-wrapper entries unchanged
+  wrapper equals sole authorized repaired hash
+~~~
+
+No Isaac/AppLauncher or model/runtime path was invoked by A6 or A6-R. The dedicated
+suite used only pure objects, fake wrappers, synthetic tensors, clean children,
+and AST/source checks; it performed no real checkpoint tensor save/load,
+`load_state_dict`, model construction, training, playback, or evaluation. One
+historical candidate was attempted before its canonical import chain was fully
+classified and failed before test collection at missing `omni.kit`; it started
+no AppLauncher, environment, rollout, or policy operation and was immediately
+reclassified as deferred and not rerun.
+
+## A6 / A6-R authorized scope and outcome
+
+~~~text
+new standalone test:
+  scripts/environments/test_assignment_phase_a_default_off_identity.py
+
+Phase-A final report:
+  AgentRead/20260809/PHASE_A_PURE_INTERFACE_IDENTITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md
+
+A6-R report:
+  AgentRead/20260809/PHASE_A6R_TARGETED_DEFAULT_OFF_IDENTITY_REPAIR_REPORT.md
+
+production changes during A6:
+  none
+
+sole production change during A6-R:
+  assignment_harl_wrapper.py
+  profile_name = self._resolved_assignment_profile.profile_name.value
+~~~
+
+A6-R resolved the inherited `NameError` through the canonical readiness-checked
+profile authority and did not change observation/action/mask values or any
+V2/V3 semantic contract, runtime, HARL, config, checkpoint artifact, or golden.
+The four existing profiles expose the exact canonical string in the public
+manifest; the event profile still fails closed before manifest access.
+`rejection_penalty_scale` remains the ninth of 11 unresolved parameters, owned
+by `phase_d_e`; V3 remains interface-only, runtime-not-ready, and
+weight-unauthorized.
+
+## Deferred evidence and risk
+
+The immediate schema-manifest blocker is resolved. H1--H4 now use an
+independent tensor oracle, exact 19-name inventory, resolver-discriminating
+Contract-C fixture, and widened isolated clean-child boundary. This is enough
+to close the declared Phase-A pure/static/manifest gate, but not any runtime
+gate.
+
+Still deferred: real pre-reset lifecycle authority/state machine; completion
+attribution; expected-time estimators; retry/local-set/Top-K; component graph
+and atomic commit; event observation builder; DVM buffer/trainer/factor; team
+reward runtime/diagnostic producer/logger; V3 checkpoint-ready/state-dict inventory and weight-loader support;
+Isaac/training/evaluation/ablation. V3 checkpoint-ready construction, V3
+state-dict inventory, and every V3 weight-use path remain unavailable.
+
+The largest technical risk remains Phase C runner/trainer integration: a
+nondecision ratio must be exactly one and a zero-valid actor must be wholly
+skipped while critic GAE/ValueNorm still use all valid physical steps.
+
+## Do not do
+
+Without explicit authorization: do not enter B0/B/C/D/E; do not edit runtime,
+HARL, config, semantic authority, or checkpoint-ready behavior; do not select
+numeric values; do not run Isaac, training, playback, evaluation, real
+checkpoint tensor I/O, or commit.
+
+## Next step
+
+Review the completed A6-R repair and Phase-A pure/static/manifest closeout.
+Do not infer authorization to enter B0 or any runtime phase from this handoff;
+B0 requires a new explicit authorization after GPT/user review. The 11 method
+numeric parameters and all 23 runtime evidence rows remain unresolved/deferred.
+
+No TASK archive was created because this is a narrow in-place blocker update,
+not a substantial rewrite or shortening, and A6-R did not authorize a new
+archive. Wait for GPT/user review.

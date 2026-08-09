@@ -50,6 +50,13 @@ try:
     from .assignment_harl_adapter import get_harl_scalar_action_dim
     from .assignment_harl_wrapper import AssignmentHarlWrapper
     from .assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence
+    from .assignment_profile_contract import (
+        AssignmentProfileResolutionOrigin,
+        ResolvedAssignmentProfile,
+        ResolvedExistingAssignmentProfile,
+        require_assignment_profile_runtime_ready,
+        resolve_or_validate_assignment_profile_authority,
+    )
     from .assignment_value_normalizer_checkpoint import export_value_normalizer_checkpoint_state
 except ImportError:  # Allows direct file-based smoke tests after adding this directory to sys.path.
     from assignment_checkpoint_contract import CompatibilityPurpose  # type: ignore
@@ -64,6 +71,13 @@ except ImportError:  # Allows direct file-based smoke tests after adding this di
     from assignment_harl_adapter import get_harl_scalar_action_dim  # type: ignore
     from assignment_harl_wrapper import AssignmentHarlWrapper  # type: ignore
     from assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence  # type: ignore
+    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (  # type: ignore
+        AssignmentProfileResolutionOrigin,
+        ResolvedAssignmentProfile,
+        ResolvedExistingAssignmentProfile,
+        require_assignment_profile_runtime_ready,
+        resolve_or_validate_assignment_profile_authority,
+    )
     from assignment_value_normalizer_checkpoint import export_value_normalizer_checkpoint_state  # type: ignore
 
 
@@ -251,10 +265,44 @@ class AssignmentIsaacLabLogger(IsaacLabLogger):
 class AssignmentIsaacLabEnv:
     """HARL-facing env facade that routes Discrete ids through assignment control."""
 
-    def __init__(self, env_args: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        env_args: dict[str, Any],
+        *,
+        resolved_assignment_profile: ResolvedAssignmentProfile | None = None,
+        profile_resolution_origin: AssignmentProfileResolutionOrigin = (
+            AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT
+        ),
+        assignment_profile_entrypoint: str = "train.py",
+    ) -> None:
         if not env_args.get("assignment_rl", False):
             raise ValueError("AssignmentIsaacLabEnv requires env_args['assignment_rl']=True")
 
+        cfg = env_args.get("config")
+        raw_profile_present = cfg is not None and hasattr(
+            cfg,
+            "assignment_lifecycle_profile",
+        )
+        raw_profile = (
+            getattr(cfg, "assignment_lifecycle_profile")
+            if raw_profile_present
+            else None
+        )
+        authoritative_profile = resolve_or_validate_assignment_profile_authority(
+            raw_profile=raw_profile,
+            raw_profile_present=raw_profile_present,
+            resolved_assignment_profile=resolved_assignment_profile,
+            expected_origin=profile_resolution_origin,
+            allow_direct_fallback=False,
+            consumer="AssignmentIsaacLabEnv",
+            entrypoint=assignment_profile_entrypoint,
+        )
+        self.resolved_assignment_profile = require_assignment_profile_runtime_ready(
+            authoritative_profile,
+            consumer="AssignmentIsaacLabEnv",
+            entrypoint=assignment_profile_entrypoint,
+            barrier="before gym.make, RecordVideo, and AssignmentHarlWrapper",
+        )
         self.env_args = env_args
         render_mode = "rgb_array" if env_args.get("video_settings", {}).get("video", False) else None
         raw_env = gym.make(env_args["task"], cfg=env_args["config"], render_mode=render_mode)
@@ -269,7 +317,20 @@ class AssignmentIsaacLabEnv:
                 disable_logger=True,
             )
 
-        self.assignment_env = AssignmentHarlWrapper(raw_env)
+        self.assignment_env = AssignmentHarlWrapper(
+            raw_env,
+            resolved_assignment_profile=self.resolved_assignment_profile,
+            profile_resolution_origin=profile_resolution_origin,
+            assignment_profile_entrypoint=assignment_profile_entrypoint,
+        )
+        if (
+            self.assignment_env.resolved_assignment_profile
+            is not self.resolved_assignment_profile
+        ):
+            raise RuntimeError(
+                "AssignmentIsaacLabEnv and AssignmentHarlWrapper lost "
+                "resolved-profile object identity"
+            )
         profile_config = self.assignment_env.assignment_lifecycle_profile_config
         if not bool(profile_config.get("training_allowed", True)):
             raise RuntimeError(
@@ -365,9 +426,22 @@ class AssignmentIsaacLabEnv:
         self.log_info = log_info
 
 
-def make_assignment_train_env(env_name: str, seed: int, n_threads: int, env_args: dict[str, Any]):
+def make_assignment_train_env(
+    env_name: str,
+    seed: int,
+    n_threads: int,
+    env_args: dict[str, Any],
+    *,
+    resolved_assignment_profile: ResolvedExistingAssignmentProfile,
+    assignment_profile_entrypoint: str,
+):
     if env_name == "isaaclab" and env_args.get("assignment_rl", False):
-        return AssignmentIsaacLabEnv({"n_threads": n_threads, **env_args})
+        return AssignmentIsaacLabEnv(
+            {"n_threads": n_threads, **env_args},
+            resolved_assignment_profile=resolved_assignment_profile,
+            profile_resolution_origin=AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+            assignment_profile_entrypoint=assignment_profile_entrypoint,
+        )
     return make_train_env(env_name, seed, n_threads, env_args)
 
 
@@ -383,13 +457,62 @@ def get_assignment_num_agents(env_name: str, env_args: dict[str, Any], envs: Any
 class AssignmentOnPolicyHARunner(OnPolicyHARunner):
     """HARL HA runner with repo-local assignment env and Discrete action dim support."""
 
-    def __init__(self, args, algo_args, env_args):
+    def __init__(
+        self,
+        args,
+        algo_args,
+        env_args,
+        *,
+        resolved_assignment_profile: ResolvedAssignmentProfile | None = None,
+        assignment_profile_entrypoint: str = "train.py",
+    ):
         self.assignment_rl = bool(env_args.get("assignment_rl", False))
+        self.resolved_assignment_profile: ResolvedExistingAssignmentProfile | None = None
+        if self.assignment_rl:
+            cfg = env_args.get("config")
+            raw_profile_present = cfg is not None and hasattr(
+                cfg,
+                "assignment_lifecycle_profile",
+            )
+            raw_profile = (
+                getattr(cfg, "assignment_lifecycle_profile")
+                if raw_profile_present
+                else None
+            )
+            authoritative_profile = resolve_or_validate_assignment_profile_authority(
+                raw_profile=raw_profile,
+                raw_profile_present=raw_profile_present,
+                resolved_assignment_profile=resolved_assignment_profile,
+                expected_origin=AssignmentProfileResolutionOrigin.FORMAL_ENTRYPOINT,
+                allow_direct_fallback=False,
+                consumer="AssignmentOnPolicyHARunner",
+                entrypoint=assignment_profile_entrypoint,
+            )
+            self.resolved_assignment_profile = require_assignment_profile_runtime_ready(
+                authoritative_profile,
+                consumer="AssignmentOnPolicyHARunner",
+                entrypoint=assignment_profile_entrypoint,
+                barrier="before RNG, device, output, environment, actor, critic, logger, and checkpoint initialization",
+            )
+            if bool(algo_args.get("render", {}).get("use_render", False)):
+                raise RuntimeError(
+                    "assignment_rl requires HARL render.use_render=False because "
+                    "the installed render-env route bypasses AssignmentIsaacLabEnv, "
+                    "AssignmentHarlWrapper, and resolved-profile authority propagation"
+                )
+        elif resolved_assignment_profile is not None:
+            raise ValueError(
+                "resolved_assignment_profile is valid only for assignment_rl runners"
+            )
         self._assignment_checkpoint_generation = 0
         self._assignment_checkpoint_coordinator: AssignmentCheckpointSaveCoordinator | None = None
         self.assignment_checkpoint_load_result = None
         self.assignment_policy_sequence_contract = (
-            validate_assignment_lifecycle_policy_sequence(algo_args=algo_args, env_args=env_args)
+            validate_assignment_lifecycle_policy_sequence(
+                resolved_assignment_profile=self.resolved_assignment_profile,
+                algo_args=algo_args,
+                env_args=env_args,
+            )
             if self.assignment_rl
             else None
         )
@@ -443,7 +566,17 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
                 algo_args["seed"]["seed"],
                 algo_args["train"]["n_rollout_threads"],
                 env_args,
+                resolved_assignment_profile=self.resolved_assignment_profile,
+                assignment_profile_entrypoint=assignment_profile_entrypoint,
             )
+            if self.assignment_rl and (
+                self.env.resolved_assignment_profile
+                is not self.resolved_assignment_profile
+            ):
+                raise RuntimeError(
+                    "AssignmentOnPolicyHARunner and AssignmentIsaacLabEnv lost "
+                    "resolved-profile object identity"
+                )
             self.eval_envs = (
                 make_eval_env(
                     args["env"],

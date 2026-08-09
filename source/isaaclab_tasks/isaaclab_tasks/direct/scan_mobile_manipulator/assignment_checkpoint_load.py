@@ -94,6 +94,26 @@ except ImportError:  # Allows direct lightweight tests with this directory on sy
     )
 
 
+# The A4a semantic dispatcher deliberately enforces canonical module identity.
+# Production package imports therefore use the shared A4b guard and propagate
+# its import errors.  Historical bare imports remain available only to the
+# established lightweight V2 test suites and retain their direct V2 path.
+_CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD = bool(__package__)
+if _CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD:
+    from .assignment_checkpoint_entry_guard import (
+        AssignmentCheckpointEntryGuardError,
+        AssignmentCheckpointEntryPurposeDeniedError,
+        AssignmentCheckpointEntryPurpose,
+        AssignmentCheckpointFingerprintError,
+        AssignmentCheckpointMetadataMode,
+        AssignmentCheckpointMetadataPairError,
+        evaluate_checkpoint_entry_guard,
+        inspect_checkpoint_metadata_pair,
+        read_checkpoint_native_metadata_pair,
+        require_checkpoint_weight_io_authorized,
+    )
+
+
 _EPISODE_DIRECTORY = re.compile(r"^episode_(\d+)$")
 
 
@@ -156,6 +176,181 @@ class _InspectedArtifact:
 
 def _context(directory: Path, purpose: CompatibilityPurpose, message: str) -> str:
     return f"checkpoint={directory} purpose={purpose.value}: {message}"
+
+
+def _manifest_mapping_for_entry_guard(value: Any) -> Mapping[str, Any]:
+    if isinstance(value, Mapping):
+        return value
+    to_mapping = getattr(value, "to_mapping", None)
+    if callable(to_mapping):
+        mapping = to_mapping()
+        if isinstance(mapping, Mapping):
+            return mapping
+    raise AssignmentCheckpointMetadataError(
+        "current assignment checkpoint manifest must expose a mapping"
+    )
+
+
+def _resolve_load_entry_purpose(
+    purpose: CompatibilityPurpose,
+    entry_purpose: Any | None,
+) -> Any | None:
+    """Infer the glue-only entry intent without changing the V2 purpose."""
+
+    if not _CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD:
+        return entry_purpose
+    continuation_purposes = {
+        CompatibilityPurpose.VALIDATED_WEIGHT_CONTINUATION,
+        CompatibilityPurpose.TRAINING_INITIALIZATION_OR_FINE_TUNING,
+        CompatibilityPurpose.EXACT_TRAINING_RESUME,
+    }
+    inferred = (
+        AssignmentCheckpointEntryPurpose.LOAD_CONTINUATION
+        if purpose in continuation_purposes
+        else AssignmentCheckpointEntryPurpose.LOAD_EVALUATION
+    )
+    if entry_purpose is None:
+        return inferred
+    try:
+        resolved = AssignmentCheckpointEntryPurpose(entry_purpose)
+    except (TypeError, ValueError) as exc:
+        raise AssignmentCheckpointCompatibilityError(
+            f"invalid assignment checkpoint entry purpose {entry_purpose!r}"
+        ) from exc
+    if purpose in continuation_purposes:
+        allowed = {AssignmentCheckpointEntryPurpose.LOAD_CONTINUATION}
+    elif purpose is CompatibilityPurpose.STRUCTURAL_INSPECTION:
+        allowed = {AssignmentCheckpointEntryPurpose.LOAD_EVALUATION}
+    else:
+        allowed = {
+            AssignmentCheckpointEntryPurpose.LOAD_EVALUATION,
+            AssignmentCheckpointEntryPurpose.LOAD_PLAYBACK,
+        }
+    if resolved not in allowed:
+        raise AssignmentCheckpointCompatibilityError(
+            f"entry purpose {resolved.value!r} is inconsistent with V2 load purpose {purpose.value!r}"
+        )
+    return resolved
+
+
+def _entry_guard_training_state_mapping(directory: Path) -> Mapping[str, Any] | None:
+    marker_path = directory / TRAINING_STATE_MANIFEST_FILE
+    if not marker_path.exists():
+        return None
+    try:
+        value = json.loads(marker_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise AssignmentCheckpointMetadataError(
+            f"checkpoint={directory}: invalid training-state completion marker: {exc}"
+        ) from exc
+    if not isinstance(value, Mapping):
+        raise AssignmentCheckpointMetadataError(
+            f"checkpoint={directory}: training-state completion marker must be a mapping"
+        )
+    return value
+
+
+def _guard_assignment_checkpoint_load_entry(
+    directory: Path,
+    *,
+    purpose: CompatibilityPurpose,
+    entry_purpose: Any | None,
+    current_manifest: Any,
+    explicit_ablation_name: str | None,
+    continuation_reset_acknowledged: bool,
+) -> Any | None:
+    """Complete native semantic authorization before the existing loader path."""
+
+    if not _CAN_USE_ASSIGNMENT_CHECKPOINT_ENTRY_GUARD:
+        return None
+    resolved_entry_purpose = _resolve_load_entry_purpose(purpose, entry_purpose)
+    local_mode = inspect_checkpoint_metadata_pair(directory).metadata_mode
+    run_root = _recognized_run_root(directory)
+    if run_root is not None and run_root != directory:
+        root_mode = inspect_checkpoint_metadata_pair(run_root).metadata_mode
+        if root_mode is AssignmentCheckpointMetadataMode.PARTIAL:
+            raise AssignmentCheckpointMetadataError(
+                _context(
+                    directory,
+                    purpose,
+                    "recognized run-root native manifest/fingerprint pair is partial",
+                )
+            )
+        if (
+            local_mode is AssignmentCheckpointMetadataMode.BOTH_ABSENT
+            and root_mode is AssignmentCheckpointMetadataMode.BOTH_PRESENT
+        ):
+            raise AssignmentCheckpointMetadataError(
+                _context(
+                    directory,
+                    purpose,
+                    "recognized run-root native metadata exists but the selected "
+                    "checkpoint has no local pair; legacy fallback is forbidden",
+                )
+            )
+    if local_mode is AssignmentCheckpointMetadataMode.BOTH_ABSENT:
+        if not isinstance(
+            current_manifest,
+            AssignmentCheckpointContractManifest,
+        ):
+            raise AssignmentCheckpointCompatibilityError(
+                _context(
+                    directory,
+                    purpose,
+                    "metadata-free fallback is restricted to the existing V2 legacy contract boundary",
+                )
+            )
+        return None
+    try:
+        native_metadata = read_checkpoint_native_metadata_pair(directory)
+        if native_metadata is None:
+            raise AssignmentCheckpointMetadataPairError(
+                "native metadata disappeared after BOTH_PRESENT/PARTIAL inspection"
+            )
+        # The V2 completion marker is read only after the exact manifest bytes
+        # and fingerprint have been parsed, canonicalized, and integrity-checked.
+        # A V3 interface descriptor is denied by its own authority without
+        # consulting or requiring a V2 training-state marker.
+        training_state_mapping = (
+            _entry_guard_training_state_mapping(directory)
+            if isinstance(
+                native_metadata.parsed_manifest,
+                AssignmentCheckpointContractManifest,
+            )
+            else None
+        )
+        result = evaluate_checkpoint_entry_guard(
+            manifest_mapping=native_metadata.manifest_mapping,
+            stored_fingerprint=native_metadata.stored_fingerprint,
+            purpose=resolved_entry_purpose,
+            current_manifest_or_context=_manifest_mapping_for_entry_guard(current_manifest),
+            v2_compatibility_purpose=purpose,
+            explicit_ablation_name=explicit_ablation_name,
+            training_state_manifest=training_state_mapping,
+            continuation_reset_acknowledged=continuation_reset_acknowledged,
+        )
+        require_checkpoint_weight_io_authorized(result)
+        return result
+    except AssignmentCheckpointEntryPurposeDeniedError as exc:
+        raise AssignmentCheckpointCompatibilityError(
+            _context(directory, purpose, str(exc))
+        ) from exc
+    except AssignmentCheckpointFingerprintError as exc:
+        raise AssignmentCheckpointIntegrityError(
+            _context(directory, purpose, str(exc))
+        ) from exc
+    except AssignmentCheckpointMetadataPairError as exc:
+        raise AssignmentCheckpointMetadataError(
+            _context(directory, purpose, str(exc))
+        ) from exc
+    except AssignmentCheckpointEntryGuardError as exc:
+        raise AssignmentCheckpointMetadataError(
+            _context(directory, purpose, str(exc))
+        ) from exc
+    except Exception as exc:
+        raise AssignmentCheckpointMetadataError(
+            _context(directory, purpose, f"semantic entry guard rejected metadata: {exc}")
+        ) from exc
 
 
 def _read_contract_pair(
@@ -827,6 +1022,7 @@ def load_assignment_checkpoint(
     *,
     checkpoint_directory: Path,
     purpose: CompatibilityPurpose,
+    entry_purpose: Any | None = None,
     current_manifest: AssignmentCheckpointContractManifest,
     actor_modules: Sequence[tuple[str, Any]],
     critic_module: Any | None = None,
@@ -856,7 +1052,24 @@ def load_assignment_checkpoint(
         raise AssignmentCheckpointCompatibilityError(
             _context(directory, purpose, decision.reason)
         )
+    entry_guard_result = _guard_assignment_checkpoint_load_entry(
+        directory,
+        purpose=purpose,
+        entry_purpose=entry_purpose,
+        current_manifest=current_manifest,
+        explicit_ablation_name=explicit_ablation_name,
+        continuation_reset_acknowledged=continuation_reset_acknowledged,
+    )
     native = _read_native_checkpoint(directory, purpose)
+    if entry_guard_result is not None and native is None:
+        raise AssignmentCheckpointMetadataError(
+            _context(
+                directory,
+                purpose,
+                "native metadata disappeared after semantic authorization; "
+                "legacy fallback is forbidden",
+            )
+        )
     if native is not None:
         return _native_load(
             native,
