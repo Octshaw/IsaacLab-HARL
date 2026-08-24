@@ -56,6 +56,22 @@ from .assignment_initial_condition import (
     quaternion_wxyz_to_yaw,
     resolve_assignment_initial_condition,
 )
+from .assignment_event_profile_runtime_domain import (
+    _EnvironmentPhysicalTransitionOutcome,
+    _EventProfileEnvironmentAdmissionValidationPort,
+    _EventProfileLifecycleEnvironmentPort,
+    _EventProfileLifecycleRuntimeDomain,
+    _StagedPreResetPhysicalReport,
+)
+from .assignment_lifecycle_transition_contract import (
+    RobotLifecycleState,
+    TaskLifecycleState,
+)
+from .assignment_profile_contract import (
+    AssignmentProfileRouteError,
+    ResolvedEventGatedAssignmentProfile,
+    ResolvedExistingAssignmentProfile,
+)
 
 
 ROBOT_ACTION_DIM = 9
@@ -67,6 +83,15 @@ ROBOT_VISUAL_MESH_YAW_OFFSET = 0.0
 ROBOT_VISUAL_MODES = ("mesh", "debug_marker", "none")
 COMPONENT_VISUAL_MODES = ("mesh", "bbox", "none")
 LEGACY_CAPABILITY_PROFILES = ("mobile_scanner_a", "mobile_scanner_b", "mobile_scanner_c")
+
+
+class EventProfileEnvironmentIntegrationError(RuntimeError):
+    """Typed fail-closed boundary for the dormant event-profile hook route."""
+
+    def __init__(self, message: str, *, failure_code: str, actual: object = None) -> None:
+        self.failure_code = failure_code
+        self.actual = actual
+        super().__init__(f"{message}; failure_code={failure_code!r}; actual={actual!r}")
 
 
 @configclass
@@ -1442,6 +1467,65 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
     cfg: ScanMobileManipulatorEnvCfg
 
     def __init__(self, cfg: ScanMobileManipulatorEnvCfg, render_mode: str | None = None, **kwargs):
+        resolved_assignment_profile = kwargs.pop("resolved_assignment_profile", None)
+        event_lifecycle_runtime_domain = kwargs.pop("event_lifecycle_runtime_domain", None)
+        event_admission_validation_port = kwargs.pop("event_admission_validation_port", None)
+        if resolved_assignment_profile is not None and type(resolved_assignment_profile) not in (
+            ResolvedExistingAssignmentProfile,
+            ResolvedEventGatedAssignmentProfile,
+        ):
+            raise AssignmentProfileRouteError(
+                "environment profile transport accepts only an exact canonical resolved profile",
+                profile=getattr(resolved_assignment_profile, "profile_name", None),
+                expected=(ResolvedExistingAssignmentProfile, ResolvedEventGatedAssignmentProfile),
+                actual=type(resolved_assignment_profile),
+                resolution_origin=getattr(resolved_assignment_profile, "resolution_origin", None),
+            )
+        if type(resolved_assignment_profile) is ResolvedEventGatedAssignmentProfile:
+            if type(event_lifecycle_runtime_domain) is not _EventProfileLifecycleRuntimeDomain:
+                raise EventProfileEnvironmentIntegrationError(
+                    "event profile requires one exact composition-root runtime domain",
+                    failure_code="event_runtime_domain_missing",
+                    actual=type(event_lifecycle_runtime_domain),
+                )
+            if event_lifecycle_runtime_domain.identity.profile is not resolved_assignment_profile:
+                raise EventProfileEnvironmentIntegrationError(
+                    "event runtime domain did not retain the transported canonical profile object",
+                    failure_code="event_profile_identity",
+                    actual=(
+                        id(event_lifecycle_runtime_domain.identity.profile),
+                        id(resolved_assignment_profile),
+                    ),
+                )
+            if (
+                type(event_admission_validation_port)
+                is not _EventProfileEnvironmentAdmissionValidationPort
+                or event_admission_validation_port
+                is not event_lifecycle_runtime_domain.environment_admission_validation_port
+            ):
+                raise EventProfileEnvironmentIntegrationError(
+                    "event profile requires the exact same-domain admission validation capability",
+                    failure_code="event_admission_validation_port",
+                    actual=type(event_admission_validation_port),
+                )
+            if cfg.action_noise_model is not None:
+                raise EventProfileEnvironmentIntegrationError(
+                    "event-profile zero-work guard requires action noise to be disabled",
+                    failure_code="event_action_noise_not_supported",
+                    actual=type(cfg.action_noise_model),
+                )
+        elif (
+            event_lifecycle_runtime_domain is not None
+            or event_admission_validation_port is not None
+        ):
+            raise EventProfileEnvironmentIntegrationError(
+                "existing/default routes must not receive event runtime capabilities",
+                failure_code="event_domain_on_existing_route",
+                actual=(
+                    type(event_lifecycle_runtime_domain),
+                    type(event_admission_validation_port),
+                ),
+            )
         _prepare_visualization_cfg(cfg)
         _prepare_robot_config_cfg(cfg)
         _prepare_component_mesh_cfg(cfg)
@@ -1528,6 +1612,36 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             line_prim_paths_sample=[],
         )
         self._reset_diagnostics_printed = False
+        self._resolved_assignment_profile = resolved_assignment_profile
+        self._event_lifecycle_environment_port: _EventProfileLifecycleEnvironmentPort | None = None
+        self._event_admission_validation_port: (
+            _EventProfileEnvironmentAdmissionValidationPort | None
+        ) = None
+        if type(resolved_assignment_profile) is ResolvedEventGatedAssignmentProfile:
+            domain_identity = event_lifecycle_runtime_domain.identity
+            expected_env_ids = torch.arange(
+                self.num_envs,
+                dtype=torch.int64,
+                device=self.device,
+            )
+            if (
+                domain_identity.device != torch.device(self.device)
+                or not torch.equal(domain_identity.env_ids, expected_env_ids)
+                or domain_identity.num_robots != self.num_agents_cfg
+                or domain_identity.num_tasks != self.num_viewpoints
+            ):
+                raise EventProfileEnvironmentIntegrationError(
+                    "event runtime domain differs from the constructed environment domain",
+                    failure_code="event_domain_identity",
+                    actual=(
+                        domain_identity.device,
+                        tuple(domain_identity.env_ids.detach().cpu().tolist()),
+                        domain_identity.num_robots,
+                        domain_identity.num_tasks,
+                    ),
+                )
+            self._event_lifecycle_environment_port = event_lifecycle_runtime_domain.environment_port
+            self._event_admission_validation_port = event_admission_validation_port
         self._log_static_configuration()
 
     def _mesh_footprint_obstacle_fields(self, cost_matrix: torch.Tensor, viewpoint_pos: torch.Tensor) -> dict:
@@ -2803,6 +2917,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             self._update_obstacle_debug_visual_lines(stage, Gf, UsdGeom)
 
     def _pre_physics_step(self, actions: dict[str, torch.Tensor]):
+        self._validate_event_physical_step_entry()
         # Preserve the previous action for the action-rate penalty, then clamp policy/controller outputs before they
         # affect the task-space state.
         for agent, action in actions.items():
@@ -2810,6 +2925,11 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
             self.actions[agent] = action.clamp(-1.0, 1.0)
         self._integrate_high_level_actions()
         self._usd_debug_dirty = True
+
+    def _validate_event_physical_step_entry(self) -> None:
+        port = self._event_admission_validation_port
+        if port is not None:
+            port.validate_physical_step_entry_for_active_call()
 
     def _integrate_high_level_actions(self):
         """Integrate 9D task-space actions into high-level robot/scanner buffers."""
@@ -2927,6 +3047,80 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         observations = self._get_observations()
         return torch.cat([observations[agent].reshape(self.num_envs, -1) for agent in self.cfg.possible_agents], dim=-1)
 
+    def _compute_scan_candidate(self) -> torch.Tensor:
+        """Compute the physical scan predicate without mutating episode buffers."""
+
+        world_viewpoints = self.viewpoint_pos_local.unsqueeze(0) + self.scene.env_origins.unsqueeze(1)
+        scanner_world_pos = self.scanner_pos + self.scene.env_origins.unsqueeze(1)
+        pos_error = torch.norm(scanner_world_pos.unsqueeze(2) - world_viewpoints.unsqueeze(1), dim=-1)
+        scanner_quat = self.scanner_quat.unsqueeze(2).expand(-1, -1, self.num_viewpoints, -1)
+        viewpoint_quat = self.viewpoint_quat.view(1, 1, self.num_viewpoints, 4).expand_as(scanner_quat)
+        rot_error = quat_error_magnitude(scanner_quat.reshape(-1, 4), viewpoint_quat.reshape(-1, 4)).reshape(
+            self.num_envs, self.num_agents_cfg, self.num_viewpoints
+        )
+        arm_distance = torch.norm(
+            world_viewpoints.unsqueeze(1) - (self.base_pos + self.scene.env_origins.unsqueeze(1)).unsqueeze(2), dim=-1
+        )
+        scanner_to_box = torch.abs(self.scanner_pos - self.component_center.view(1, 1, 3))
+        scanner_to_box = torch.clamp(scanner_to_box - self.component_half_extents.view(1, 1, 3), min=0.0)
+        sensor_distance = torch.norm(scanner_to_box, dim=-1).unsqueeze(-1)
+        forward_axis = torch.tensor([1.0, 0.0, 0.0], dtype=torch.float32, device=self.device)
+        repeated_forward = forward_axis.repeat(self.num_envs * self.num_agents_cfg * self.num_viewpoints, 1)
+        scanner_forward = quat_apply(scanner_quat.reshape(-1, 4), repeated_forward).reshape(
+            self.num_envs, self.num_agents_cfg, self.num_viewpoints, 3
+        )
+        desired_forward = quat_apply(viewpoint_quat.reshape(-1, 4), repeated_forward).reshape(
+            self.num_envs, self.num_agents_cfg, self.num_viewpoints, 3
+        )
+        fov_ok = torch.sum(scanner_forward * desired_forward, dim=-1) > self.scanner_fov_cos.view(1, -1, 1)
+        return (
+            (pos_error < self.scan_pos_tolerance.view(1, -1, 1))
+            & (rot_error < self.scan_rot_tolerance.view(1, -1, 1))
+            & (arm_distance <= self.arm_reach.view(1, -1, 1) + 1.0e-6)
+            & (sensor_distance >= self.scanner_min_range.view(1, -1, 1) - 1.0e-6)
+            & (sensor_distance <= self.scanner_max_range.view(1, -1, 1) + 1.0e-6)
+            & fov_ok
+        )
+
+    def _stage_event_scan_progress(
+        self,
+    ) -> tuple[_StagedPreResetPhysicalReport, torch.Tensor, torch.Tensor]:
+        """Stage detector/dwell evidence without mutating coverage or rewards."""
+
+        candidate = self._compute_scan_candidate()
+        dwell_next = torch.where(
+            candidate,
+            self.dwell_counter + 1,
+            torch.zeros_like(self.dwell_counter),
+        )
+        raw_new_candidate = (dwell_next >= self.cfg.dwell_steps) & (~self.viewpoints_covered.unsqueeze(1))
+        duplicate_scans = (candidate & self.viewpoints_covered.unsqueeze(1)).float().sum(dim=-1)
+        time_out = self.episode_length_buf >= self.max_episode_length - 1
+        report = _StagedPreResetPhysicalReport(
+            device=torch.device(self.device),
+            coverage_before_transition=self.viewpoints_covered,
+            raw_new_candidate=raw_new_candidate,
+            physical_truncated=time_out,
+            time_limit_reached=time_out,
+        )
+        return report, dwell_next, duplicate_scans
+
+    def _commit_event_scan_progress(
+        self,
+        *,
+        outcome: _EnvironmentPhysicalTransitionOutcome,
+        dwell_next: torch.Tensor,
+        duplicate_scans: torch.Tensor,
+    ) -> None:
+        """Commit only authority-approved environment bookkeeping evidence."""
+
+        self.dwell_counter.copy_(dwell_next)
+        self.viewpoints_covered.copy_(outcome.coverage_after_transition)
+        completion = outcome.completion_signals
+        self.last_global_coverage_gain.copy_(outcome.result.completed_tasks.float().sum(dim=-1))
+        self.last_own_coverage_gain.copy_(completion.float().sum(dim=-1))
+        self.last_duplicate_scans.copy_(duplicate_scans)
+
     def _update_scan_progress(self):
         """Update coverage buffers and per-agent scan-event reward terms."""
         world_viewpoints = self.viewpoint_pos_local.unsqueeze(0) + self.scene.env_origins.unsqueeze(1)
@@ -3010,6 +3204,26 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         return rewards
 
     def _get_dones(self) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
+        port = self._event_lifecycle_environment_port
+        if port is not None:
+            report, dwell_next, duplicate_scans = self._stage_event_scan_progress()
+            validation_port = self._event_admission_validation_port
+            if validation_port is None:
+                raise AssertionError("event lifecycle port lost its admission validation pair")
+            validation_port.validate_physical_finalization_for_active_call()
+            outcome = port.finalize_physical_transition(report)
+            try:
+                self._commit_event_scan_progress(
+                    outcome=outcome,
+                    dwell_next=dwell_next,
+                    duplicate_scans=duplicate_scans,
+                )
+            except BaseException as exc:
+                port.report_post_authority_bookkeeping_failure(outcome, exc)
+                raise
+            terminated = {agent: outcome.terminated for agent in self.cfg.possible_agents}
+            time_outs = {agent: outcome.truncated for agent in self.cfg.possible_agents}
+            return terminated, time_outs
         # DirectMARLEnv calls this before reward collection, so scan progress is updated here to make reward terms reflect
         # the latest post-action state.
         self._update_scan_progress()
@@ -3020,9 +3234,48 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         return terminated, time_outs
 
     def _reset_idx(self, env_ids: Sequence[int] | None):
+        self._validate_event_reset_entry()
         if env_ids is None:
             env_ids = torch.arange(self.num_envs, dtype=torch.int64, device=self.device)
-        super()._reset_idx(env_ids)
+        selected_env_ids = torch.as_tensor(env_ids, dtype=torch.int64, device=self.device).reshape(-1)
+        port = self._event_lifecycle_environment_port
+        if port is None:
+            super()._reset_idx(selected_env_ids)
+            self._reset_scan_task_buffers(selected_env_ids)
+            return
+
+        with port.episode_rebuild(
+            selected_env_ids=selected_env_ids,
+            initial_task_state=torch.full(
+                (int(selected_env_ids.numel()), self.num_viewpoints),
+                int(TaskLifecycleState.AVAILABLE),
+                dtype=torch.int64,
+                device=self.device,
+            ),
+            initial_robot_state=torch.full(
+                (int(selected_env_ids.numel()), self.num_agents_cfg),
+                int(RobotLifecycleState.NEEDS_ASSIGNMENT),
+                dtype=torch.int64,
+                device=self.device,
+            ),
+            initial_ownership=torch.full(
+                (int(selected_env_ids.numel()), self.num_viewpoints),
+                -1,
+                dtype=torch.int64,
+                device=self.device,
+            ),
+        ) as rebuild:
+            super()._reset_idx(selected_env_ids)
+            self._reset_scan_task_buffers(selected_env_ids)
+            rebuild.commit_physical_reset_complete()
+
+    def _validate_event_reset_entry(self) -> None:
+        port = self._event_admission_validation_port
+        if port is not None:
+            port.validate_reset_entry_for_active_call()
+
+    def _reset_scan_task_buffers(self, env_ids: torch.Tensor) -> None:
+        """Reset the native scan buffers for one already-normalized row set."""
 
         # Reset only the selected vectorized environments. The start pose tensors have shape [num_agents, ...] and are
         # broadcast across env_ids.

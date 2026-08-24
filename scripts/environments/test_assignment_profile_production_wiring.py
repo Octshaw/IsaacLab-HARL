@@ -927,15 +927,44 @@ def test_formal_wrapper_call_inventory() -> dict[str, Any]:
         "formal wrapper-factory inventory changed",
     )
 
-    for path, enclosing in (
-        (WRAPPER_PATH, "make_assignment_harl_env"),
-        (TRAINING_PATH, "AssignmentIsaacLabEnv.__init__"),
-    ):
-        count = len(_calls(_tree(path), "AssignmentHarlWrapper"))
-        _assert(count == 1, f"{path.name} internal wrapper call count={count}")
-        inventory["production_internal_wrapper_calls"].append(
-            {"file": path.name, "enclosing": enclosing, "count": count}
+    wrapper_tree = _tree(WRAPPER_PATH)
+    wrapper_routes = {
+        "make_assignment_harl_env": len(
+            _calls(_function(wrapper_tree, "make_assignment_harl_env"), "AssignmentHarlWrapper")
+        ),
+        "_compose_event_assignment_harl_wrapper": len(
+            _calls(
+                _function(wrapper_tree, "_compose_event_assignment_harl_wrapper"),
+                "AssignmentHarlWrapper",
+            )
+        ),
+    }
+    _assert(
+        wrapper_routes == {
+            "make_assignment_harl_env": 1,
+            "_compose_event_assignment_harl_wrapper": 1,
+        },
+        f"assignment_harl_wrapper.py route inventory={wrapper_routes}",
+    )
+    inventory["production_internal_wrapper_calls"].append(
+        {"file": WRAPPER_PATH.name, "enclosing": wrapper_routes, "count": 2}
+    )
+
+    training_tree = _tree(TRAINING_PATH)
+    training_count = len(
+        _calls(
+            _class_method(training_tree, "AssignmentIsaacLabEnv", "__init__"),
+            "AssignmentHarlWrapper",
         )
+    )
+    _assert(training_count == 1, f"{TRAINING_PATH.name} internal wrapper call count={training_count}")
+    inventory["production_internal_wrapper_calls"].append(
+        {
+            "file": TRAINING_PATH.name,
+            "enclosing": "AssignmentIsaacLabEnv.__init__",
+            "count": training_count,
+        }
+    )
 
     direct_test_files = (
         "test_assignment_cooldown_mask_smoke.py",

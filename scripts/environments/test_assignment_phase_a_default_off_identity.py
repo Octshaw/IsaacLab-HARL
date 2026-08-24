@@ -157,7 +157,7 @@ EXPECTED_TENSOR_DIGESTS = {
 PRODUCTION_SHA256 = {
     "assignment_profile_contract.py": "ece4a58c1636ea3f710775eaac25e12df4097972ef57ec0d15cefec5e6702500",
     "scenario_config.py": "36f80d920fdce818979fe1ad1e6f32e322d925c1984141f675826edf6ed1fc01",
-    "assignment_harl_wrapper.py": "da694c5c1cbebea675e3657fc0c43640d16b131bb1cd4fc5cb83e6626eed320a",
+    "assignment_harl_wrapper.py": "f238536c8a4bed53da984e4f2d81150f7b634915e49b601d86eb407fae9fa2ae",
     "assignment_lifecycle_training_contract.py": "066b120d6451d6f50b8b3c145b988c1f97d5f9b6048493420c1b20e0b0cb1c47",
     "assignment_harl_training.py": "b6f32510ae663b3e443891cdd09219dd9a5c9ceb9de9c720c73192c7488597fd",
     "assignment_lifecycle_transition_contract.py": "1bf66c6c6b51adb8a44292910c1b11dfb1e43f31d711d3320285f3df587b0cc9",
@@ -173,7 +173,7 @@ PRODUCTION_SHA256 = {
     "assignment_checkpoint_load.py": "87a936b7ad56294706c0c29992c29793d1bff505a0f3244eff759fb7f2257e9f",
     "assignment_training_run_audit.py": "3aa0bf1d81a36af3b493a3932c9c454249ac7185adc98ed7714f7f5ad90765db",
     "assignment_checkpoint_contract.py": V2_SOURCE_SHA256,
-    "scan_mobile_manipulator_env.py": "2cbce531bf8b4a1847c838bccaa4ea17b82f1caf53dd49c1b54fe17b488c7f74",
+    "scan_mobile_manipulator_env.py": "c19b5de8f73d22fbc8b4c1f6b38dbfc4804d28b6e37b002cdfc4e20d5ecc9c99",
     "assignment_state.py": "a7f83351ed3e360c0a077a66faeec8087cff89ee47123ead4ec045d3602c14c5",
     "assignment_lifecycle_observation.py": "af20d2862242ece6c49cadbd54651153590dc7831a76f47e73a722925b3e03d7",
     "assignment_lifecycle_resolver.py": "7f64183c638697f16efa45769978127c7e3575599e87cfa76a5ba26f20eabadb",
@@ -761,8 +761,8 @@ def test_wrapper_schema_manifest_profile_name_binding() -> dict[str, Any]:
     profile = _canonical("assignment_profile_contract")
     try:
         _make_wrapper("event_gated_local_mrta", pre_resolved=True)
-    except profile.PhaseAExecutionNotAuthorizedError:
-        event_result = "phase_a_fail_closed_before_existing_wrapper_schema"
+    except (profile.PhaseAExecutionNotAuthorizedError, ValueError):
+        event_result = "fail_closed_before_existing_wrapper_schema"
     else:
         raise AssertionError("event profile silently entered existing wrapper schema route")
     return {"existing_profiles": actual, "event_profile": event_result}

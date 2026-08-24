@@ -2,422 +2,483 @@
 
 ## Current status
 
-~~~text
+```text
 classification:
-  PHASE-A-PURE-INTERFACE-IDENTITY-DIAGNOSTICS-COMPLETE-AWAITING-GPT-REVIEW
-Phase10A authoritative method design:
-  AUTHORITATIVE-DESIGN-APPROVED
-latest authorization:
-  PHASE-A6R-TARGETED-DEFAULT-OFF-REPAIR-AUTHORIZED
-A1:
-  complete
-  review passed
-A2:
-  complete
-  review passed
-A3:
-  complete after targeted schema-freeze extension
-  review passed
-A3x-0:
-  design accepted
-A3x-1:
-  complete by pure/descriptor evidence
-  prerequisite review passed
-A4a:
-  complete
-  review passed
-A4b:
-  complete by pure metadata, callback-spy, AST, and regression evidence
-  review passed
-A5:
-  complete
-  review passed
-A6:
-  original authorized closeout stopped at 13/15
-  STOP — PHASE-A DEFAULT-OFF IDENTITY GAP preserved as history
-A6-R:
-  targeted one-line production repair complete
-  hardened dedicated pure/static/manifest suite: 16/16 passed
-  H1/H2/H3/H4 identity evidence passed
-repaired interface:
-  AssignmentHarlWrapper.assignment_observation_schema_manifest
-repaired implementation:
-  AssignmentHarlWrapper._build_assignment_observation_schema_manifest
-canonical binding:
-  self._resolved_assignment_profile.profile_name.value
-existing-profile manifest identity:
-  legacy / lifecycle_contract_c / lifecycle_ablation / diagnostics_hidden_state passed
-event profile:
-  remains typed fail-closed before schema-manifest access
-Phase B0/B/C/D/E:
-  not entered
-  not authorized
-event-profile schema descriptor:
-  implemented
-MRTA/event/transition descriptors:
-  v2 / v2 / v2
-DTO/record schemas:
-  unchanged
-runtime assignment behavior:
-  not implemented
-V3 manifest/fingerprint:
-  interface_semantic_descriptor implemented
-  03c33620e8324c034de5f9014dfd0cb76bef2fc06c99b15895f94b9981cb2b6a
-V3 checkpoint-ready/weight use:
-  Phase-A fail-closed / unauthorized
-checkpoint semantic guard:
-  integrated at save/load/playback/offline-audit boundaries
-diagnostics schema:
-  unchanged; typed payload/availability closeout passed
-diagnostics runtime producer/sink:
-  not implemented
-team reward schema:
-  unchanged; semantic formula closeout passed
-team reward runtime:
-  not implemented
-rejection_penalty_scale:
-  unresolved; phase_d_e
-V2 native behavior:
-  preserved through unchanged semantic authority
-V2 metadata-free fallback:
-  preserved and not expanded
-V3 interface checkpoint metadata:
-  offline semantic audit only
-V3 save/load/continuation/evaluation/playback:
-  fail-closed
-Isaac/AppLauncher:
-  not run
+  PHASE-B1W-I4-4-FOCUSED-REAL-ISAAC-WRAPPER-INTEGRATION-VERIFICATION-PASS-AWAITING-GPT-REVIEW
+
+Phase A:
+  final review passed; previously committed by user
+B0 lifecycle/direct-environment foundation:
+  CLOSED
+focused Isaac nonterminal runtime:
+  B0 baseline PASS; B1W-I2 admitted O1 route PASS
+real-Isaac terminal transition:
+  VERIFIED through direct HARL-independent O1
+
+wrapper event route:
+  REAL WR-C RESET / CONTINUATION / PRIVATE PROPOSAL-M1 / TERMINAL HANDOFF VERIFIED
+  activation remains blocked
+proposal -> effective B1 commit:
+  IMPLEMENTED / PURE-STATIC VERIFIED
+terminal wrapper handoff:
+  BOUNDED IMMUTABLE HISTORICAL COPY / IMPLEMENTED
+Phase-B entry:
+  CONDITIONAL PASS
+  pure/default-off B1 complete
+  production activation conditions remain blocked
+
+B1D:
+  review pass / frozen
+B1 implementation:
+  pure / dormant / default-off complete
+B1W-D:
+  review pass / frozen
+B1W implementation:
+  pure / dormant / default-off complete
+  B1W-I1 exact-event production-boundary wiring implemented
+B1W-I-D: review pass / frozen
+B1W-I1:
+  REVIEW PASS / CLOSED
+environment admission validation: exact event profile implemented
+generic synchronous coordinator: implemented / HARL-independent
+real Isaac admitted nonterminal runtime: VERIFIED
+B1W-I2: REVIEW PASS / CLOSED
+B1W-I3: REVIEW PASS / CLOSED
+B1W-I4-D: REVIEW PASS / FROZEN
+B1W-I4-D-R: REVIEW PASS / CLOSED
+conflict candidate model: EXPLICIT-FEASIBILITY-FIRST / FROZEN
+terminal multi-row ACK model: ATOMIC_BATCH_EXACT_ACK / FROZEN
+B1W-I4-1:
+  REVIEW PASS / CLOSED
+B1W-I4-2:
+  REVIEW PASS / CLOSED
+B1W-I4-3:
+  REVIEW PASS / CLOSED
+B1W-I4-4:
+  FOCUSED REAL-ISAAC WRAPPER INTEGRATION VERIFIED / AWAITING GPT REVIEW
+event proposal adapter: IMPLEMENTED
+explicit-feasibility-first: IMPLEMENTED / PURE-STATIC VERIFIED
+conflict arbitration: IMPLEMENTED / PURE-STATIC VERIFIED
+M1 zero-or-one B1 commit: IMPLEMENTED / PURE-STATIC VERIFIED
+event composition: IMPLEMENTED / activation still blocked
+event admitted wrapper reset: REAL ISAAC VERIFIED
+no-new-claim continuation: REAL ISAAC VERIFIED
+real proposal/M1: VERIFIED
+real final P2 -> Ak -> controller: VERIFIED
+continuation: REAL ISAAC VERIFIED / PRESERVED
+P2 sole authority: PRESERVED
+Ak-only controller: PRESERVED
+stateful legacy resolver exact-event route: NOT CONSTRUCTED / NOT USED
+public learned-policy event step:
+  BLOCKED
+  lifecycle actor/shared observation identity incomplete
+  lifecycle action mask / DVM incomplete
+  forced-row sampling not integrated
+terminal direct O1 capture/single-key ACK:
+  IMPLEMENTED BY B1W-I3 / PRESERVED
+terminal wrapper historical copy:
+  REAL ISAAC VERIFIED / NO RAW ARTIFACT RETENTION
+ATOMIC_BATCH_EXACT_ACK:
+  REAL ISAAC VERIFIED / ALL-OR-NONE / ONE SLOT-MAP PUBLICATION
+W-T1:
+  PRESERVED
+ACK-A:
+  IMPLEMENTED AT WRAPPER/FACADE PRIVATE ROUTE
+historical/current separation:
+  REAL ISAAC VERIFIED
+real terminal/autoreset: VERIFIED
+real post-ACK recovery: VERIFIED
+terminal critic sidecar:
+  NOT IMPLEMENTED / READINESS BLOCKER
+event-profile runtime readiness:
+  BLOCKED; wrapper/readiness gates remain
+
+current publication architecture:
+  P2 discriminated per-row provenance aggregate
+assignment tick clock:
+  NOT REQUIRED
+terminal gating / granularity:
+  G2 per-env / C2 batched independent claims
+
+inter-step fence design:
+  global vector-domain / S4 split admission / O1 open owner
+  W2 production envelope / F1 outside P2
+inter-step fence implementation:
+  pure/default-off implemented; FAULTED derives from existing poison
+
+Phase C/D/E:
+  not entered / not authorized
+
 training/playback/evaluation:
   not run
-checkpoint I/O:
-  temporary text metadata only
-  no real tensor serialization/deserialization or live mutation
-installed HARL:
-  unchanged
-commit:
-  none
-~~~
 
-The original A6 run reached its explicit stop condition at `13/15`: both
-legacy and Contract-C observation/shared/action-mask groups reached the public
-schema-manifest property and exposed an undefined local `profile_name`.
-A6-R was separately authorized and restored exactly one canonical binding from
-the readiness-narrowed resolved-profile authority. The hardened dedicated
-suite now passes `16/16`; the original stop remains part of the audit history.
-This closes Phase A only at its declared pure-interface/static/manifest level.
-It does not authorize or establish runtime identity, event execution, B0, or
-any later phase.
+TASK_PROGRESS consistency: PASS
+Python: NO PRODUCTION MODIFICATIONS IN B1W-I4-4; BOUNDED SMOKE FIXTURE ONLY
+tests: 213/213 PER MODE; NORMAL AND -I -B TARGETED CANONICAL MATRIX
 
-## Repository state
+current phase delta: bounded real-Isaac WR-C reset/proposal/continuation/
+                     terminal-copy/batch-ACK/recovery verification
 
-~~~text
-starting/ending HEAD:
-  dca976001d8c53a9cfb424b468fa58d9fca367f6
+commit: none
+```
 
-active interpreter:
-  C:\isaacenvs\isaac45_harl\python.exe
+## Latest completed phase
 
-index at preflight/final:
-  empty
+B1W-I4-4 focused verification passes and awaits GPT review. A bounded headless
+real-Isaac supervisor/worker smoke composed exactly one private event wrapper
+over `ScanMobileManipulatorEnv` with E=2, M=3, N=12 on `cuda:0` and exact
+`event_gated_local_mrta` identity. Real admitted reset produced canonical P2
+episode 0 / transition -1 and OPEN W1. A real feasibility/cost snapshot drove
+one task-disjoint M1/B1 batch, exactly one Store increment, final P2 -> Ak ->
+controller assignment `[[9,-1,-1],[9,-1,-1]]`, finite CUDA actions, and a real
+no-new-claim continuation.
 
-Phase A6 preflight/final worktree:
-  49 -> 51 entries after the authorized A6 test and blocker report
+Both rows then reached a bounded real terminal with exact keys `(0,0,3)` and
+`(1,0,3)`. Same-Ak autoreset published current episode 1 while the wrapper
+returned immutable episode 0 history and `optional_sidecar=None`. One atomic
+batch exact ACK changed two occupied slots to zero without changing P2, Store,
+generations, window, or poison. The next real step recovered to Store 8 /
+transition 4 / OPEN window 5; the worker closed cleanly with exit code 0 and no
+timeout.
 
-Phase A6-R preflight/final worktree:
-  51 -> 52 entries after the targeted repair and A6-R report
-  13 tracked modifications + 39 untracked paths
-  no unknown path
+The targeted I4-3/I4-2/I4-1/Phase-A/profile/B1/B1W/I1/I3/frozen matrix passes
+213/213 in normal and `-I -B` modes. All 18 protected production SHA-256 values
+match preflight exactly; `git diff --check`, empty-index verification, and smoke
+`py_compile` pass. No production source changed in I4-4. No HARL, training,
+playback, evaluation, or commit occurred. Public learned-policy event
+`.step(actions)`, lifecycle observations, mask/DVM, forced-row sampling, critic
+sidecar, learner transport, TIME_LIMIT GAE, and runtime readiness remain blocked.
 
-A6-R authorized delta:
-  one-line canonical repair in assignment_harl_wrapper.py
-  hardened standalone pure/static/manifest identity test
-  one new AgentRead A6-R repair report
-  Phase-A final report updated while preserving the original blocker history
-  TASK_PROGRESS updated in place
-~~~
+B1W-I4-2 is REVIEW PASS / CLOSED. It adds a B-private pure proposal adapter and extends the private event
+facade route through explicit feasibility-first arbitration, one task-disjoint
+C2/M1 request, zero-or-one authoritative B1 artifact, final P2 capture, and the
+existing O1 Ak-only physical admission. Decision evidence is bound to the exact
+P2 publication identity, episode/transition generations, and OPEN-window
+identity. Stale P2 or window evidence is rejected without rebinding.
 
-No TASK archive was created: this is a targeted blocker update, not a
-substantial rewrite/condensation, and the A6-R allowed-file list did not
-authorize a new archive. Apart from the single wrapper binding, A6-R changed no
-production/runtime/config/HARL/checkpoint artifact or golden.
+Structural legality is evaluated before explicit physical feasibility. Cost is
+ranking evidence only and cannot make an infeasible pair eligible. Eligible
+finite candidates use minimum cost then lowest robot ID; an all-NaN/inf
+already-feasible set uses lowest robot ID without infeasible re-entry. One
+action batch produces no B1 artifact for K=0 or exactly one full-batch artifact
+and Store increment for K>0. Mixed continuation plus new claim preserves the
+existing owner while committing only the new claim. Wrapper caches, proposals,
+winner masks, M1 requests, and artifacts never become controller authority;
+physical control remains final P2 -> Ak -> controller.
 
-## Detailed reports / archives
+The dedicated suite passes 22/22 in normal and `-I -B` modes. The full recorded
+I4-2/I4-1/Phase-A/profile/B1/B1W/I1/I3/B0/frozen matrix passes 271 cases per
+mode. Protected environment/controller/RL/B1/domain/fence/resolver/contracts/
+training hashes are unchanged. Public event `.step(actions)` remains blocked
+because lifecycle observation/mask identity is absent. Terminal wrapper copy
+and atomic batch exact ACK remain deferred to I4-3. No Isaac, HARL, training,
+playback, evaluation, runtime smoke, or commit occurred.
 
-Report:
+B1W-I4-1 is review pass / closed. Its facade-only reset and no-new-claim
+continuation remain intact and continue to pass 15/15 in both modes.
 
-- AgentRead/20260809/PHASE_A6R_TARGETED_DEFAULT_OFF_IDENTITY_REPAIR_REPORT.md;
-- AgentRead/20260809/PHASE_A_PURE_INTERFACE_IDENTITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md;
-- AgentRead/20260808/PHASE_A5_DIAGNOSTICS_AND_REWARD_SEMANTIC_CONFIGURATION_REPORT.md;
-- AgentRead/20260808/PHASE_A4B_CHECKPOINT_ENTRY_SEMANTIC_GUARD_INTEGRATION_REPORT.md;
-- AgentRead/20260807/PHASE_A4A_V3_INTERFACE_DESCRIPTOR_AND_SEMANTIC_DISPATCH_IMPLEMENTATION_REPORT.md;
-- AgentRead/20260803/PHASE_A3X1_EVENT_PROFILE_SCHEMA_DESCRIPTOR_IMPLEMENTATION_REPORT.md;
-- AgentRead/20260803/PHASE_A3X0_EVENT_SCHEMA_FREEZE_DESIGN.md.
+B1W-I4-D-R resolves both conditional design issues without reopening WR-C,
+W-T1, ACK-A, P2/Ak authority, continuation/noop semantics, M1 zero-or-one
+batching, or default-off. Conflict handling is now explicitly
+feasibility-first: P2 structural legality and the separate current physical
+feasibility signal determine candidate eligibility; cost ranks only survivors.
+Finite cost cannot rescue an infeasible pair. When an already-feasible conflict
+set has no finite cost, lowest robot ID provides totality without re-entry.
 
-The A6-R report preserves the exact original `13/15` blocker, records the
-separately authorized one-line repair, and closes H1--H4 with final `16/16`
-evidence. The Phase-A final report retains the blocker chronology while
-updating the current classification. Together they record the 19-surface
-matrix, 23 deferred runtime rows, 11 numeric TBDs, canonical/historical
-regression inventory, and the save/load/playback public-consumer audit.
+Multi-row terminal delivery is now `ATOMIC_BATCH_EXACT_ACK`: after the full
+bounded immutable copy validates, the narrow same-domain consumer path validates
+the entire canonical exact-key tuple under the existing publication lock,
+prepares exact stored return identities and the replacement slot map, then
+performs one slot-map publication. Any row failure removes none; partial
+successful ACK is impossible. Existing single-key ACK remains unchanged.
+No Python, tests, Isaac, HARL, or implementation execution occurred in D-R.
 
-The A4b report records the exact native filenames and pair-state matrix, shared
-guard architecture, V2 direct/guard equivalence, unchanged metadata-free
-fallback, V3 audit-only behavior, save/load pre-I/O ordering, playback AST
-routing, offline-audit integration, callback-spy evidence, and the remaining
-post-AppLauncher/pre-checkpoint-tensor limitation.
+B1W-I3 passed one bounded real-Isaac E=2 terminal route. A legal deterministic
+initial claim was followed by admitted O1 physical steps until the existing
+time-limit mechanism produced exact terminal transition generation 2 for both
+rows. The same Ak finalized I3, installed two immutable slots, survived
+autoreset to episode 1, returned, and completed to OPEN. O1 captured the exact
+stored artifacts, a deliberate pre-ack step rejected neutrally through R3,
+exact keys `(0,0,2)` and `(1,0,2)` were acknowledged, and the next real
+nonterminal step completed to a new OPEN window without a stranded Ak.
 
-The A4a-R report records the frozen V2 golden package, exact 21-key/19-section
-V3 typed manifest, ownership-driven assembly, strict V2/V3 dispatcher, first
-interface-only V3 fingerprint, fail-closed readiness matrix, side-effect audit,
-and all required phase boundaries. The underlying frozen schema remains:
+The narrow production delta is confined to the existing terminal coordinator,
+designated consumer port, and HARL-independent O1 facade. Discovery returns an
+env-ID-ordered immutable tuple of the exact stored artifact objects under the
+existing publication lock. Capture never acknowledges. O1 exposes separate
+capture and exact-key ack methods and retains no terminal cache or second state
+authority. Runtime readiness remains blocked.
 
-~~~text
-actor schema:
-  event_gated_global_actor_observation_v1
-actor blocks:
-  15
-actor dimension:
-  6MN + 30M + 14N + 2
-  M=3,N=50 -> 1692
+B1W-I2 previously passed the bounded real-Isaac E=2 nonterminal admitted route
+and is now review pass / closed.
 
-shared schema:
-  event_gated_global_centralized_observation_v1
-shared construction:
-  global_fixed_width_centralized_v1
-shared blocks:
-  19
-shared semantic dimension:
-  6MN + 31M + 15N + 8
-  M=3,N=50 -> 1751
-shared semantic/transport/critic shapes:
-  [E,S] / [E,M,S] / [B,S]
-~~~
+B1W-I1 implements the B-private HARL-independent O1 coordinator and exact-event
+environment validation for reset, step entry, I3, and internal autoreset. No
+accepted B1W, B1, B0, or Phase-A contract changes.
 
-The actor sees fixed global IDs, physical/lifecycle state, policy-before a0,
-failed/path/nominal-cost matrices, pre-policy masks/DVM, minimal workload and
-episode context. Same-tick proposal/resolver/effective outcome, future facts,
-private detector state and local repacking are excluded.
+```text
+scope:       one global synchronous vector-domain fence
+states:      PREBOOTSTRAP_CLOSED / OPEN / STEP_IN_FLIGHT /
+             RESET_IN_FLIGHT / derived FAULTED
+window:      opaque domain-lifetime identity; not an assignment tick
+binding:     W2 immutable production envelope around unchanged B1 request
+publication: F1 admission state outside P2 and StateStore
+step:        S4 caller-close plus exact environment/I3 admission validation
+open owner:  O1 synchronous runtime coordinator
+control:     final P2 -> Ak -> Ak-derived action -> env.step
+failure:     no reopen; existing coordinator/domain fail-stop authority
+```
 
-The shared state stores global facts once; agent-axis repetition is transport,
-not semantic state. Contract-C supplies selected primitives only. Its nearest-8
-packing, field order, dimensions, budget semantics and actor-concat shared
-identity are not reused.
+The first window opens only after an admitted reset explicitly completes.
+Claims may commit multiple times in one window; they change P2/Store version,
+not the window. Step admission checks R3 and atomically closes the window under
+the same operation/admission lock used by claims. R3 failure keeps the same
+window open. A successful step/reset creates the next window only after
+explicit success in the pure protocol; internal autoreset never opens one.
+The generic fake/direct call path admits reset before `env.reset()` and opens W1
+only after return. O1 performs primary R3 and admits Ak before Ak-derived control
+construction; event entry then performs exact-Ak validation followed by
+defensive R3. I3 and autoreset validate the same Ak. Real Isaac has now verified
+both the prior nonterminal path and the B1W-I3 terminal/autoreset/capture/ack/
+recovery path.
 
-## Numeric-TBD identity
+An OPEN window may coexist with terminal slots. G2 blocks selected occupied
+rows, R3 blocks the next global step, and exact ack changes neither P2 nor the
+window. An envelope bound to W1 is permanently invalid after W1 closes and is
+never rebound to W2.
 
-There are exactly 11 ordered method numeric-TBDs:
+## Active architecture / implementation path
 
-~~~text
-top_k_tasks_per_robot
-local_robot_cap
-local_task_cap
-pair_abs_threshold
-pair_rel_threshold
-component_abs_threshold
-component_rel_threshold
-transfer_penalty
-rejection_penalty_scale
-alignment_time_constant
-assignment_retry_cadence
-~~~
+The retained composition remains:
 
-Typed owner values are phase_b, phase_d, phase_e, phase_b_e and phase_d_e.
-Phase A selects no number. Multi-stage owner values are explicit; free strings
-are forbidden. The aggregate references each domain owner and drift-checks the
-exact triple; it does not duplicate authority.
+```text
+resolved_assignment_profile
+event_lifecycle_runtime_domain
+  -> one domain operation lock
+  -> one coordinator publication lock
+  -> one LifecycleStateStore writer
+```
 
-Alignment fallback is robot-specific seconds inside cost/path; retry cadence
-counts physical-transition deltas; transfer penalty belongs only to equal-count
-component Jp; rejection penalty belongs only to once-per-eligible-component
-team reward.
+The pure initial-claim deriver has no writer capability. The existing
+coordinator remains the sole transaction/publication owner and owns the private
+claim route. The domain owns a narrow request port and single-use request
+registry. Its operation lock is also the implemented dormant fence's admission
+linearization boundary. B1W-I1 implemented production-boundary validation,
+B1W-I2 verified the real admitted nonterminal route, and B1W-I3 verified the
+real terminal/autoreset/capture/ack/recovery route. No tick clock, second mutex,
+StateStore, coordinator, or poison authority is introduced.
 
-## Descriptor/projection freeze
+Private capabilities are separated into production claim, physical-step
+admission, standalone-reset admission, environment validation, read-only
+fence inspection, and terminal consumer ports. No raw open/close/state-writer
+capability escapes. Fence state remains outside P2; `FAULTED` derives from the
+existing poison authority.
 
-A3x-1 implements immutable descriptor projections for the exact A3x-0R key
-orders and equations covering:
+Existing/default routes receive no event domain and retain legacy behavior.
 
-1. local seed/Top-K/current retention/one owner expansion/overlap merge/
-   recomputation/fail-closed overflow/request-result association;
-2. expected-time cost/current-owner remaining cost/path-valid/NaN/fallback;
-3. component contention/pair and component gates/count/transfer/covered
-   CONTINUE/whole outcome/rejection attribution;
-4. cumulative failed pair/TEAM_INFEASIBLE/release-before-a0/termination/
-   physical fail-closed/generation;
-5. model structure and state-dict identity;
-6. HAPPO EP feed-forward training, DVM-only actor, zero/singleton handling,
-   all-step critic GAE/ValueNorm, and nondecision factor identity.
+The event environment retains lifecycle and admission-validation ports only.
+O1 retains current-P2 read, production-claim, step/reset-admission, designated
+terminal-consumer, and environment-call capabilities. The private I4
+composition injects only a narrow facade into the exact-event wrapper; I4-2
+extends that private path with proposal interpretation, explicit feasibility,
+conflict arbitration, and M1/B1 routing. The wrapper retains neither the raw
+domain nor O1. Formal activation remains blocked and event noise remains
+prohibited.
 
-~~~text
-STATE ENUM OWNER GAP:
-  resolved
+## Terminal handoff
 
-unique owner:
-  assignment_lifecycle_transition_contract.py
+One immutable exact-generation artifact is stored per row. Exact designated ack
+removes one slot; slots survive reset and reject invalid operations. No
+overwrite, auto-ack, or optional sidecar exists. The designated consumer can
+capture all pending exact stored artifacts as an immutable env-ID-ordered tuple;
+capture is repeatable/read-only and does not reconstruct from reset P2.
 
-TaskLifecycleState order:
-  AVAILABLE, CLAIMED, NAVIGATING, ALIGNING, COMPLETED, TEAM_INFEASIBLE
+## Publication and poison boundary
 
-RobotLifecycleState order:
-  EXECUTING, NEEDS_ASSIGNMENT, WAITING_FOR_TASK, UNAVAILABLE
+The coordinator holds one publication lock through Store/generation/P2/slot
+installation; reads, terminal operations, and permission checks share it. Any
+post-authority bookkeeping failure poisons without rollback, retry, auto-ack,
+or normal continuation.
 
-TerminationReason order unchanged:
-  NONE, ALL_TASKS_COMPLETED, NO_FEASIBLE_TASKS_REMAIN, TIME_LIMIT
-~~~
+## Event environment order
 
-The V3 count is 21 top-level keys: two discriminators plus 19 typed semantic
-section dataclasses. “20 entries after manifest_format_version” includes
-manifest_kind; no twentieth semantic section is invented.
+```text
+O1 primary step admission / R3 -> STEP_IN_FLIGHT Ak
+Ak-bound continuous action construction -> env.step()
+first event hook: exact active-Ak validation -> defensive R3 -> event mutation
+physics -> episode counters -> staged report
+exact same-Ak I3 validation -> lifecycle authority -> terminal publication if any
+reward/bookkeeping -> optional internal autoreset under the same Ak
+observation -> external return -> O1 explicit Ak success completion
+OPEN next window
+```
 
-## Model/training finding
+Primary R3 is the caller-side O1 begin-step admission before
+`OPEN -> STEP_IN_FLIGHT`. Defensive R3 is the environment's first event hook,
+after exact-Ak validation and before task mutation or physics.
 
-The assignment runner reads model.hidden_sizes for both networks, so its actual
-current actor/critic projection is (256,256)/(256,256). YAML
-hidden_sizes_critic [512,256] is not consumed. The proposal binds the actual
-route as interface_identity_only_not_runtime_verified. A 512/256 event critic
-would be a new architecture decision.
+The event constructor rejects non-`None` action noise before base environment
+construction because DirectMARLEnv applies noise before the task hook.
 
-Training numeric config is current-config identity only, not a paper default or
-an addition to the 11 method numeric-TBDs. No model/state dict was constructed.
+The event detector does not mutate coverage or dwell before authority. Passive
+non-owner candidates remain non-events. Coverage and reward evidence come from
+the authoritative outcome.
 
-## Implemented versions
+Legacy `_update_scan_progress`, done, reward, and reset paths remain present
+for the four existing/default profiles.
 
-~~~text
-new in A4a-R:
-  assignment_checkpoint_contract_v3
-  assignment_checkpoint_semantic_dispatch
+## Episode rebuild
 
-new authority consumed from A3x-1:
-  assignment_event_profile_schema_contract_v1
+Event `_reset_idx(selected)` wraps native reset and selected scan-buffer reset
+inside `environment_port.episode_rebuild(...)`, then signals
+`commit_physical_reset_complete()`.
 
-descriptor version bumps:
-  assignment_mrta_contract_v1 -> v2
-  assignment_event_contract_v1 -> v2
-  assignment_lifecycle_transition_contract_v1 -> v2
+```text
+standalone reset: O1 admitted Rk -> reset-entry validation -> I1
+                  -> external return -> explicit Rk completion -> OPEN
+internal autoreset: same active Ak -> reset-entry validation -> I1
+                    -> remain STEP_IN_FLIGHT -> outer return -> Ak completion
+                    -> OPEN
+```
 
-unchanged:
-  profile and actor/shared v1 identity strings
-  all A2/A3 DTO/record schemas and field orders
-  reward v1 and diagnostics v1
-  V2 checkpoint bytes/hash/semantics
-~~~
+The first reset advances episode `-1 -> 0`; partial/manual/autoreset use the
+same primitive. Terminal slots survive rebuild. Native reset does not re-enter
+a lifecycle port and no `RLock` was introduced.
 
-The first V3 golden is the interface-only descriptor for M=3, N=50 and has
-canonical byte length 67794 and SHA-256
-`03c33620e8324c034de5f9014dfd0cb76bef2fc06c99b15895f94b9981cb2b6a`.
-It is not checkpoint-ready and does not authorize runtime or weight use.
+## Verification
 
-## Latest verification
+B1W-I4-2 accepted recorded verification (not rerun in B1W-I4-2-R):
 
-All final pure evidence used the required conda interpreter.
+```text
+I4-2 dedicated normal / -I -B                   22/22 + 22/22
+full recorded matrix normal / -I -B             271/271 + 271/271
+dedicated facade/wrapper normal / -I -B        15/15 + 15/15
+Phase-A default-off normal / -I -B             16/16 + 16/16
+profile contract normal / -I -B                16/16 + 16/16
+profile production wiring normal / -I -B       10/10 + 10/10
+B1W-I3 terminal consumer normal / -I -B        13/13 + 13/13
+B1W-I1 environment/O1 normal / -I -B           28/28 + 28/28
+B1W fence normal / -I -B                       26/26 + 26/26
+B1 initial claim normal / -I -B                23/23 + 23/23
+B0-3I2 domain normal / -I -B                   12/12 + 12/12
+B0-3I4 environment normal / -I -B              12/12 + 12/12
+frozen transition/schema/event normal/-I -B    34/34 + 34/34
+py_compile / diff / side effects               pass / pass / unchanged
+protected production hashes                    exact
+```
 
-~~~text
-A6 original standalone default-off identity:
-  py_compile passed
-  13/15 passed; exit 1; prescribed STOP
-  failed: legacy_observation_shared_action_mask
-          contract_c_observation_shared_action_mask
-A6-R hardened standalone identity:
-  py_compile passed
-  16/16 passed
-H1 independent tensor oracle:
-  legacy and nonzero Contract-C actor/shared/action-mask torch.equal passed
-H2 evidence inventory:
-  exact 19-surface tuple and label counts passed
-H3 resolver discriminator:
-  proposal [[5,5,-1],[7,7,7]]
-  effective [[5,-1,-1],[7,-1,-1]]
-H4 isolated clean child:
-  -I -B full state snapshot passed
-canonical required matrix:
-  143/143 passed
-audited-safe historical matrix:
-  7 scripts / 100/100 passed
-five deferred historical scripts:
-  not run
-V2 source SHA-256:
-  8f220bb62bcacf108876bf02d97141f77af8761cced7669e9f73406d00b90bc0
-V2 legacy bytes / SHA-256:
-  5509 / 1b525f3d577f0064dc86e1f2231c7569bf0e46fa9735960937d475323d5cf60f
-V2 Contract-C bytes / SHA-256:
-  7234 / 88c8000cae494af36c441288659cf84fa428324784d1ea807a0d8e48654ae398
-V3 bytes / SHA-256:
-  67794 / 03c33620e8324c034de5f9014dfd0cb76bef2fc06c99b15895f94b9981cb2b6a
-protected production inventory:
-  25 non-wrapper entries unchanged
-  wrapper equals sole authorized repaired hash
-~~~
+No Isaac/AppLauncher, real environment, HARL, training, playback, evaluation,
+checkpoint, or readiness run occurred in I4-1.
 
-No Isaac/AppLauncher or model/runtime path was invoked by A6 or A6-R. The dedicated
-suite used only pure objects, fake wrappers, synthetic tensors, clean children,
-and AST/source checks; it performed no real checkpoint tensor save/load,
-`load_state_dict`, model construction, training, playback, or evaluation. One
-historical candidate was attempted before its canonical import chain was fully
-classified and failed before test collection at missing `omni.kit`; it started
-no AppLauncher, environment, rollout, or policy operation and was immediately
-reclassified as deferred and not rerun.
+## Key and changed files
 
-## A6 / A6-R authorized scope and outcome
+B1W-I4-2 production/test/report delta:
 
-~~~text
-new standalone test:
-  scripts/environments/test_assignment_phase_a_default_off_identity.py
+```text
+assignment_event_proposal_adapter.py
+assignment_event_runtime_facade.py
+assignment_event_profile_synchronous_runtime.py
+assignment_harl_wrapper.py
+scripts/environments/test_assignment_phase_b1w_i4_2_proposal_effective_commit_pure.py
+AgentRead/20260824/PHASE_B1W_I4_2_PROPOSAL_INTERPRETATION_AND_EFFECTIVE_COMMIT_IMPLEMENTATION_REPORT.md
+AgentRead/TASK_PROGRESS.md
+```
 
-Phase-A final report:
-  AgentRead/20260809/PHASE_A_PURE_INTERFACE_IDENTITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md
+B1W-I4-1 production/test/report delta:
 
-A6-R report:
-  AgentRead/20260809/PHASE_A6R_TARGETED_DEFAULT_OFF_IDENTITY_REPAIR_REPORT.md
+```text
+assignment_event_runtime_facade.py
+assignment_event_profile_synchronous_runtime.py
+assignment_harl_wrapper.py
+scripts/environments/test_assignment_phase_b1w_i4_1_event_facade_wrapper_integration_pure.py
+six existing pure/static boundary-oracle fixtures
+AgentRead/20260823/PHASE_B1W_I4_1_EVENT_FACADE_COMPOSITION_RESET_CONTINUATION_IMPLEMENTATION_REPORT.md
+AgentRead/TASK_PROGRESS.md
+```
 
-production changes during A6:
-  none
+B1W-I3 production/test/report delta:
 
-sole production change during A6-R:
-  assignment_harl_wrapper.py
-  profile_name = self._resolved_assignment_profile.profile_name.value
-~~~
+```text
+assignment_lifecycle_transaction_runtime.py
+assignment_event_profile_runtime_domain.py
+assignment_event_profile_synchronous_runtime.py
+scripts/environments/test_assignment_phase_b1w_i3_terminal_consumer_integration_pure.py
+scripts/environments/test_assignment_phase_b1w_i3_real_isaac_terminal_smoke.py
+scripts/environments/test_assignment_phase_b1w_i1_environment_coordinator_integration_pure.py
+scripts/environments/test_assignment_phase_b1w_i2_real_isaac_nonterminal_smoke.py
+scripts/environments/test_assignment_phase_b0_3i2_runtime_domain_capabilities_pure.py
+AgentRead/20260823/PHASE_B1W_I3_REAL_TERMINAL_CAPTURE_ACK_AND_RECOVERY_VERIFICATION_REPORT.md
+AgentRead/TASK_PROGRESS.md
+```
 
-A6-R resolved the inherited `NameError` through the canonical readiness-checked
-profile authority and did not change observation/action/mask values or any
-V2/V3 semantic contract, runtime, HARL, config, checkpoint artifact, or golden.
-The four existing profiles expose the exact canonical string in the public
-manifest; the event profile still fails closed before manifest access.
-`rejection_penalty_scale` remains the ninth of 11 unresolved parameters, owned
-by `phase_d_e`; V3 remains interface-only, runtime-not-ready, and
-weight-unauthorized.
+B1W-I1 implementation files remain:
 
-## Deferred evidence and risk
+```text
+assignment_interstep_claim_window_runtime.py
+assignment_event_profile_runtime_domain.py
+assignment_event_profile_synchronous_runtime.py
+scan_mobile_manipulator_env.py
+scripts/environments/test_assignment_phase_b1w_i1_environment_coordinator_integration_pure.py
+scripts/environments/test_assignment_phase_b1w_interstep_claim_window_fence_pure.py
+scripts/environments/test_assignment_phase_b0_3i2_runtime_domain_capabilities_pure.py
+scripts/environments/test_assignment_phase_b0_3i3_staged_prereset_facts_adapter_pure.py
+scripts/environments/test_assignment_phase_b0_3i4_environment_integration.py
+scripts/environments/test_assignment_phase_a_default_off_identity.py
+AgentRead/20260822/PHASE_B1W_I1_ENVIRONMENT_VALIDATION_AND_SYNCHRONOUS_COORDINATOR_IMPLEMENTATION_REPORT.md
+AgentRead/TASK_PROGRESS.md
+```
 
-The immediate schema-manifest blocker is resolved. H1--H4 now use an
-independent tensor oracle, exact 19-name inventory, resolver-discriminating
-Contract-C fixture, and widened isolated clean-child boundary. This is enough
-to close the declared Phase-A pure/static/manifest gate, but not any runtime
-gate.
+No frozen contract, environment, training/runner, resolver/controller,
+RL-interface, readiness, checkpoint, config/YAML, Isaac core, or
+installed-package file changed in I4-1. Fixture edits only track the authorized
+private composition boundary and wrapper digest. No TASK_PROGRESS archive was
+needed.
 
-Still deferred: real pre-reset lifecycle authority/state machine; completion
-attribution; expected-time estimators; retry/local-set/Top-K; component graph
-and atomic commit; event observation builder; DVM buffer/trainer/factor; team
-reward runtime/diagnostic producer/logger; V3 checkpoint-ready/state-dict inventory and weight-loader support;
-Isaac/training/evaluation/ablation. V3 checkpoint-ready construction, V3
-state-dict inventory, and every V3 weight-use path remain unavailable.
+## Detailed reports
 
-The largest technical risk remains Phase C runner/trainer integration: a
-nondecision ratio must be exactly one and a zero-valid actor must be wholly
-skipped while critic GAE/ValueNorm still use all valid physical steps.
+Current:
 
-## Do not do
+```text
+AgentRead/20260824/PHASE_B1W_I4_4_FOCUSED_REAL_ISAAC_WRAPPER_INTEGRATION_VERIFICATION_REPORT.md
+AgentRead/20260824/PHASE_B1W_I4_3_TERMINAL_WRAPPER_HISTORICAL_COPY_AND_ATOMIC_BATCH_ACK_IMPLEMENTATION_REPORT.md
+AgentRead/20260824/PHASE_B1W_I4_2_PROPOSAL_INTERPRETATION_AND_EFFECTIVE_COMMIT_IMPLEMENTATION_REPORT.md
+AgentRead/20260823/PHASE_B1W_I4_1_EVENT_FACADE_COMPOSITION_RESET_CONTINUATION_IMPLEMENTATION_REPORT.md
+AgentRead/20260823/PHASE_B1W_I4_D_WRAPPER_FACADE_AND_EFFECTIVE_COMMIT_INTEGRATION_TARGETED_DESIGN.md
+AgentRead/20260823/PHASE_B1W_I3_REAL_TERMINAL_CAPTURE_ACK_AND_RECOVERY_VERIFICATION_REPORT.md
+AgentRead/20260822/PHASE_B1W_I2_FOCUSED_REAL_ISAAC_NONTERMINAL_SMOKE_VERIFICATION_REPORT.md
+AgentRead/20260822/PHASE_B1W_I1_ENVIRONMENT_VALIDATION_AND_SYNCHRONOUS_COORDINATOR_IMPLEMENTATION_REPORT.md
+AgentRead/20260822/PHASE_B1W_I_D_PRODUCTION_FENCE_INTEGRATION_TARGETED_DESIGN.md
+AgentRead/20260821/PHASE_B1W_PURE_INTERSTEP_CLAIM_WINDOW_FENCE_IMPLEMENTATION_REPORT.md
+AgentRead/20260821/PHASE_B1W_D_INTERSTEP_CLAIM_WINDOW_FENCE_TARGETED_DESIGN.md
+AgentRead/20260821/PHASE_B1_PURE_INITIAL_CLAIM_TRANSACTION_IMPLEMENTATION_REPORT.md
+AgentRead/20260821/PHASE_B1D_PURE_INITIAL_CLAIM_TRANSACTION_TARGETED_DESIGN.md
+```
 
-Without explicit authorization: do not enter B0/B/C/D/E; do not edit runtime,
-HARL, config, semantic authority, or checkpoint-ready behavior; do not select
-numeric values; do not run Isaac, training, playback, evaluation, real
-checkpoint tensor I/O, or commit.
+## Deferred / do not do
 
-## Next step
+Until separately authorized:
 
-Review the completed A6-R repair and Phase-A pure/static/manifest closeout.
-Do not infer authorization to enter B0 or any runtime phase from this handoff;
-B0 requires a new explicit authorization after GPT/user review. The 11 method
-numeric parameters and all 23 runtime evidence rows remain unresolved/deferred.
+```text
+do not flip event runtime readiness
+environment admission-validation wiring and generic HARL-independent O1 are implemented
+proposal interpretation / explicit-feasibility-first arbitration /
+M1 B1 commit routing are implemented in the private exact-event path
+terminal direct O1 capture/single-key ACK is implemented by B1W-I3
+terminal wrapper historical copy and ATOMIC_BATCH_EXACT_ACK are implemented by B1W-I4-3
+do not activate public learned-policy event step
+do not add lifecycle actor/shared observations
+do not add lifecycle action mask/DVM
+do not modify forced-row runner behavior
+do not add terminal critic sidecar
+do not add learner buffer transport
+do not run additional Isaac/AppLauncher smoke or HARL/training/playback/evaluation
+do not commit
+```
 
-No TASK archive was created because this is a narrow in-place blocker update,
-not a substantial rewrite or shortening, and A6-R did not authorize a new
-archive. Wait for GPT/user review.
+## Next action
+
+B1W-I4-1, B1W-I4-2, and B1W-I4-3 are REVIEW PASS / CLOSED. B1W-I4-4 focused
+real-Isaac wrapper integration is VERIFIED and awaits GPT review. Preserve WR-C,
+W-T1 / ACK-A, P2 sole authority, Ak-only controller source, S4/O1/W2/F1, G2/C2,
+default-off behavior, blocked public event `.step(actions)`, and runtime
+readiness BLOCKED. Do not enter a later phase or proceed automatically.

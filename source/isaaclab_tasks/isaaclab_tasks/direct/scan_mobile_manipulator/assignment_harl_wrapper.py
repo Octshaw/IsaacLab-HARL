@@ -18,6 +18,7 @@ if __package__:
         AssignmentProfileName,
         AssignmentProfileResolutionOrigin,
         ResolvedAssignmentProfile,
+        ResolvedEventGatedAssignmentProfile,
         ResolvedExistingAssignmentProfile,
         require_assignment_profile_runtime_ready,
         resolve_or_validate_assignment_profile_authority,
@@ -27,12 +28,23 @@ else:  # Direct/fake test compatibility without a second contract module key.
         AssignmentProfileName,
         AssignmentProfileResolutionOrigin,
         ResolvedAssignmentProfile,
+        ResolvedEventGatedAssignmentProfile,
         ResolvedExistingAssignmentProfile,
         require_assignment_profile_runtime_ready,
         resolve_or_validate_assignment_profile_authority,
     )
 
 try:
+    from .assignment_event_profile_runtime_domain import _EventProfileLifecycleRuntimeDomain
+    from .assignment_event_profile_synchronous_runtime import EventProfileSynchronousRuntimeCoordinator
+    from .assignment_event_runtime_facade import (
+        EventAssignmentRuntimeFacade,
+        EventFacadeProposalStepResult,
+        EventFacadeResetResult,
+        EventFacadeStepResult,
+        _compose_event_assignment_runtime_facade,
+    )
+    from .assignment_event_proposal_adapter import EventProposalDecisionSnapshot
     from .assignment_harl_adapter import (
         AssignmentHarlAdapter,
         get_harl_scalar_action_dim,
@@ -62,6 +74,22 @@ try:
         critic_budget_addon_dim,
     )
 except ImportError:  # Allows direct file-based smoke tests after adding this directory to sys.path.
+    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_event_profile_runtime_domain import (  # type: ignore
+        _EventProfileLifecycleRuntimeDomain,
+    )
+    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_event_profile_synchronous_runtime import (  # type: ignore
+        EventProfileSynchronousRuntimeCoordinator,
+    )
+    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_event_runtime_facade import (  # type: ignore
+        EventAssignmentRuntimeFacade,
+        EventFacadeProposalStepResult,
+        EventFacadeResetResult,
+        EventFacadeStepResult,
+        _compose_event_assignment_runtime_facade,
+    )
+    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_event_proposal_adapter import (  # type: ignore
+        EventProposalDecisionSnapshot,
+    )
     from assignment_harl_adapter import (  # type: ignore
         AssignmentHarlAdapter,
         get_harl_scalar_action_dim,
@@ -127,6 +155,7 @@ class AssignmentHarlWrapper:
             AssignmentProfileResolutionOrigin.DIRECT_WRAPPER_FALLBACK
         ),
         assignment_profile_entrypoint: str = "AssignmentHarlWrapper.direct",
+        event_runtime_facade: EventAssignmentRuntimeFacade | None = None,
     ) -> None:
         self._env = env
         self._unwrapped = getattr(env, "unwrapped", env)
@@ -152,12 +181,30 @@ class AssignmentHarlWrapper:
             consumer="AssignmentHarlWrapper",
             entrypoint=assignment_profile_entrypoint,
         )
-        self._resolved_assignment_profile = require_assignment_profile_runtime_ready(
-            authoritative_profile,
-            consumer="AssignmentHarlWrapper",
-            entrypoint=assignment_profile_entrypoint,
-            barrier="before wrapper profile branches, resolver, observation, mask, logger, and controller",
-        )
+        if type(authoritative_profile) is ResolvedExistingAssignmentProfile:
+            if event_runtime_facade is not None:
+                raise ValueError("existing assignment profiles must not receive an event runtime facade")
+            self._resolved_assignment_profile = require_assignment_profile_runtime_ready(
+                authoritative_profile,
+                consumer="AssignmentHarlWrapper",
+                entrypoint=assignment_profile_entrypoint,
+                barrier="before wrapper profile branches, resolver, observation, mask, logger, and controller",
+            )
+            self._event_runtime_facade: EventAssignmentRuntimeFacade | None = None
+        elif type(authoritative_profile) is ResolvedEventGatedAssignmentProfile:
+            if type(event_runtime_facade) is not EventAssignmentRuntimeFacade:
+                raise ValueError("exact event assignment profile requires one exact event runtime facade")
+            if event_runtime_facade.resolved_assignment_profile is not authoritative_profile:
+                raise ValueError("event runtime facade and wrapper profile identities do not match")
+            if getattr(self._unwrapped, "_resolved_assignment_profile", None) is not authoritative_profile:
+                raise ValueError("event wrapper environment and profile identities do not match")
+            self._resolved_assignment_profile = authoritative_profile
+            self._event_runtime_facade = event_runtime_facade
+        else:
+            raise TypeError(
+                "assignment wrapper requires an exact canonical resolved-profile subtype; "
+                f"actual={type(authoritative_profile)!r}"
+            )
         self._assignment_profile_entrypoint = assignment_profile_entrypoint
         self.include_noop = include_noop
         self.strict_decode = strict_decode
@@ -170,6 +217,9 @@ class AssignmentHarlWrapper:
         self._num_viewpoints = self._infer_num_viewpoints()
         self._device = torch.device(getattr(self._unwrapped, "device", "cpu"))
         self._normalization_horizon = max(1, int(getattr(self._unwrapped, "max_episode_length", 300) or 300))
+        if self._event_runtime_facade is not None:
+            self._initialize_event_route()
+            return
         self._assignment_reward_config = self._build_assignment_reward_config()
         self._assignment_cooldown_config = self._build_assignment_cooldown_config()
         self._assignment_redirect_guardrail_config = self._build_assignment_redirect_guardrail_config()
@@ -273,6 +323,107 @@ class AssignmentHarlWrapper:
         self._share_observation_space = self._make_share_observation_space()
         self._reset_assignment_diagnostics()
 
+    def _initialize_event_route(self) -> None:
+        """Initialize only neutral wrapper mechanics for the blocked I4-1 route."""
+
+        self._assignment_reward_config: dict[str, float | int] = {}
+        self._assignment_cooldown_config: dict[str, bool | float | int | str] = {"enabled": False}
+        self._assignment_redirect_guardrail_config: dict[str, bool | float | int | str | None] = {
+            "enabled": False
+        }
+        self._assignment_failed_pair_memory_config: dict[str, bool | int | str] = {"enabled": False}
+        self._assignment_lifecycle_profile_config: dict[str, Any] = {
+            "profile_name": self._resolved_assignment_profile.profile_name.value,
+            "actor_schema_version": "i4_1_provisional_raw_physical_observation_not_runtime_ready",
+            "shared_schema_version": "i4_1_provisional_raw_actor_concat_not_runtime_ready",
+            "shared_construction_mode": "provisional_raw_actor_concat",
+            "mask_contract_version": "not_implemented_i4_1",
+            "budget_release_contract": "not_implemented_i4_1",
+            "legacy_guardrail_profile": "not_applicable_event_route",
+            "lifecycle_observation_enabled": False,
+            "lifecycle_mask_enabled": False,
+            "resolver_enabled": False,
+        }
+        self._assignment_lifecycle_resolver_config: dict[str, bool | str | None] = {
+            "enabled": False,
+            "output_dir": None,
+            "log_diagnostics": False,
+            "strict_proposals": True,
+        }
+        self._max_base_xy_step_by_agent = torch.zeros(
+            (self._num_agents,), dtype=torch.float32, device=self._device
+        )
+        self._adapter = AssignmentHarlAdapter(
+            num_envs=self._num_envs,
+            num_agents=self._num_agents,
+            num_viewpoints=self._num_viewpoints,
+            device=self._device,
+        )
+        self._action_space = make_assignment_discrete_action_spaces(self._num_agents, self._num_viewpoints)
+        self._max_scalar_action_dim = max(
+            get_harl_scalar_action_dim(space) for space in self._action_space.values()
+        )
+
+        self.last_assignment = None
+        self.last_assignment_proposal = None
+        self.last_effective_assignment = None
+        self.last_env_actions = None
+        self.last_pre_step_available_actions = None
+        self.last_available_actions = None
+        self.last_duplicate_count = None
+        self.last_noop_count = None
+        self.last_valid_action_count = None
+        self.last_selected_available_mask = None
+        self.last_assignment_reward_terms = None
+        self._last_assignment_lifecycle_resolution = None
+        self._lifecycle_snapshot_generation = 0
+        self._lifecycle_episode_generation = None
+        self._last_lifecycle_decision_snapshot = None
+        self._last_actor_lifecycle_tensor_result = None
+        self._last_critic_budget_tensor_result = None
+        self._last_available_actions_lifecycle_result = None
+        self._last_actor_observation_generation = None
+        self._last_shared_observation_generation = None
+        self._last_available_actions_generation = None
+        self._assignment_lifecycle_resolver_runtime = None
+        self._last_event_facade_reset_result: EventFacadeResetResult | None = None
+        self._last_event_facade_step_result: EventFacadeStepResult | None = None
+        self._last_event_facade_proposal_step_result: EventFacadeProposalStepResult | None = None
+
+        self._legacy_viewpoint_row_fields = ()
+        self._lifecycle_viewpoint_row_fields = ()
+        self._viewpoint_row_fields = ()
+        self._noop_context_fields = ()
+        self._dynamic_scalar_fields = ()
+        self._viewpoint_row_dim = 0
+        self._noop_context_dim = 0
+        self._previous_assignment_one_hot_dim = 0
+        self._assignment_extension_dim = 0
+        self._raw_observation_dims = self._infer_raw_observation_dims()
+        self._observation_space = self._make_observation_space()
+        self._share_observation_space = self._make_share_observation_space()
+
+    def _clear_event_convenience_caches(self) -> None:
+        self.last_assignment = None
+        self.last_assignment_proposal = None
+        self.last_effective_assignment = None
+        self.last_env_actions = None
+        self.last_pre_step_available_actions = None
+        self.last_available_actions = None
+        self.last_duplicate_count = None
+        self.last_noop_count = None
+        self.last_valid_action_count = None
+        self.last_selected_available_mask = None
+        self.last_assignment_reward_terms = None
+        self._last_assignment_lifecycle_resolution = None
+        self._last_lifecycle_decision_snapshot = None
+        self._last_actor_observation_generation = None
+        self._last_shared_observation_generation = None
+        self._last_available_actions_generation = None
+        self._last_event_facade_reset_result = None
+        self._last_event_facade_step_result = None
+        self._last_event_facade_proposal_step_result = None
+
     def __getattr__(self, key: str) -> Any:
         if hasattr(self._env, key):
             return getattr(self._env, key)
@@ -285,7 +436,7 @@ class AssignmentHarlWrapper:
         return self._unwrapped
 
     @property
-    def resolved_assignment_profile(self) -> ResolvedExistingAssignmentProfile:
+    def resolved_assignment_profile(self) -> ResolvedAssignmentProfile:
         """Return the process-local authority object without copying it."""
 
         return self._resolved_assignment_profile
@@ -416,6 +567,10 @@ class AssignmentHarlWrapper:
 
     @property
     def assignment_observation_schema_manifest(self) -> dict[str, Any]:
+        if self._event_runtime_facade is not None:
+            raise RuntimeError(
+                "exact event lifecycle observation/mask schema is not implemented in B1W-I4-1"
+            )
         return self._build_assignment_observation_schema_manifest()
 
     @property
@@ -425,6 +580,8 @@ class AssignmentHarlWrapper:
 
     @property
     def last_lifecycle_episode_generation(self) -> torch.Tensor:
+        if self._event_runtime_facade is not None:
+            return self._event_runtime_facade.read_current().episode_generation.detach().clone()
         return self._lifecycle_episode_generation.detach().clone()
 
     @property
@@ -442,7 +599,25 @@ class AssignmentHarlWrapper:
     def get_last_assignment_lifecycle_resolution(self) -> dict[str, Any] | None:
         return self._clone_lifecycle_resolution_payload(self._last_assignment_lifecycle_resolution)
 
-    def reset(self, *args, **kwargs) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
+    def reset(
+        self, *args, **kwargs
+    ) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor | None]:
+        if self._event_runtime_facade is not None:
+            facade_result = self._event_runtime_facade.reset(*args, **kwargs)
+            raw_result = facade_result.environment_result
+            if type(raw_result) is not tuple or len(raw_result) != 2 or not isinstance(raw_result[0], Mapping):
+                raise RuntimeError(
+                    "I4-1 exact event reset requires the raw environment reset two-tuple"
+                )
+            obs = dict(raw_result[0])
+            self._clear_event_convenience_caches()
+            self._last_event_facade_reset_result = facade_result
+            self._sync_agents(obs)
+            shared_obs = self._build_shared_obs(obs)
+            # The third slot deliberately remains absent until the separately
+            # gated lifecycle mask/DVM implementation.  Production activation
+            # still rejects this route before wrapper construction.
+            return obs, shared_obs, None
         obs, _ = self._env.reset(*args, **kwargs)
         problem = self._unwrapped.get_assignment_problem()
         self._reset_assignment_diagnostics(problem=problem)
@@ -463,6 +638,11 @@ class AssignmentHarlWrapper:
         discrete_actions: torch.Tensor,
         layout: str | None = None,
     ) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor, dict, torch.Tensor]:
+        if self._event_runtime_facade is not None:
+            raise RuntimeError(
+                "exact event policy-action routing is not runtime-ready in B1W-I4-2; "
+                "lifecycle observation and action-mask identity remain unbound"
+            )
         pre_step_problem = self._unwrapped.get_assignment_problem()
         pre_step_available_actions = self._build_available_actions(problem=pre_step_problem)
         self._capture_pre_step_assignment_redirect_guardrail_diagnostics()
@@ -559,17 +739,98 @@ class AssignmentHarlWrapper:
         self.last_available_actions = available_actions
         return obs, shared_obs, reward_tensor, dones, info, available_actions
 
+    def _step_event_without_new_claim(
+        self,
+        *,
+        action_builder: Any | None = None,
+    ) -> EventFacadeStepResult:
+        """Private I4-1 proof seam; this is not a policy-proposal entrypoint."""
+
+        facade = self._event_runtime_facade
+        if facade is None:
+            raise RuntimeError("no-new-claim event step is unavailable on existing profiles")
+        result = facade.step_without_new_claim(action_builder=action_builder)
+        if result.terminal_historical_payload:
+            self._clear_event_convenience_caches()
+        self._last_event_facade_step_result = result
+        return result
+
+    def _capture_event_proposal_decision(
+        self,
+        *,
+        feasible_mask: torch.Tensor,
+        cost_matrix: torch.Tensor,
+        available_mask: torch.Tensor | None = None,
+    ) -> EventProposalDecisionSnapshot:
+        """Private I4-2 snapshot seam; final obs/mask production is deferred."""
+
+        facade = self._event_runtime_facade
+        if facade is None:
+            raise RuntimeError("event proposal decisions are unavailable on existing profiles")
+        return facade.capture_proposal_decision(
+            feasible_mask=feasible_mask,
+            cost_matrix=cost_matrix,
+            available_mask=available_mask,
+        )
+
+    def _step_event_proposals(
+        self,
+        discrete_actions: torch.Tensor,
+        *,
+        decision: EventProposalDecisionSnapshot,
+        layout: str | None = None,
+        action_builder: Any | None = None,
+    ) -> EventFacadeProposalStepResult:
+        """Private I4-2 proof seam; actor obs/mask binding is not runtime-ready."""
+
+        facade = self._event_runtime_facade
+        if facade is None:
+            raise RuntimeError("event proposal stepping is unavailable on existing profiles")
+        if layout is None:
+            layout = self._infer_action_layout(discrete_actions)
+        decoded = self.decode_actions(discrete_actions, layout=layout, strict=True)
+        if layout == "env_agent_action":
+            raw_values = discrete_actions[:, :, 0]
+        elif layout == "agent_env_action":
+            raw_values = discrete_actions[:, :, 0].transpose(0, 1).contiguous()
+        else:
+            raise ValueError("event proposal layout must be env_agent_action or agent_env_action")
+        if torch.is_floating_point(raw_values):
+            if not bool((torch.isfinite(raw_values) & (raw_values == torch.trunc(raw_values))).all().item()):
+                raise ValueError("event proposal actions must preserve finite integer actor IDs")
+        raw_action_ids = raw_values.to(dtype=torch.int64).detach().clone().contiguous()
+        result = facade.resolve_and_step_proposals(
+            raw_action_ids=raw_action_ids,
+            decoded_proposal=decoded,
+            decision=decision,
+            action_builder=action_builder,
+        )
+        if result.terminal_historical_payload:
+            self._clear_event_convenience_caches()
+        # These values are bounded diagnostics after authority/physical success.
+        # They are never read by the exact-event control path.
+        if not result.terminal_historical_payload:
+            self.last_assignment_proposal = result.resolution.decoded_proposal
+            self.last_assignment = result.admitted_effective_assignment.detach().clone().contiguous()
+            self.last_effective_assignment = result.admitted_effective_assignment.detach().clone().contiguous()
+        self._last_event_facade_proposal_step_result = result
+        return result
+
     def close(self) -> None:
         self.finalize_assignment_lifecycle_resolver()
         self._env.close()
 
     def finalize_assignment_lifecycle_resolver(self) -> dict[str, Any]:
+        if self._assignment_lifecycle_resolver_runtime is None:
+            return {}
         return self._assignment_lifecycle_resolver_runtime.finalize()
 
     def make_action_tensor(self, dtype: torch.dtype = torch.float32) -> torch.Tensor:
         return make_harl_action_tensor(self._num_envs, self._action_space, device=self._device, dtype=dtype)
 
     def make_available_actions(self) -> torch.Tensor:
+        if self._event_runtime_facade is not None:
+            raise RuntimeError("exact event action mask/DVM is not implemented in B1W-I4-1")
         return self._build_available_actions()
 
     def decode_actions(self, discrete_actions: torch.Tensor, layout: str | None = None, strict: bool | None = None) -> torch.Tensor:
@@ -580,6 +841,8 @@ class AssignmentHarlWrapper:
         return self._adapter.decode_actions(discrete_actions, layout=layout, strict=strict)
 
     def assignment_to_env_actions(self, assignment: torch.Tensor) -> dict[str, torch.Tensor]:
+        if self._event_runtime_facade is not None:
+            raise RuntimeError("exact event controller conversion is owned only by O1")
         return assignment_to_env_actions(self._unwrapped, assignment)
 
     def _initial_agents(self) -> list[str]:
@@ -2761,6 +3024,54 @@ class AssignmentHarlWrapper:
             "last_trigger_target_ids": last_trigger_target_ids,
             "last_trigger_reason": last_trigger_reason,
         }
+
+
+def _compose_event_assignment_harl_wrapper(
+    *,
+    env: Any,
+    resolved_assignment_profile: ResolvedEventGatedAssignmentProfile,
+    runtime_domain: _EventProfileLifecycleRuntimeDomain,
+    include_noop: bool = True,
+    strict_decode: bool = True,
+    stage_observer: Any | None = None,
+    assignment_profile_entrypoint: str = "B1W-I4-1.private_event_composition",
+) -> AssignmentHarlWrapper:
+    """Private blocked-activation seam for domain -> O1 -> facade -> wrapper."""
+
+    if type(resolved_assignment_profile) is not ResolvedEventGatedAssignmentProfile:
+        raise TypeError("event wrapper composition requires the exact event profile type")
+    if type(runtime_domain) is not _EventProfileLifecycleRuntimeDomain:
+        raise TypeError("event wrapper composition requires the exact retained runtime domain")
+    unwrapped = getattr(env, "unwrapped", env)
+    if getattr(unwrapped, "_resolved_assignment_profile", None) is not resolved_assignment_profile:
+        raise ValueError("event environment and composition profile identities do not match")
+    if runtime_domain.identity.profile is not resolved_assignment_profile:
+        raise ValueError("event runtime domain and composition profile identities do not match")
+
+    synchronous_runtime = EventProfileSynchronousRuntimeCoordinator(
+        environment=unwrapped,
+        current_read_port=runtime_domain.current_read_port,
+        production_claim_port=runtime_domain.production_claim_port,
+        physical_step_admission_port=runtime_domain.physical_step_admission_port,
+        standalone_reset_admission_port=runtime_domain.standalone_reset_admission_port,
+        terminal_consumer_port=runtime_domain.terminal_consumer_port,
+        fence_read_port=runtime_domain.interstep_fence_read_port,
+        stage_observer=stage_observer,
+    )
+    facade = _compose_event_assignment_runtime_facade(
+        resolved_assignment_profile=resolved_assignment_profile,
+        runtime_domain=runtime_domain,
+        synchronous_runtime=synchronous_runtime,
+    )
+    return AssignmentHarlWrapper(
+        env,
+        include_noop=include_noop,
+        strict_decode=strict_decode,
+        resolved_assignment_profile=resolved_assignment_profile,
+        profile_resolution_origin=resolved_assignment_profile.resolution_origin,
+        assignment_profile_entrypoint=assignment_profile_entrypoint,
+        event_runtime_facade=facade,
+    )
 
 
 def make_assignment_harl_env(
