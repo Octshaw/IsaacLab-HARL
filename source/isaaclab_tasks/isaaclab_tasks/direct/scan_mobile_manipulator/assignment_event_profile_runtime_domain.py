@@ -72,6 +72,7 @@ from .assignment_lifecycle_transition_contract import (
     TerminationReason,
     TransitionConsumeLedger,
 )
+from .assignment_event_terminal_critic_sidecar import PreResetCriticPhysicalSnapshotV2
 from .assignment_profile_contract import (
     AssignmentProfileRouteError,
     ResolvedEventGatedAssignmentProfile,
@@ -337,6 +338,9 @@ class _StagedPreResetPhysicalReport:
     _raw_new_candidate: torch.Tensor = field(repr=False)
     _physical_truncated: torch.Tensor = field(repr=False)
     _time_limit_reached: torch.Tensor = field(repr=False)
+    _pre_reset_critic_physical_snapshot: PreResetCriticPhysicalSnapshotV2 | None = field(
+        repr=False
+    )
     num_envs: int
     num_robots: int
     num_tasks: int
@@ -349,6 +353,7 @@ class _StagedPreResetPhysicalReport:
         raw_new_candidate: torch.Tensor,
         physical_truncated: torch.Tensor,
         time_limit_reached: torch.Tensor,
+        pre_reset_critic_physical_snapshot: PreResetCriticPhysicalSnapshotV2 | None = None,
     ) -> None:
         if type(device) is not torch.device:
             raise _EventProfileLifecycleDomainRuntimeError(
@@ -421,6 +426,39 @@ class _StagedPreResetPhysicalReport:
         object.__setattr__(self, "_raw_new_candidate", captured["candidate"])
         object.__setattr__(self, "_physical_truncated", captured["truncated"])
         object.__setattr__(self, "_time_limit_reached", captured["time_limit"])
+        if pre_reset_critic_physical_snapshot is not None:
+            if type(pre_reset_critic_physical_snapshot) is not PreResetCriticPhysicalSnapshotV2:
+                raise _EventProfileLifecycleDomainRuntimeError(
+                    "staged report terminal critic evidence has the wrong immutable type",
+                    failure_code="pre_reset_critic_snapshot_type",
+                    field_name="pre_reset_critic_physical_snapshot",
+                    expected=PreResetCriticPhysicalSnapshotV2,
+                    actual=type(pre_reset_critic_physical_snapshot),
+                )
+            if (
+                pre_reset_critic_physical_snapshot.device != device
+                or pre_reset_critic_physical_snapshot.num_envs != env_count
+                or pre_reset_critic_physical_snapshot.M != num_robots
+                or pre_reset_critic_physical_snapshot.N != num_tasks
+            ):
+                raise _EventProfileLifecycleDomainRuntimeError(
+                    "staged terminal critic evidence differs from the report domain",
+                    failure_code="pre_reset_critic_snapshot_domain",
+                    field_name="pre_reset_critic_physical_snapshot",
+                    expected=(device, env_count, num_robots, num_tasks),
+                    actual=(
+                        pre_reset_critic_physical_snapshot.device,
+                        pre_reset_critic_physical_snapshot.num_envs,
+                        pre_reset_critic_physical_snapshot.M,
+                        pre_reset_critic_physical_snapshot.N,
+                    ),
+                )
+            pre_reset_critic_physical_snapshot = pre_reset_critic_physical_snapshot._clone()
+        object.__setattr__(
+            self,
+            "_pre_reset_critic_physical_snapshot",
+            pre_reset_critic_physical_snapshot,
+        )
         object.__setattr__(self, "num_envs", env_count)
         object.__setattr__(self, "num_robots", num_robots)
         object.__setattr__(self, "num_tasks", num_tasks)
@@ -444,6 +482,14 @@ class _StagedPreResetPhysicalReport:
     @property
     def time_limit_reached(self) -> torch.Tensor:
         return self._time_limit_reached.detach().clone().contiguous()
+
+    @property
+    def pre_reset_critic_physical_snapshot(
+        self,
+    ) -> PreResetCriticPhysicalSnapshotV2 | None:
+        if self._pre_reset_critic_physical_snapshot is None:
+            return None
+        return self._pre_reset_critic_physical_snapshot._clone()
 
 
 @dataclass(frozen=True, slots=True, init=False, eq=False)
@@ -1356,6 +1402,9 @@ class _EventProfileLifecycleRuntimeDomain:
                 facts=facts,
                 transition_contexts=pending.contexts,
                 coverage_before_transition=report._coverage_before_transition,
+                pre_reset_critic_physical_snapshot=(
+                    report._pre_reset_critic_physical_snapshot
+                ),
             )
             outcome = _EnvironmentPhysicalTransitionOutcome._create(
                 published_view=current.lifecycle_view,

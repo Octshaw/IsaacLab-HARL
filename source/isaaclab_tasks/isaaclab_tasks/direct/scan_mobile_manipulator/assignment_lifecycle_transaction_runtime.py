@@ -2864,7 +2864,7 @@ class _TerminalHandoffArtifact:
     _facts_consume_token: int
     _authority_receipt_id: int
     _lifecycle_events: tuple[object, ...] = field(repr=False)
-    _optional_sidecar: None = field(default=None, repr=False)
+    _optional_sidecar: object | None = field(default=None, repr=False)
 
     @classmethod
     def _create(
@@ -2875,6 +2875,7 @@ class _TerminalHandoffArtifact:
         published_view: PublishedLifecycleView,
         domain_row: int,
         coverage_after_transition: torch.Tensor,
+        optional_sidecar: object | None = None,
     ) -> "_TerminalHandoffArtifact":
         if type(key) is not _TerminalTransitionKey:
             raise LifecycleCoordinatorRuntimeError(
@@ -2949,6 +2950,26 @@ class _TerminalHandoffArtifact:
                 expected="reason != NONE and terminated|truncated",
                 actual=(reason, terminated, truncated),
             )
+        if optional_sidecar is not None:
+            from .assignment_event_terminal_critic_sidecar import (
+                EventTerminalCriticSidecarV2,
+            )
+
+            if type(optional_sidecar) is not EventTerminalCriticSidecarV2:
+                raise LifecycleCoordinatorRuntimeError(
+                    "terminal handoff sidecar has a noncanonical type",
+                    failure_code="terminal_sidecar_type",
+                    stage="terminal_handoff_prepare",
+                    expected=EventTerminalCriticSidecarV2,
+                    actual=type(optional_sidecar),
+                )
+            optional_sidecar._validate_artifact_binding(
+                key=key,
+                termination_reason=reason,
+                terminated=terminated,
+                truncated=truncated,
+                published_store_version=published_view.store_version,
+            )
         row_events = tuple(
             event for event in result.lifecycle_events if event.env_id == key.env_id
         )
@@ -2967,7 +2988,7 @@ class _TerminalHandoffArtifact:
         object.__setattr__(instance, "_facts_consume_token", int(result.facts_consume_token[domain_row].item()))
         object.__setattr__(instance, "_authority_receipt_id", int(result.authority_receipt_id[domain_row].item()))
         object.__setattr__(instance, "_lifecycle_events", row_events)
-        object.__setattr__(instance, "_optional_sidecar", None)
+        object.__setattr__(instance, "_optional_sidecar", optional_sidecar)
         return instance
 
     @property
@@ -3011,8 +3032,8 @@ class _TerminalHandoffArtifact:
         return self._lifecycle_events
 
     @property
-    def optional_sidecar(self) -> None:
-        return None
+    def optional_sidecar(self) -> object | None:
+        return self._optional_sidecar
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -4104,6 +4125,7 @@ class LifecycleAuthorityTransactionCoordinator:
             facts=facts,
             transition_contexts=transition_contexts,
             coverage_before_transition=None,
+            pre_reset_critic_physical_snapshot=None,
         )
 
     def _transact_with_terminal_handoff(
@@ -4112,6 +4134,7 @@ class LifecycleAuthorityTransactionCoordinator:
         facts: ExecutionTransitionFacts,
         transition_contexts: tuple[TransitionGenerationContext, ...],
         coverage_before_transition: torch.Tensor,
+        pre_reset_critic_physical_snapshot: object | None = None,
     ) -> _EventRuntimeCurrentPublication:
         """Private I4 extension installing terminal rows before lock release."""
 
@@ -4119,6 +4142,7 @@ class LifecycleAuthorityTransactionCoordinator:
             facts=facts,
             transition_contexts=transition_contexts,
             coverage_before_transition=coverage_before_transition,
+            pre_reset_critic_physical_snapshot=pre_reset_critic_physical_snapshot,
         )
 
     def _run_transaction(
@@ -4127,6 +4151,7 @@ class LifecycleAuthorityTransactionCoordinator:
         facts: ExecutionTransitionFacts,
         transition_contexts: tuple[TransitionGenerationContext, ...],
         coverage_before_transition: torch.Tensor | None,
+        pre_reset_critic_physical_snapshot: object | None,
     ) -> _EventRuntimeCurrentPublication:
         """Run one full-batch consume/finalize/swap/commit/publication."""
 
@@ -4164,6 +4189,10 @@ class LifecycleAuthorityTransactionCoordinator:
                 terminal_coverage_after = self._prevalidate_terminal_capacity(
                     candidate=candidate,
                     coverage_before_transition=coverage_before_transition,
+                )
+                self._prevalidate_terminal_critic_snapshot(
+                    candidate=candidate,
+                    physical_snapshot=pre_reset_critic_physical_snapshot,
                 )
 
                 # Final receipt-free revalidation under the outer publication
@@ -4246,8 +4275,12 @@ class LifecycleAuthorityTransactionCoordinator:
                 prepared_terminal = self._prepare_terminal_handoffs(
                     candidate=candidate,
                     result=result,
-                    prepared_view=prepared_lifecycle_view,
+                    prepared_lifecycle_view=prepared_lifecycle_view,
+                    prepared_current_publication=prepared_view,
                     coverage_after_transition=terminal_coverage_after,
+                    pre_reset_critic_physical_snapshot=(
+                        pre_reset_critic_physical_snapshot
+                    ),
                 )
 
                 stage = "state_swap"
@@ -4858,16 +4891,79 @@ class LifecycleAuthorityTransactionCoordinator:
             | candidate.completed_tasks.detach().clone().contiguous()
         )
 
+    @staticmethod
+    def _prevalidate_terminal_critic_snapshot(
+        *,
+        candidate: _LifecycleTransitionCandidate,
+        physical_snapshot: object | None,
+    ) -> None:
+        """Reject malformed B2-I4 evidence before ledger receipt issuance."""
+
+        if physical_snapshot is None:
+            return
+        from .assignment_event_terminal_critic_sidecar import (
+            PreResetCriticPhysicalSnapshotV2,
+        )
+
+        facts = candidate.facts
+        if type(physical_snapshot) is not PreResetCriticPhysicalSnapshotV2:
+            raise LifecycleCoordinatorRuntimeError(
+                "terminal-aware transaction received a noncanonical pre-reset critic snapshot",
+                failure_code="terminal_critic_snapshot_type",
+                stage="prevalidation",
+                expected=PreResetCriticPhysicalSnapshotV2,
+                actual=type(physical_snapshot),
+            )
+        actual = (
+            physical_snapshot.num_envs,
+            physical_snapshot.M,
+            physical_snapshot.N,
+            physical_snapshot.device,
+        )
+        expected = (facts.num_envs, facts.num_robots, facts.num_tasks, facts.device)
+        if actual != expected:
+            raise LifecycleCoordinatorRuntimeError(
+                "pre-reset critic snapshot differs from the authority transaction domain",
+                failure_code="terminal_critic_snapshot_domain",
+                stage="prevalidation",
+                expected=expected,
+                actual=actual,
+            )
+
     def _prepare_terminal_handoffs(
         self,
         *,
         candidate: _LifecycleTransitionCandidate,
         result: LifecycleTransitionResult,
-        prepared_view: PublishedLifecycleView,
+        prepared_lifecycle_view: PublishedLifecycleView,
+        prepared_current_publication: _EventRuntimeCurrentPublication,
         coverage_after_transition: torch.Tensor | None,
+        pre_reset_critic_physical_snapshot: object | None,
     ) -> _PreparedTerminalHandoffs | None:
         if coverage_after_transition is None:
             return None
+        sidecars: tuple[object | None, ...]
+        if pre_reset_critic_physical_snapshot is None:
+            # Compatibility for pre-B2 pure transaction fixtures.  The task-local
+            # production seam always supplies B2-I4 physical evidence.
+            sidecars = (None,) * int(result.env_id.numel())
+        else:
+            from .assignment_event_terminal_critic_sidecar import (
+                build_event_terminal_critic_sidecars_v2,
+            )
+
+            sidecars = build_event_terminal_critic_sidecars_v2(
+                physical_snapshot=pre_reset_critic_physical_snapshot,
+                current_publication=prepared_current_publication,
+            )
+            if len(sidecars) != int(result.env_id.numel()):
+                raise LifecycleCoordinatorRuntimeError(
+                    "terminal sidecar batch differs from the finalized result domain",
+                    failure_code="terminal_sidecar_batch_cardinality",
+                    stage="terminal_handoff_prepare",
+                    expected=int(result.env_id.numel()),
+                    actual=len(sidecars),
+                )
         replacement = dict(self._terminal_slots)
         keys: list[_TerminalTransitionKey] = []
         for row, reason in enumerate(candidate.termination_reason.detach().cpu().tolist()):
@@ -4887,9 +4983,10 @@ class LifecycleAuthorityTransactionCoordinator:
             replacement[env_value] = _TerminalHandoffArtifact._create(
                 key=key,
                 result=result,
-                published_view=prepared_view,
+                published_view=prepared_lifecycle_view,
                 domain_row=row,
                 coverage_after_transition=coverage_after_transition[row],
+                optional_sidecar=sidecars[row],
             )
             keys.append(key)
         return _PreparedTerminalHandoffs(

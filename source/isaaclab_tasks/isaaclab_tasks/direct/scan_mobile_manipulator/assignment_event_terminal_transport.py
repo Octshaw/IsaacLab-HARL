@@ -33,6 +33,7 @@ from .assignment_lifecycle_transaction_runtime import (
     _TerminalTransitionKey,
 )
 from .assignment_lifecycle_transition_contract import TerminationReason
+from .assignment_event_terminal_critic_sidecar import EventTerminalCriticSidecarV2
 
 
 _HISTORICAL_ROW_FACTORY_CAPABILITY = object()
@@ -124,7 +125,7 @@ class EventTerminalHistoricalRow:
     authority_id: object
     published_store_version: int
     lifecycle_events: tuple[object, ...] = field(repr=False)
-    optional_sidecar: None = field(default=None, repr=False)
+    optional_sidecar: EventTerminalCriticSidecarV2 | None = field(default=None, repr=False)
     _coverage_after_transition: torch.Tensor = field(repr=False)
     _completion_count: torch.Tensor = field(repr=False)
     _completed_tasks: torch.Tensor = field(repr=False)
@@ -234,6 +235,59 @@ class EventTerminalHistoricalRow:
                     expected=f"detached storage for {name}",
                     actual="shared data_ptr",
                 )
+        source_sidecar = artifact.optional_sidecar
+        if source_sidecar is None:
+            copied_sidecar = None
+        else:
+            if type(source_sidecar) is not EventTerminalCriticSidecarV2:
+                raise EventTerminalTransportError(
+                    "runtime terminal sidecar has a noncanonical type",
+                    failure_code="historical_sidecar_type",
+                    stage="terminal_history_copy",
+                    expected=EventTerminalCriticSidecarV2,
+                    actual=type(source_sidecar),
+                )
+            source_sidecar._validate_artifact_binding(
+                key=key,
+                termination_reason=artifact.termination_reason,
+                terminated=artifact.terminated,
+                truncated=artifact.truncated,
+                published_store_version=view.store_version,
+            )
+            copied_sidecar = source_sidecar._clone_for_historical()
+            if copied_sidecar is source_sidecar:
+                raise EventTerminalTransportError(
+                    "terminal sidecar historical copy retained runtime identity",
+                    failure_code="historical_sidecar_alias",
+                    stage="terminal_history_copy",
+                    expected="distinct immutable sidecar value",
+                    actual="same object identity",
+                )
+            source_audit = source_sidecar._terminal_audit_projection._semantic_evidence
+            copied_audit = copied_sidecar._terminal_audit_projection._semantic_evidence
+            if source_audit.numel() and source_audit.data_ptr() == copied_audit.data_ptr():
+                raise EventTerminalTransportError(
+                    "terminal audit projection aliases runtime sidecar storage",
+                    failure_code="historical_sidecar_alias",
+                    stage="terminal_history_copy",
+                    expected="detached audit storage",
+                    actual="shared data_ptr",
+                )
+            source_bootstrap = source_sidecar._bootstrap_critic_obs
+            copied_bootstrap = copied_sidecar._bootstrap_critic_obs
+            if (
+                source_bootstrap is not None
+                and copied_bootstrap is not None
+                and source_bootstrap.numel()
+                and source_bootstrap.data_ptr() == copied_bootstrap.data_ptr()
+            ):
+                raise EventTerminalTransportError(
+                    "timeout bootstrap observation aliases runtime sidecar storage",
+                    failure_code="historical_sidecar_alias",
+                    stage="terminal_history_copy",
+                    expected="detached bootstrap storage",
+                    actual="shared data_ptr",
+                )
 
         instance = object.__new__(cls)
         for name, value in (
@@ -251,7 +305,7 @@ class EventTerminalHistoricalRow:
             ("authority_id", result.authority_id),
             ("published_store_version", view.store_version),
             ("lifecycle_events", _copy_lifecycle_events(artifact.lifecycle_events)),
-            ("optional_sidecar", None),
+            ("optional_sidecar", copied_sidecar),
         ):
             object.__setattr__(instance, name, value)
         for name, value in copied_tensors.items():
@@ -470,7 +524,7 @@ def _copy_and_validate_terminal_history(
             or historical.truncated is not artifact.truncated
             or historical.facts_consume_token != artifact.facts_consume_token
             or historical.authority_receipt_id != artifact.authority_receipt_id
-            or historical.optional_sidecar is not None
+            or (historical.optional_sidecar is None) != (artifact.optional_sidecar is None)
         ):
             raise EventTerminalTransportError(
                 "copied historical row differs from authoritative terminal evidence",
@@ -478,6 +532,14 @@ def _copy_and_validate_terminal_history(
                 stage="terminal_history_validate",
                 expected=exact_key,
                 actual=historical_key,
+            )
+        if historical.optional_sidecar is not None:
+            historical.optional_sidecar._validate_artifact_binding(
+                key=key,
+                termination_reason=artifact.termination_reason,
+                terminated=artifact.terminated,
+                truncated=artifact.truncated,
+                published_store_version=artifact.published_view.store_version,
             )
         if len(historical.lifecycle_events) != len(artifact.lifecycle_events) or any(
             copied_event is source_event or copied_event != source_event

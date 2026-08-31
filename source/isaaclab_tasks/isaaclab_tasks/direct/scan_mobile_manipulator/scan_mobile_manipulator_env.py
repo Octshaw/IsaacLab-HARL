@@ -63,6 +63,10 @@ from .assignment_event_profile_runtime_domain import (
     _EventProfileLifecycleRuntimeDomain,
     _StagedPreResetPhysicalReport,
 )
+from .assignment_event_profile_schema_contract_v2 import build_event_policy_scale_contract_v2
+from .assignment_event_terminal_critic_sidecar import (
+    capture_pre_reset_critic_physical_snapshot_v2,
+)
 from .assignment_lifecycle_transition_contract import (
     RobotLifecycleState,
     TaskLifecycleState,
@@ -1617,6 +1621,7 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         self._event_admission_validation_port: (
             _EventProfileEnvironmentAdmissionValidationPort | None
         ) = None
+        self._event_terminal_critic_scale_contract_v2: Mapping[str, object] | None = None
         if type(resolved_assignment_profile) is ResolvedEventGatedAssignmentProfile:
             domain_identity = event_lifecycle_runtime_domain.identity
             expected_env_ids = torch.arange(
@@ -1642,6 +1647,16 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
                 )
             self._event_lifecycle_environment_port = event_lifecycle_runtime_domain.environment_port
             self._event_admission_validation_port = event_admission_validation_port
+            self._event_terminal_critic_scale_contract_v2 = build_event_policy_scale_contract_v2(
+                M=self.num_agents_cfg,
+                N=self.num_viewpoints,
+                ordered_agent_names=tuple(self.cfg.possible_agents),
+                ordered_task_ids=self.viewpoint_ids,
+                scene_env_spacing=float(self.cfg.scene.env_spacing),
+                sim_dt_seconds=float(self.cfg.sim.dt),
+                control_decimation=int(self.cfg.decimation),
+                episode_time_limit_seconds=float(self.cfg.episode_length_s),
+            )
         self._log_static_configuration()
 
     def _mesh_footprint_obstacle_fields(self, cost_matrix: torch.Tensor, viewpoint_pos: torch.Tensor) -> dict:
@@ -3096,12 +3111,21 @@ class ScanMobileManipulatorEnv(DirectMARLEnv):
         raw_new_candidate = (dwell_next >= self.cfg.dwell_steps) & (~self.viewpoints_covered.unsqueeze(1))
         duplicate_scans = (candidate & self.viewpoints_covered.unsqueeze(1)).float().sum(dim=-1)
         time_out = self.episode_length_buf >= self.max_episode_length - 1
+        scale_contract = self._event_terminal_critic_scale_contract_v2
+        if scale_contract is None:
+            raise AssertionError("event lifecycle route lost its terminal critic scale contract")
+        pre_reset_critic_physical_snapshot = capture_pre_reset_critic_physical_snapshot_v2(
+            assignment_problem=self.get_assignment_problem(),
+            episode_progress_steps=self.episode_length_buf,
+            scale_contract=scale_contract,
+        )
         report = _StagedPreResetPhysicalReport(
             device=torch.device(self.device),
             coverage_before_transition=self.viewpoints_covered,
             raw_new_candidate=raw_new_candidate,
             physical_truncated=time_out,
             time_limit_reached=time_out,
+            pre_reset_critic_physical_snapshot=pre_reset_critic_physical_snapshot,
         )
         return report, dwell_next, duplicate_scans
 

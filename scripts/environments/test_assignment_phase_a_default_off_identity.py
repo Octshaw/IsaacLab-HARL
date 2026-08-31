@@ -173,7 +173,7 @@ PRODUCTION_SHA256 = {
     "assignment_checkpoint_load.py": "87a936b7ad56294706c0c29992c29793d1bff505a0f3244eff759fb7f2257e9f",
     "assignment_training_run_audit.py": "3aa0bf1d81a36af3b493a3932c9c454249ac7185adc98ed7714f7f5ad90765db",
     "assignment_checkpoint_contract.py": V2_SOURCE_SHA256,
-    "scan_mobile_manipulator_env.py": "c19b5de8f73d22fbc8b4c1f6b38dbfc4804d28b6e37b002cdfc4e20d5ecc9c99",
+    "scan_mobile_manipulator_env.py": "f96f6b6e9a530cd0b438344a11dc67670559206f3521d641d776d4bd475c6363",
     "assignment_state.py": "a7f83351ed3e360c0a077a66faeec8087cff89ee47123ead4ec045d3602c14c5",
     "assignment_lifecycle_observation.py": "af20d2862242ece6c49cadbd54651153590dc7831a76f47e73a722925b3e03d7",
     "assignment_lifecycle_resolver.py": "7f64183c638697f16efa45769978127c7e3575599e87cfa76a5ba26f20eabadb",
