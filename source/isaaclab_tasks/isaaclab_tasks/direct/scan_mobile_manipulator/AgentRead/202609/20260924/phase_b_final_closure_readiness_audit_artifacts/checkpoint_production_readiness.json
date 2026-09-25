@@ -1,0 +1,48 @@
+{
+  "schema_version": "phase_b_final_closure_readiness_audit_v1",
+  "date": "2026-09-24",
+  "mode": "SOURCE_AND_RETAINED_EVIDENCE_ONLY",
+  "runtime_executed": false,
+  "verdict": "CHECKPOINT IMPLEMENTATION READY FOR FINAL SMOKE",
+  "state_coverage": [
+    "ordered actor weights",
+    "all actor Adam state_dicts incl moments/steps/param_groups",
+    "critic weights",
+    "critic Adam state_dict",
+    "project ValueNorm running_mean/running_mean_sq/debiasing_term",
+    "completed/next/total/LR position",
+    "caller-bound semantic reconstruction config"
+  ],
+  "source_refs": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "Q1"
+  ],
+  "evidence": "CKPT1 CPU exact roundtrip and same-input/same-LR next update; 6 tests/25 expected rejects retained, not rerun.",
+  "answers": {
+    "A": "All mutable optimization state required by the scoped fixed-scale fresh-rollout boundary is represented.",
+    "B": "No identified omitted mutable state that invalidates a passing scoped smoke. Caller must preserve initial LR, schedule enablement and effective loss/normalizer/model configuration.",
+    "C": "No exact simulator/environment state is required; not a trajectory-identical restart.",
+    "D": "Fresh environment and fresh rollout/RNN buffers after a completed update are valid. Discard partial rollout; never relabel post-reset state as terminal history.",
+    "E": "No checkpoint production modification identified as required before the final scoped smoke."
+  },
+  "safety": {
+    "save": "assert_saveable before component writes; hidden staging, manifest last, readback, atomic generation/pointer publish.",
+    "load": "Full validation and target shape/order/config checks before load_state_dict. Actor/critic weights/optimizers, VN and progression backups; restore on application failure; explicit poison on incomplete rollback.",
+    "device": "CPU deserialization, load_state_dict into destination modules and optimizers, project VN copy. Real CUDA placement remains unestablished until B1.",
+    "progression": "No scheduler object in scoped HARL; LR is optimizer param-group state plus initial-LR/config and progression. Resume driver must call next-position schedule; inherited generic run loop is not an event-resume contract."
+  },
+  "limits": [
+    "Requires populated optimizer states; an actor with no Adam state is rejected, not silently reset. A must populate every actor before this checkpoint.",
+    "One fixed M/N, independent ordered actors, approved Adam/ValueNorm layout, single synchronous writer.",
+    "No exact RNG/simulator/mid-rollout restoration; no arbitrary configuration migration."
+  ],
+  "source_sha256": {
+    "assignment_optimization_checkpoint": "b0fec513bad87af961450345f1ee5849cca04c4da5429a483af5f31f8a6e76b9",
+    "assignment_harl_training": "31295d60a01d11657b924e6d8332f160b278eeeb236109b59409bfbf55f7e787"
+  },
+  "real_continuation_established": false,
+  "production_modification_required": false
+}

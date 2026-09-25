@@ -1,0 +1,27 @@
+{
+  "exact_mid_episode_environment_restoration": {
+    "includes": [
+      "Isaac physics",
+      "wrapper/resolver/P2",
+      "rollout buffers",
+      "RNG for bitwise replay"
+    ],
+    "reason": "the intended boundary is post-update and begins a fresh rollout",
+    "required": false
+  },
+  "learner_checkpoint_continuation": {
+    "includes": [
+      "actor/critic weights",
+      "actor/critic optimizer states",
+      "ValueNorm",
+      "progression counter",
+      "semantic config and policy order"
+    ],
+    "required": true,
+    "starts_new_environment": true,
+    "starts_new_rollout": true
+  },
+  "pass": true,
+  "rule": "absence of an exact Isaac snapshot must not block learner checkpoint continuation at the quiescent fresh-rollout boundary",
+  "schema_version": "b2_t4_csr1_checkpoint_vs_environment_snapshot_v1"
+}

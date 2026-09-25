@@ -1,0 +1,18 @@
+{
+  "applies_prospectively_only": true,
+  "checkpoint_rule": "partial or integrity-failed checkpoint artifacts are never loadable even when the live learner remains valid",
+  "do_not_poison_learner_when": [
+    "a post-update diagnostic projection/receipt fails with direct learner evidence intact",
+    "a checkpoint save fails without mutating learner state; reject only that checkpoint",
+    "a strict load fails before mutation or fully rolls back"
+  ],
+  "experiment_rule": "metric/protocol failures block paper claims, not learner reuse, unless they expose invalid training semantics",
+  "poison_learner_when": [
+    "an incomplete/ambiguous optimizer or ValueNorm mutation may have occurred",
+    "nonfinite or corrupted learner state is observed",
+    "checkpoint load partially mutates live state and rollback is not proved",
+    "lifecycle/return evidence reveals that already-applied gradients used invalid semantics"
+  ],
+  "r14_status_unchanged": "HISTORICAL / POISONED / NEVER REUSE",
+  "schema_version": "b2_t4_csr1_future_poison_semantics_proposal_v1"
+}

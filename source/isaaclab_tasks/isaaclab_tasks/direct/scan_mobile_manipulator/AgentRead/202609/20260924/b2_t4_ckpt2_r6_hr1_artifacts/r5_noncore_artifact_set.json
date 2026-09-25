@@ -1,0 +1,190 @@
+{
+  "entries": [
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Detailed pure negative cases derived from the R5 harness qualification.",
+      "relative_path": "actor_plan_count_negative_matrix.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Detailed pure positive actor-plan fixtures derived from production constructors.",
+      "relative_path": "actor_plan_dynamic_positive_matrix.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Summarizes pre-runtime gates already evidenced by focused receipts.",
+      "relative_path": "ckpt2_r5_preflight.json"
+    },
+    {
+      "authority_class": "OTHER",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Binds the single attempt number, run identity, and zero-retry policy.",
+      "relative_path": "ckpt2_r5_run_identity.json"
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Records clean pure-process import state; it is not learner-state authority.",
+      "relative_path": "clean_interpreter_baseline.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Retrospective RE1 Adam/plan comparison, not direct R5 runtime evidence.",
+      "relative_path": "historical_actor_adam_plan_consistency.json"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Records preservation of the earlier CKPT2 evidence root.",
+      "relative_path": "historical_ckpt2_preservation.json"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Records preservation of the earlier CKPT2-R1 evidence root.",
+      "relative_path": "historical_ckpt2_r1_preservation.json"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Records preservation of the earlier CKPT2-R2 evidence root.",
+      "relative_path": "historical_ckpt2_r2_preservation.json"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Records preservation of the earlier CKPT2-R3 evidence root.",
+      "relative_path": "historical_ckpt2_r3_preservation.json"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Records preservation of the earlier CKPT2-R4 evidence root.",
+      "relative_path": "historical_ckpt2_r4_preservation.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Retrospective RE1 dynamic-plan comparison, not direct R5 runtime evidence.",
+      "relative_path": "historical_dynamic_actor_plan_consistency.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Summarizes inherited identity, event-return, isolation, and gate contracts.",
+      "relative_path": "inherited_contract_preservation.json"
+    },
+    {
+      "authority_class": "PROCESS_SHUTDOWN_BOOKKEEPING",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Records parent/worker PID creation and exit observations.",
+      "relative_path": "parent/parent_process_inventory.json"
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Documents R5 harness-only repair scope and zero production edits.",
+      "relative_path": "pre_runtime_harness_repair_log.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Detailed inherited CKPT1 pure-suite result matrix.",
+      "relative_path": "preflight_ckpt1_pure.json"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Durable core failure state, mutation counters, stage history, and poison state.",
+      "relative_path": "process_a/core_failure.json"
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Chronological runtime checkpoint trace used for forensic timing.",
+      "relative_path": "process_a/core_runtime_checkpoints.jsonl"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Process-local duplicate of the environment-creation receipt.",
+      "relative_path": "process_a/environment_creation.json"
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Documents OS-process isolation between pure qualification and runtime.",
+      "relative_path": "pure_runtime_process_isolation.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Reproduction of the historical R4 fixed-predicate defect.",
+      "relative_path": "r4_fixed_actor_count_predicate_failure_reproduction.json"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Captures branch, commit, staged-index, and worktree authority at R5 entry.",
+      "relative_path": "repository_authority.json"
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "future_historical_preservation_hard_fail": false,
+      "later_modification_invalidates_reviewed_semantic_claim": false,
+      "reason": "Schema-level summary of the plan/observed per-actor equality contract.",
+      "relative_path": "transaction_ledger_actor_plan_binding_v1.json"
+    }
+  ],
+  "entry_count": 23,
+  "result": "PASS"
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": "phase_b_final_closure_readiness_audit_v1",
+  "date": "2026-09-24",
+  "mode": "SOURCE_AND_RETAINED_EVIDENCE_ONLY",
+  "runtime_executed": false,
+  "classes": {
+    "A": "PHASE-B PRODUCTION BLOCKER",
+    "B": "FINAL CLOSURE SMOKE REQUIREMENT",
+    "C": "HARNESS / EVIDENCE ENGINEERING",
+    "D": "PAPER EXPERIMENT WORK",
+    "E": "FUTURE WORK"
+  },
+  "class_A_count": 0,
+  "items": [
+    {
+      "id": "B1",
+      "class": "B",
+      "title": "Real fresh-process optimization continuation",
+      "closure_blocking": true,
+      "known_production_defect": false,
+      "requirement": "Real A update -> clean save/exit -> new B strict load -> exact state equality -> real resumed update/S10/exit. Includes CUDA placement and Adam/ValueNorm/progression continuity."
+    },
+    {
+      "id": "C1",
+      "class": "C",
+      "title": "R6 historical inventory gate remains stale",
+      "closure_blocking": false,
+      "blocks_unmodified_harness": true,
+      "requirement": "HR1 reconciles literal backslash-n vs LF; current R6 still compares the old aggregate. Repair only prospective final-smoke preflight under new authority; do not alter historical R5/R6 evidence."
+    },
+    {
+      "id": "C2",
+      "class": "C",
+      "title": "Compact final-smoke orchestration and receipt readiness",
+      "closure_blocking": false,
+      "blocks_future_execution_until_preflight": true,
+      "requirement": "Adapt transaction count/start IDs coherently; source-first DTO binding; pure/runtime process isolation; durable semantic A-to-B gate; only a small targeted preflight for changed harness seams. R6 pure checks remain NOT RUN."
+    },
+    {
+      "id": "C3",
+      "class": "C",
+      "title": "Effective config and schedule binding in final smoke",
+      "closure_blocking": false,
+      "requirement": "Freeze same actual learner config/source in A/B, including initial LR and loss/normalizer knobs. R6's compact semantic dictionary is a bounded fixture, not a generalized compatibility validator; production checkpoint API compares caller-supplied config."
+    },
+    {
+      "id": "C4",
+      "class": "C",
+      "title": "Optional forensic/report cleanup",
+      "closure_blocking": false,
+      "requirement": "Large inventories, redundant PPQ/Layer-A/Layer-B envelopes, historical per-file reconstruction and diagnostic serialization are advisory unless required to establish B1. Preserve historical STOP labels."
+    },
+    {
+      "id": "D1",
+      "class": "D",
+      "title": "Paper experiment protocol and runnable campaign entry",
+      "closure_blocking": false,
+      "requirement": "Baseline/ablation/disturbance, multiple fixed M/N, multiseed, canonical metrics/statistics, checkpoint-based evaluation. Explicitly wire reviewed event update and saved progression; do not assume generic inherited runner.run resumes them. Public activation separately authorized."
+    },
+    {
+      "id": "E1",
+      "class": "E",
+      "title": "Generalized resume and checkpoint scope",
+      "closure_blocking": false,
+      "requirement": "Exact simulator/RNG/mid-rollout restoration, variable cardinality/Transformer, arbitrary inactive/uninitialized-Adam saves and concurrent-writer checkpoint services are outside this fixed-scale clean-boundary closure."
+    }
+  ]
+}

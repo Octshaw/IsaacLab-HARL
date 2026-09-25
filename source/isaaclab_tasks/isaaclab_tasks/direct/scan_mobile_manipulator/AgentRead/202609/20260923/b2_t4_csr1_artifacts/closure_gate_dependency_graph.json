@@ -1,0 +1,54 @@
+{
+  "current_path": [
+    "runtime",
+    "PW",
+    "NORM",
+    "PPQ",
+    "W1-W7",
+    "Layer-A source projection",
+    "Layer-A",
+    "Layer-B",
+    "85-slot aggregate",
+    "checkpoint permission"
+  ],
+  "overblocking_candidates": [
+    {
+      "chain": "canonical NORM -> duplicate equality -> Layer-A -> aggregate -> checkpoint",
+      "reason": "post-runtime evidence-copy equality has no dependency on learner or checkpoint state"
+    },
+    {
+      "chain": "PPQ -> 43/90 Layer-A -> 39+9 predicates -> checkpoint",
+      "reason": "rich provenance aggregation duplicates direct core and checkpoint evidence"
+    },
+    {
+      "chain": "formal authority namespace purity -> checkpoint",
+      "reason": "audit provenance is not checkpoint-state completeness"
+    }
+  ],
+  "proposed_paths": {
+    "checkpoint": [
+      "core-runtime verdict",
+      "complete learner state",
+      "atomic save",
+      "fresh-process strict load",
+      "post-load valid updates"
+    ],
+    "core_runtime": [
+      "runtime",
+      "direct core semantic evidence",
+      "core-runtime verdict"
+    ],
+    "diagnostic": [
+      "canonical evidence",
+      "PPQ/Layer-A/RACQ forensic receipts",
+      "warning/report"
+    ],
+    "paper": [
+      "core-runtime verdict",
+      "canonical NORM metrics",
+      "reproducible experiment protocol",
+      "paper verdict"
+    ]
+  },
+  "schema_version": "b2_t4_csr1_closure_gate_dependency_graph_v1"
+}

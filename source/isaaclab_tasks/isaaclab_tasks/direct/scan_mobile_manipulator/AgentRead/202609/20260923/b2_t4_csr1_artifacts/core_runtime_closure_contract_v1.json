@@ -1,0 +1,189 @@
+{
+  "excluded_current_gates": [
+    {
+      "gate": "NORM-R1",
+      "reason": "reported metrics cannot be qualified",
+      "retained_as": "experiment blocker"
+    },
+    {
+      "gate": "raw/normalized crosscheck",
+      "reason": "normalized experiment claims diverge from raw evidence",
+      "retained_as": "experiment blocker"
+    },
+    {
+      "gate": "PPQ",
+      "reason": "forensic receipt unavailable while direct evidence remains",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "artifact ownership",
+      "reason": "audit artifact collision",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "namespace purity",
+      "reason": "provenance namespace contaminated",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "source-phase authority",
+      "reason": "phase claim cannot be published",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "source-phase binding",
+      "reason": "run provenance incomplete",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "runtime authority",
+      "reason": "formal audit identity incomplete",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "RACQ run binding",
+      "reason": "RACQ publication cannot be qualified",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "shared Layer-A source projection",
+      "reason": "forensic projection unavailable",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "Layer-A 43/90 receipt",
+      "reason": "rich receipt unavailable",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "39/39 inherited predicates",
+      "reason": "aggregate audit receipt incomplete",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "9/9 RACQ predicates",
+      "reason": "authority receipt incomplete",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "Layer-B process quiescence",
+      "reason": "fresh-process continuation unsafe",
+      "retained_as": "checkpoint blocker"
+    },
+    {
+      "gate": "supervisor result",
+      "reason": "summary unavailable; direct evidence remains",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "success-gate aggregation",
+      "reason": "aggregate verdict unavailable",
+      "retained_as": "diagnostic warning"
+    },
+    {
+      "gate": "runtime_normalization_result equality",
+      "reason": "projection copy differs from canonical",
+      "retained_as": "diagnostic warning"
+    }
+  ],
+  "gate_count": 12,
+  "gates": [
+    {
+      "evidence_source": "transaction/S10/ledger/bridge",
+      "failure_prevented": "prevents partial/missing/reordered updates",
+      "id": "C1",
+      "name": "transaction commit completeness",
+      "pass_fail_rule": "exact counts and ordered identities pass",
+      "why_required": "prevents partial/missing/reordered updates"
+    },
+    {
+      "evidence_source": "NR/SR",
+      "failure_prevented": "prevents invalid transition facts/bootstrap",
+      "id": "C2",
+      "name": "rollout and serializer completeness",
+      "pass_fail_rule": "all direct predicates pass",
+      "why_required": "prevents invalid transition facts/bootstrap"
+    },
+    {
+      "evidence_source": "ZD and actor evidence",
+      "failure_prevented": "prevents invalid policy calls and masks",
+      "id": "C3",
+      "name": "decision-valid actor path",
+      "pass_fail_rule": "decision-valid and actor attribution pass",
+      "why_required": "prevents invalid policy calls and masks"
+    },
+    {
+      "evidence_source": "factor evidence/W1",
+      "failure_prevented": "prevents cross-agent factor attribution errors",
+      "id": "C4",
+      "name": "HAPPO factor correctness",
+      "pass_fail_rule": "all factor and ownership checks pass",
+      "why_required": "prevents cross-agent factor attribution errors"
+    },
+    {
+      "evidence_source": "critic evidence",
+      "failure_prevented": "prevents invalid value optimization",
+      "id": "C5",
+      "name": "critic update correctness",
+      "pass_fail_rule": "loss/backward/step and numerics pass",
+      "why_required": "prevents invalid value optimization"
+    },
+    {
+      "evidence_source": "ValueNorm direct evidence",
+      "failure_prevented": "prevents discontinuous normalized targets",
+      "id": "C6",
+      "name": "ValueNorm update continuity",
+      "pass_fail_rule": "object continuity and finite updates pass",
+      "why_required": "prevents discontinuous normalized targets"
+    },
+    {
+      "evidence_source": "Adam and parameter evidence",
+      "failure_prevented": "prevents optimizer replacement/nonfinite state",
+      "id": "C7",
+      "name": "optimizer continuity and numerical health",
+      "pass_fail_rule": "identity/moments/numerics pass",
+      "why_required": "prevents optimizer replacement/nonfinite state"
+    },
+    {
+      "evidence_source": "event-return evidence",
+      "failure_prevented": "prevents wrong training targets",
+      "id": "C8",
+      "name": "event-return correctness",
+      "pass_fail_rule": "event-aware and stock computations reconcile",
+      "why_required": "prevents wrong training targets"
+    },
+    {
+      "evidence_source": "W1/W2",
+      "failure_prevented": "prevents invalid MRTA ownership lifecycle",
+      "id": "C9",
+      "name": "lifecycle claim-complete-reopen",
+      "pass_fail_rule": "claim, continuity, completion, clear, reopen pass",
+      "why_required": "prevents invalid MRTA ownership lifecycle"
+    },
+    {
+      "evidence_source": "W5 and terminal ledger",
+      "failure_prevented": "prevents post-reset fact substitution",
+      "id": "C10",
+      "name": "terminal/autoreset semantics",
+      "pass_fail_rule": "pre-reset reasons and autoreset reconciliation pass",
+      "why_required": "prevents post-reset fact substitution"
+    },
+    {
+      "evidence_source": "W6/W7",
+      "failure_prevented": "prevents stalled generations or learner mutation of P2",
+      "id": "C11",
+      "name": "post-autoreset learning and P2 separation",
+      "pass_fail_rule": "fresh-generation update and immutability pass",
+      "why_required": "prevents stalled generations or learner mutation of P2"
+    },
+    {
+      "evidence_source": "PW",
+      "failure_prevented": "prevents missing/duplicate/out-of-order optimizer events",
+      "id": "C12",
+      "name": "immutable update-progress accounting",
+      "pass_fail_rule": "expected counts and all fault counters zero",
+      "why_required": "prevents missing/duplicate/out-of-order optimizer events"
+    }
+  ],
+  "schema_version": "b2_t4_csr1_core_runtime_closure_contract_v1"
+}

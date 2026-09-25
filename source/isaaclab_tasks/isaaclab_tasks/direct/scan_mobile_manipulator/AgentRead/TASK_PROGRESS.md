@@ -2,152 +2,117 @@
 
 ## Current status
 
-```text
-B2-D:
-  REVIEW PASS / FROZEN
+PHASE-B-FINAL-CLOSURE: **GPT REVIEW PASS / CLOSED**.
+Phase B: **COMPLETE / GPT REVIEW PASS / CLOSED**.
+Phase-B engineering closeout: **COMPLETE / LOCAL COMMITS RECORDED**.
+Classification: `PHASE-B-ENGINEERING-GIT-CLOSEOUT-COMMITTED`.
 
-B2-I0 through B2-I6:
-  REVIEW PASS / CLOSED
+Lifecycle/runtime backbone, real repeated learning, normal-horizon dynamic
+lifecycle, optimization checkpoint and real fresh-process optimization
+continuation: COMPLETE. Production/runtime qualification: COMPLETE.
+G1-G10: 10/10 PASS. Phase-B implementation/runtime blockers: NONE.
 
-B2-V1:
-  GPT REVIEW PASS / CLOSED
+The user explicitly authorized Codex to execute the previously reviewed
+four-commit plan on 2026-09-25. This supersedes the earlier manual-only execution
+boundary; it does not authorize push, tag, deletion or runtime experiments.
 
-B2-V2-PD2-R5-K:
-  GPT FORMAL REVIEW PASS / CLOSED
+## Latest completed work / local commits
 
-B2-V2:
-  GPT REVIEW PASS / CLOSED
+Branch: main. Original audited base:
+b71d85a32f51be6ada324f870813a56bb45dd396.
 
-classification:
-  PHASE-B2-V2-FINAL-CLOSURE-COMMIT-READY-AWAITING-GPT-REVIEW
+| Group | Commit | Scope |
+|---|---|---|
+| A | c107a6c892eb90ff643d549d928c555ec9f9be5b | 359 monthly moves with path repairs, AGENTS and migration report; 361 current paths |
+| B | 5e7367ce28f0dfc3d4de86fa90d751284f1159c3 | 11 production files |
+| C | 947f9261864945ab120a7958f3cc08b38b37e44a | 96 test/helper files, 42 compact evidence JSON and root .gitignore; 139 paths |
+| D | This containing docs commit: docs(mrta): finalize Phase B closure records | 233 original allowlisted docs plus the pre-execution handoff archive; 234 paths |
 
-current-production runtime-interface readiness:
-  REVIEW PASS
+The local four-commit sequence is recorded in git log. D's own hash is intentionally
+not embedded in its contents. The only extension to the reviewed path allowlist
+is the byte-exact handoff archive required before this update.
+Total: 745 current paths plus 359 old migration path deletions.
 
-policy-interface readiness:
-  REVIEW PASS
+The original closeout reports, manual manifest and source/config/index freeze
+identities remain unchanged historical pre-commit records. Their earlier
+NOT PERFORMED / READY FOR MANUAL COMMIT wording is superseded by this handoff,
+not retroactively rewritten.
 
-terminal learner-transport readiness:
-  REVIEW PASS
+Git add / commit: performed under the user's new authorization, four groups.
+Git push / tag: NOT PERFORMED. Runtime rerun: 0.
+No production, harness, installed HARL or runtime artifact contents were edited
+during commit execution. Only this handoff was updated and its archive added.
 
-training-update readiness:
-  NOT YET ESTABLISHED
+## Checks and retained local work
 
-public learned-policy route:
-  DORMANT / BLOCKED
+- Initial branch/HEAD/index matched the reviewed manual plan.
+- One additional untracked phase_b_git_closeout_artifacts.zip was detected:
+  left on disk, excluded from all commits.
+- 52 repository/installed source hashes and 34 final artifact hashes matched
+  the accepted authority before staging.
+- All original 744 allowlisted files existed, were distinct and were below 1 MB.
+- Every commit used exact NUL-delimited file paths and an exact staged-path guard;
+  committed path-scope checks passed. A-C staged whitespace checks passed.
+- D retains 27 pre-existing whitespace notices in 12 historical Markdown reports
+  (25 trailing-space/hard-break lines and 2 extra EOF blank lines). Their byte
+  hashes match the pre-commit snapshot; historical reports were not reformatted.
+  The newly edited handoff passes its scoped whitespace check.
+- A includes 720 raw add/delete/modified paths; B11, C139, D234.
+- Git's automatic internal object packing during A completed; no runtime
+  artifact cleanup was performed.
+- The index is empty after the completed sequence. A clean worktree is NOT
+  expected: historical generated data, the newly noticed ZIP and the unrelated
+  .vscode/.gitignore edit are intentionally outside these commits.
 
-B2-R:
-  ELIGIBLE FOR EXPLICIT USER AUTHORIZATION
+Pre-execution handoff archive SHA-256:
+9b622fe42ff83510a0bf388587b59b4dc062aa7fdb77fbeb497ddd4df8d2fad0.
+Its bytes were verified identical before this rewrite.
 
-R5-L:
-  NOT REQUIRED
+## Active architecture / accepted result
 
-training:
-  NOT AUTHORIZED
+Reviewed event learner:
+execute_real_isaac_single_transaction_v1 ->
+execute_full_learner_transaction_v1, with frozen plans and S0-S10 coordination.
 
-commit readiness:
-  READY FOR MANUAL COMMIT AFTER GPT REVIEW
+Environment-owned lifecycle and pre-reset terminal authority; row-local
+event/DVM decisions; actor PPO/HAPPO factor updates; critic/live ValueNorm;
+ordered rollover and quiescence; complete optimization checkpoint state.
+Generic runner.train() still delegates to inherited HA training: a paper entry
+must explicitly use the reviewed event coordinator and saved progression.
 
-commit:
-  NONE
-```
+Accepted final closure, not rerun here: A actor steps (5,5,5), critic10, VN10,
+one checkpoint save; fresh B strict full-state load before collection, then its
+own plan (5,5,10), critic10, VN10. Adam/VN/progression/LR continuity and clean
+process exits passed. No convergence, policy-quality, simulator/RNG trajectory
+resume, variable-cardinality or completed paper-campaign claim is made.
 
-## Latest completed phase
+## Remaining work / boundaries
 
-B2-V2 final closure and commit-readiness review is complete. The authoritative one-run R5-K evidence has passed GPT formal review and closes the bounded current-production B2-V2 interface matrix.
+Phase-B local artifact cleanup: NOT EXECUTED.
+The preceding cleanup audit stopped because the four commits were pending.
+That prerequisite is now satisfied by this user-authorized local commit sequence.
+No cleanup report, delete allowlist or deletion approval has yet been produced.
 
-Reviewed identities:
+Next: resume POST-PHASE-B LOCAL ARTIFACT CLEANUP AUDIT as planning only,
+rechecking Git state and including the newly noticed ZIP. Do not delete, move
+or compress files until the user separately approves a reviewed allowlist.
+Paper-1 experiment implementation/protocol follows as a separately authorized
+project phase; no experiments started here.
 
-```text
-HEAD:
-  14993dee344bade0230d2eb97b5f22171331f44a
+R6: HISTORICAL / NO RETRY. R7: NOT USED.
+R15: NOT AUTHORIZED / NOT NEEDED FOR PHASE-B CLOSURE.
+Do not reopen Phase B, rewrite historical verdicts/freeze identities, activate
+public routes, change installed HARL, push or tag without further authorization.
+Optional tag remains lifecycle-mrta-phase-b-complete; not created.
 
-R5-K harness SHA-256:
-  28b98443c0e0612101738c9b32742416fe00ccb6cc0d391f174d59d816bee8e3
+## Detailed reports / archives
 
-R5-K formal artifact:
-  C:\Users\33506\AppData\Local\Temp\b2_v2_pd2_r5k_formal_20260831.json
-
-formal artifact SHA-256:
-  9cec63231b92c9491b0ec29f73ec0be20de67c93be55fb3269dd5cf50694bae6
-```
-
-The artifact was not rerun or regenerated during closure. Static closure rehash found 59/59 frozen source/report paths exact with zero mismatch.
-
-## B2-V2 evidence closed
-
-The reviewed R5-K run passed:
-
-- real Isaac startup, environment construction, and reset at `E=2/M=3/N=12`, `cuda:0`;
-- I1 actor/share observations and I2 available actions;
-- installed VCritic current `V(t)` and real installed actor forward;
-- first physical learned-policy event step;
-- P2 sole authority and `final P2 -> Ak -> controller`;
-- forced continuation with zero actor resampling and zero new claim mutation;
-- TIME_LIMIT pre-reset terminal critic sidecar and historical/current separation;
-- safe historical copy before runtime ACK;
-- I5b source-faithful returns, critic-buffer storage, and learner training slice;
-- Snapshot A/B no-mutation proof and external clean shutdown.
-
-Frozen semantics remain unchanged: proposal is not effective assignment; actor log-probability remains tied to the original proposal; EXECUTING continuation is not a repeated claim; current P2 is the sole ownership truth; legacy/default profiles remain isolated and default-off.
-
-## Historical STOP ledger
-
-Historical reports remain immutable:
-
-- R5-B: `PD2-STOP-TERMINAL-TRANSPORT-FAIL / S6_TIME_LIMIT`;
-- R5-E: `PD2-STOP-STARTUP-EQUIVALENCE-MISMATCH`, artifact boundary `S0R`, later source site `S1 gym.make`;
-- R5-H: `PD2-STOP-TERMINAL-TRANSPORT-FAIL / S6_I5B_RETURNS`, last durable stage `S5`.
-
-Later reviewed evidence crossed those boundaries: R5-H/R5-K crossed the R5-E timing/constructor boundary, and R5-K crossed the R5-H returns and earlier R5-B terminal boundary. Historical STOP artifacts are not rewritten.
-
-## Retained limitations
-
-- cuBLAS root cause: NOT ESTABLISHED;
-- production warmup universally necessary/sufficient: NOT ESTABLISHED;
-- pre-R8 equivalence: NOT ESTABLISHED;
-- cache provenance: PARTIALLY_ATTRIBUTED;
-- baseline restoration: NOT_PROVABLY_RESTORABLE;
-- future diagnostic contamination: HIGH.
-
-Training convergence, optimizer/update correctness, policy quality, arbitrary rollouts, public-route readiness, variable cardinality, and checkpoint compatibility are not established.
-
-## Closure-only actions
-
-- created a byte-exact pre-update archive at `AgentRead/20260831/TASK_PROGRESS_ARCHIVE_BEFORE_B2_V2_FINAL_CLOSURE_20260831.md`;
-- archive/source bytes: `7695 / 7695`;
-- archive/source SHA-256: `08e726f8a388306cf7504bb0b6464f18b661c2fc672a0671107c356728427e1d`;
-- created the final closure and commit-readiness report;
-- audited all changed/untracked paths into required implementation/test or handoff documentation scope;
-- production/harness/HARL/Kit/cache changes in this closure: NONE;
-- Isaac/CUDA/HARL runtime, optimizer, backward, training, playback, evaluation: NOT RUN;
-- git add/commit/push: NOT RUN.
-
-## Do not do
-
-- Do not rerun or regenerate R5-K.
-- Do not run R5-L; it is not required.
-- Do not activate the public learned-policy route.
-- Do not enter B2-R without explicit user authorization.
-- Do not run optimizer, backward, training, playback, evaluation, or checkpoint work.
-- Do not claim the retained diagnostic limitations are resolved.
-
-## Next step
-
-Stop for GPT independent review of the final closure report and commit-scope classification. If that review passes, the user may perform the manual commit. B2-R is only eligible for a separate explicit authorization.
-
-Recommended manual commit message:
-
-```text
-feat(mrta): close B2 event policy and learner interface verification
-```
-
-## Authoritative reports / archive
-
-- `AgentRead/20260831/PHASE_B2_V2_FINAL_CLOSURE_AND_COMMIT_READINESS_REVIEW.md`
-- `AgentRead/20260831/TASK_PROGRESS_ARCHIVE_BEFORE_B2_V2_FINAL_CLOSURE_20260831.md`
-- `AgentRead/20260831/PHASE_B2_V2_PD2_R5K_ONE_CONTROLLED_FORMAL_REENTRY_REPORT.md`
-- `AgentRead/20260831/PHASE_B2_V2_PD2_R5J_I5B_RETURNS_OBSERVABILITY_AND_ORACLE_REVISION_IMPLEMENTATION_REPORT.md`
-- `AgentRead/20260831/PHASE_B2_V2_PD2_R5I_I5B_RETURNS_CONTRACT_AND_FAILURE_OBSERVABILITY_RECONCILIATION_DESIGN.md`
-- `AgentRead/20260831/PHASE_B2_V2_PD2_R5H_ONE_CONTROLLED_FORMAL_REENTRY_REPORT.md`
-- `AgentRead/20260831/PHASE_B2_V2_PD2_R5G_INTEGRAL_HORIZON_FIXTURE_AND_S1_BOUNDARY_IMPLEMENTATION_REPORT.md`
+- [Byte-exact pre-commit handoff](202609/20260925/TASK_PROGRESS_ARCHIVE_BEFORE_AUTHORIZED_PHASE_B_COMMITS_20260925.md)
+- [Engineering closeout, historical pre-commit audit](202609/20260925/PHASE_B_ENGINEERING_GIT_CLOSEOUT_REPORT.md)
+- [Change classification](202609/20260925/PHASE_B_GIT_CLOSEOUT_CHANGE_CLASSIFICATION.md)
+- [Implementation summary](202609/20260925/PHASE_B_IMPLEMENTATION_CHANGE_SUMMARY.md)
+- [Reviewed four-commit plan](202609/20260925/PHASE_B_MANUAL_COMMIT_PLAN.md)
+- [Original closeout JSON audits and allowlists](202609/20260925/phase_b_git_closeout_artifacts/)
+- [Final runtime report](202609/20260924/PHASE_B_FINAL_CLOSURE_REPORT.md)
+- [Final runtime result](202609/20260924/phase_b_final_closure_artifacts/final_result.json)
+- [Readiness audit, reviewed closed](202609/20260924/PHASE_B_FINAL_CLOSURE_READINESS_AUDIT.md)

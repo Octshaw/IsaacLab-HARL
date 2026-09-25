@@ -1,0 +1,245 @@
+{
+  "schema": "phase_b_git_authority_v1",
+  "date": "2026-09-25",
+  "scope": "Administrative closeout only; no fetch, runtime or index mutation.",
+  "branch": "main",
+  "head": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "origin_main": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "merge_base": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "remote_ref_note": "Local origin/main reference; no claim that server remote has not moved.",
+  "git_command_prefix": "git --no-optional-locks -c core.longpaths=true -c core.quotepath=false",
+  "long_paths_note": "Per-command setting only; no repository/global configuration changed. Omitting longpaths can miss nested untracked artifacts on Windows.",
+  "resumption_snapshot_rows": 50907,
+  "resumption_status_groups": [
+    {
+      "state": " M",
+      "count": 5
+    },
+    {
+      "state": "??",
+      "count": 50543
+    },
+    {
+      "state": "R ",
+      "count": 93
+    },
+    {
+      "state": "RM",
+      "count": 266
+    }
+  ],
+  "index_sha256_before": "b6f207f1c398e1e0104583ab9abf403f8387389228d448829674f879ba250d61",
+  "required_command_captures": [
+    {
+      "stderr_lines": 0,
+      "value": "main",
+      "sha256": "6403203dd5a0867eb14d104ee8a73730bd72dd9ad92e78d996a6dba0a5dcfc01",
+      "lines": 1,
+      "bytes": 5,
+      "command": "git branch --show-current"
+    },
+    {
+      "stderr_lines": 0,
+      "value": "b71d85a32f51be6ada324f870813a56bb45dd396",
+      "sha256": "7cab194f929ed7bc694d39c1fc1ce7fd73d401c88ac3f92e5b7c30e1768cf3af",
+      "lines": 1,
+      "bytes": 41,
+      "command": "git rev-parse HEAD"
+    },
+    {
+      "stderr_lines": 0,
+      "value": "b71d85a32f51be6ada324f870813a56bb45dd396",
+      "sha256": "7cab194f929ed7bc694d39c1fc1ce7fd73d401c88ac3f92e5b7c30e1768cf3af",
+      "lines": 1,
+      "bytes": 41,
+      "command": "git rev-parse origin/main"
+    },
+    {
+      "stderr_lines": 0,
+      "value": "b71d85a32f51be6ada324f870813a56bb45dd396",
+      "sha256": "7cab194f929ed7bc694d39c1fc1ce7fd73d401c88ac3f92e5b7c30e1768cf3af",
+      "lines": 1,
+      "bytes": 41,
+      "command": "git merge-base HEAD origin/main"
+    },
+    {
+      "stderr_lines": 0,
+      "value": null,
+      "sha256": "1c93df2147ed4ecbfffa129d8f8f6a09af820504ff92bf8b1b712d34e64105b0",
+      "lines": 470,
+      "bytes": 125641,
+      "command": "git status --short"
+    },
+    {
+      "stderr_lines": 0,
+      "value": null,
+      "sha256": "6da9fae25a6a8aaa2a6d5728e42a64ccd03a5cb8449ed2399c1bc76c1be93689",
+      "lines": 50907,
+      "bytes": 12866117,
+      "command": "git status --porcelain=v1 -uall"
+    },
+    {
+      "stderr_lines": 269,
+      "value": null,
+      "sha256": "e4fa8e2fd99c685a97ad984cd40f095d70a8a20fdf83d65dcbd0834e95c085f8",
+      "lines": 272,
+      "bytes": 16732,
+      "command": "git diff --stat"
+    },
+    {
+      "stderr_lines": 269,
+      "value": null,
+      "sha256": "cfeac0d97fc46f528cb2293352de11f89fa267cc4b7743e733ffc07507b4a787",
+      "lines": 8963,
+      "bytes": 833194,
+      "command": "git diff"
+    },
+    {
+      "stderr_lines": 0,
+      "value": null,
+      "sha256": "9935dd6fe16ae37912275df2430569e2ea7e99a50218469157ca56f496ceee44",
+      "lines": 360,
+      "bytes": 28413,
+      "command": "git diff --cached --stat"
+    },
+    {
+      "stderr_lines": 0,
+      "value": null,
+      "sha256": "a551d36d47802c57786d75c95e220a5e3f8a5edf437365ee706c71eeb938cf15",
+      "lines": 1436,
+      "bytes": 247687,
+      "command": "git diff --cached"
+    },
+    {
+      "stderr_lines": 269,
+      "value": null,
+      "sha256": "0f5dab6ed7b520013e7cdbf535b81eed67c849e70c661596c1e732579be4b9a9",
+      "lines": 271,
+      "bytes": 44140,
+      "command": "git diff --name-status"
+    },
+    {
+      "stderr_lines": 0,
+      "value": null,
+      "sha256": "9d5d2399991c4f9555936b2da045d229fc8796ea999d0af46c7cf90253bdf65d",
+      "lines": 359,
+      "bytes": 115048,
+      "command": "git diff --cached --name-status"
+    },
+    {
+      "stderr_lines": 0,
+      "value": null,
+      "sha256": "a40169043c3bfffd481a7ed1bddf3e52663d61379bedfd2610781457d11f947c",
+      "lines": 2038,
+      "bytes": 271882,
+      "command": "git ls-files --stage"
+    }
+  ],
+  "handoff_archive": {
+    "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE_B_GPT_REVIEW_CLOSURE_20260924.md",
+    "sha256": "fae0f1db1cad09c519c5c0a7008b83a27d1a55d13c07edb0051fa529df817b0a",
+    "byte_exact_verified": true,
+    "note": "Created before rewrite on 2026-09-24; task continued into 2026-09-25."
+  },
+  "validation": {
+    "scoped_diff_check": "PASS",
+    "category_counts": [
+      {
+        "category": "A",
+        "count": 11
+      },
+      {
+        "category": "B",
+        "count": 96
+      },
+      {
+        "category": "C",
+        "count": 234
+      },
+      {
+        "category": "D",
+        "count": 361
+      },
+      {
+        "category": "F",
+        "count": 50206
+      },
+      {
+        "category": "G",
+        "count": 1
+      }
+    ],
+    "final_artifact_hashes_unchanged": 34,
+    "archive_sha256_after": "fae0f1db1cad09c519c5c0a7008b83a27d1a55d13c07edb0051fa529df817b0a",
+    "json_parse_count": 95,
+    "large_in_manifest": 0,
+    "tracked_files_hidden": 0,
+    "head_after": "b71d85a32f51be6ada324f870813a56bb45dd396",
+    "local_only_ignored_count": 11,
+    "status": "PASS",
+    "ignored_in_manifest": 0,
+    "status_groups": [
+      {
+        "state": " M",
+        "count": 6
+      },
+      {
+        "state": "??",
+        "count": 50544
+      },
+      {
+        "state": "R ",
+        "count": 93
+      },
+      {
+        "state": "RM",
+        "count": 266
+      }
+    ],
+    "manual_staging_commands_executed": 0,
+    "git_mutation_commands_executed": 0,
+    "runtime_reruns": 0,
+    "initial_staged_guard_pass": true,
+    "manifest_paths": 744,
+    "classification_missing_or_overlap": 0,
+    "source_hashes_match_accepted_authority": {
+      "installed_harl_sources": 7,
+      "repository_sources": 45
+    },
+    "final_harness_hash_unchanged": true,
+    "status_rows": 50909,
+    "status_sha256": "6d13652a677eca23a14c467d76be3dc34286a09361985576e18baf50a6131a3a",
+    "commits": [
+      {
+        "removed": 359,
+        "paths": 361,
+        "id": "A"
+      },
+      {
+        "removed": 0,
+        "paths": 11,
+        "id": "B"
+      },
+      {
+        "removed": 0,
+        "paths": 139,
+        "id": "C"
+      },
+      {
+        "removed": 0,
+        "paths": 233,
+        "id": "D"
+      }
+    ],
+    "new_markdown_link_count": 31,
+    "manual_powershell_blocks_syntax_only": 7,
+    "index_sha256_after": "b6f207f1c398e1e0104583ab9abf403f8387389228d448829674f879ba250d61",
+    "migration_path_reference_normalization": {
+      "files": 266,
+      "content_exceptions": 0
+    },
+    "windows_path_input": "Read-only ignore checks use NUL-delimited UTF-8. Manual add helper also uses explicit NUL input; helper syntax parsed only, never executed."
+  },
+  "git_mutation_commands_executed": 0,
+  "runtime_reruns": 0
+}

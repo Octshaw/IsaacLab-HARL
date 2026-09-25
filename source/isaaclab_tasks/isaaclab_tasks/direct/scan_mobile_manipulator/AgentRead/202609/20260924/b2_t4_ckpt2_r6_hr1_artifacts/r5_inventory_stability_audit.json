@@ -1,0 +1,74 @@
+{
+  "checks": [
+    {
+      "effect": "none",
+      "explains_drift": false,
+      "input": "mtime",
+      "present": false
+    },
+    {
+      "effect": "none",
+      "explains_drift": false,
+      "input": "absolute_root_path",
+      "present": false
+    },
+    {
+      "effect": "none",
+      "explains_drift": false,
+      "input": "temporary_directory",
+      "present": false
+    },
+    {
+      "effect": "paths are sorted",
+      "explains_drift": false,
+      "input": "unsorted_iteration",
+      "present": false
+    },
+    {
+      "effect": "none",
+      "explains_drift": false,
+      "input": "locale",
+      "present": false
+    },
+    {
+      "effect": "sort_keys=True",
+      "explains_drift": false,
+      "input": "json_key_order",
+      "present": false
+    },
+    {
+      "effect": "as_posix relative paths",
+      "explains_drift": false,
+      "input": "platform_path_separator",
+      "present": false
+    },
+    {
+      "effect": "lock occurred after final artifact/report mtime",
+      "explains_drift": false,
+      "input": "files_generated_after_lock",
+      "present": false
+    },
+    {
+      "effect": "no manifest existed inside R5 root",
+      "explains_drift": false,
+      "input": "self_referential_manifest",
+      "present": false
+    },
+    {
+      "effect": "no R5 artifact mtime postdates lock",
+      "explains_drift": false,
+      "input": "mutable_summary_after_lock",
+      "present": false
+    },
+    {
+      "effect": "5c6e versus 0a changes aggregate only",
+      "explains_drift": true,
+      "input": "terminator_algorithm_version",
+      "present": true
+    }
+  ],
+  "cross_algorithm_comparison_found": true,
+  "drift_fully_explained": true,
+  "result": "PASS",
+  "unstable_metadata_dependency_found": false
+}

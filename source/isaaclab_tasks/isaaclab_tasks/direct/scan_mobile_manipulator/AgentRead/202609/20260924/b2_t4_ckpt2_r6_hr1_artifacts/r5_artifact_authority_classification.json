@@ -1,0 +1,300 @@
+{
+  "artifact_count": 42,
+  "entries": [
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Defines the production frozen-plan expected-count authority and observer transport.",
+      "relative_path": "actor_plan_count_authority_inventory.json",
+      "supports_claim": "Defines the production frozen-plan expected-count authority and observer transport."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Detailed pure negative cases derived from the R5 harness qualification.",
+      "relative_path": "actor_plan_count_negative_matrix.json",
+      "supports_claim": "Detailed pure negative cases derived from the R5 harness qualification."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Detailed pure positive actor-plan fixtures derived from production constructors.",
+      "relative_path": "actor_plan_dynamic_positive_matrix.json",
+      "supports_claim": "Detailed pure positive actor-plan fixtures derived from production constructors."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": true,
+      "reason": "Records inherited CKPT1 and installed-HARL source preservation.",
+      "relative_path": "ckpt1_preservation.json",
+      "supports_claim": "Records inherited CKPT1 and installed-HARL source preservation."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": true,
+      "reason": "Anchors the frozen R5 harness and production source identities before Process A.",
+      "relative_path": "ckpt2_r5_pre_runtime_freeze.json",
+      "supports_claim": "Anchors the frozen R5 harness and production source identities before Process A."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Summarizes pre-runtime gates already evidenced by focused receipts.",
+      "relative_path": "ckpt2_r5_preflight.json",
+      "supports_claim": "Summarizes pre-runtime gates already evidenced by focused receipts."
+    },
+    {
+      "authority_class": "OTHER",
+      "hard_block_future_continuation": false,
+      "reason": "Binds the single attempt number, run identity, and zero-retry policy.",
+      "relative_path": "ckpt2_r5_run_identity.json",
+      "supports_claim": "Binds the single attempt number, run identity, and zero-retry policy."
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "hard_block_future_continuation": false,
+      "reason": "Records clean pure-process import state; it is not learner-state authority.",
+      "relative_path": "clean_interpreter_baseline.json",
+      "supports_claim": "Records clean pure-process import state; it is not learner-state authority."
+    },
+    {
+      "authority_class": "CHECKPOINT_OR_CONTINUATION_BLOCKING_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Records the parent semantic-gate denial and absence of a valid checkpoint generation.",
+      "relative_path": "failure_receipt.json",
+      "supports_claim": "Records the parent semantic-gate denial and absence of a valid checkpoint generation."
+    },
+    {
+      "authority_class": "FINAL_ADJUDICATION_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Canonical final R5 STOP classification and zero-mutation/checkpoint adjudication.",
+      "relative_path": "final_stop_adjudication.json",
+      "supports_claim": "Canonical final R5 STOP classification and zero-mutation/checkpoint adjudication."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Retrospective RE1 Adam/plan comparison, not direct R5 runtime evidence.",
+      "relative_path": "historical_actor_adam_plan_consistency.json",
+      "supports_claim": "Retrospective RE1 Adam/plan comparison, not direct R5 runtime evidence."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": false,
+      "reason": "Records preservation of the earlier CKPT2 evidence root.",
+      "relative_path": "historical_ckpt2_preservation.json",
+      "supports_claim": "Records preservation of the earlier CKPT2 evidence root."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": false,
+      "reason": "Records preservation of the earlier CKPT2-R1 evidence root.",
+      "relative_path": "historical_ckpt2_r1_preservation.json",
+      "supports_claim": "Records preservation of the earlier CKPT2-R1 evidence root."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": false,
+      "reason": "Records preservation of the earlier CKPT2-R2 evidence root.",
+      "relative_path": "historical_ckpt2_r2_preservation.json",
+      "supports_claim": "Records preservation of the earlier CKPT2-R2 evidence root."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": false,
+      "reason": "Records preservation of the earlier CKPT2-R3 evidence root.",
+      "relative_path": "historical_ckpt2_r3_preservation.json",
+      "supports_claim": "Records preservation of the earlier CKPT2-R3 evidence root."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": false,
+      "reason": "Records preservation of the earlier CKPT2-R4 evidence root.",
+      "relative_path": "historical_ckpt2_r4_preservation.json",
+      "supports_claim": "Records preservation of the earlier CKPT2-R4 evidence root."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Retrospective RE1 dynamic-plan comparison, not direct R5 runtime evidence.",
+      "relative_path": "historical_dynamic_actor_plan_consistency.json",
+      "supports_claim": "Retrospective RE1 dynamic-plan comparison, not direct R5 runtime evidence."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Summarizes inherited identity, event-return, isolation, and gate contracts.",
+      "relative_path": "inherited_contract_preservation.json",
+      "supports_claim": "Summarizes inherited identity, event-return, isolation, and gate contracts."
+    },
+    {
+      "authority_class": "PROCESS_SHUTDOWN_BOOKKEEPING",
+      "hard_block_future_continuation": false,
+      "reason": "Records parent/worker PID creation and exit observations.",
+      "relative_path": "parent/parent_process_inventory.json",
+      "supports_claim": "Records parent/worker PID creation and exit observations."
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "hard_block_future_continuation": false,
+      "reason": "Documents R5 harness-only repair scope and zero production edits.",
+      "relative_path": "pre_runtime_harness_repair_log.json",
+      "supports_claim": "Documents R5 harness-only repair scope and zero production edits."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Detailed inherited CKPT1 pure-suite result matrix.",
+      "relative_path": "preflight_ckpt1_pure.json",
+      "supports_claim": "Detailed inherited CKPT1 pure-suite result matrix."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": false,
+      "reason": "Durable core failure state, mutation counters, stage history, and poison state.",
+      "relative_path": "process_a/core_failure.json",
+      "supports_claim": "Durable core failure state, mutation counters, stage history, and poison state."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Binds the real process, learner construction, runtime config, and source identity.",
+      "relative_path": "process_a/core_process_config_authority.json",
+      "supports_claim": "Binds the real process, learner construction, runtime config, and source identity."
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "hard_block_future_continuation": false,
+      "reason": "Chronological runtime checkpoint trace used for forensic timing.",
+      "relative_path": "process_a/core_runtime_checkpoints.jsonl",
+      "supports_claim": "Chronological runtime checkpoint trace used for forensic timing."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Transaction-scoped durable failure state and exact zero mutation counters.",
+      "relative_path": "process_a/core_tx1_failure.json",
+      "supports_claim": "Transaction-scoped durable failure state and exact zero mutation counters."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Binds tx001 rollout provenance and pre-update learner preservation.",
+      "relative_path": "process_a/core_tx1_rollout_decision_evidence.json",
+      "supports_claim": "Binds tx001 rollout provenance and pre-update learner preservation."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Process-local duplicate of the environment-creation receipt.",
+      "relative_path": "process_a/environment_creation.json",
+      "supports_claim": "Process-local duplicate of the environment-creation receipt."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Process-A causal exception, traceback, transaction count, and poison state.",
+      "relative_path": "process_a/failure_receipt.json",
+      "supports_claim": "Process-A causal exception, traceback, transaction count, and poison state."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Initial persistent learner semantic fingerprint and optimizer state.",
+      "relative_path": "process_a/initial_state.json",
+      "supports_claim": "Initial persistent learner semantic fingerprint and optimizer state."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Real interpreter, process, AppLauncher, CUDA readiness, and learner counts.",
+      "relative_path": "process_a/runtime_identity.json",
+      "supports_claim": "Real interpreter, process, AppLauncher, CUDA readiness, and learner counts."
+    },
+    {
+      "authority_class": "PROCESS_SHUTDOWN_BOOKKEEPING",
+      "hard_block_future_continuation": true,
+      "reason": "Environment and SimulationApp shutdown result for Process A.",
+      "relative_path": "process_a/shutdown_result.json",
+      "supports_claim": "Environment and SimulationApp shutdown result for Process A."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Parent-visible proof that one real environment was constructed.",
+      "relative_path": "process_a_environment_creation.json",
+      "supports_claim": "Parent-visible proof that one real environment was constructed."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Proof that Gym registration resolved the reviewed real entry point.",
+      "relative_path": "process_a_environment_registration.json",
+      "supports_claim": "Proof that Gym registration resolved the reviewed real entry point."
+    },
+    {
+      "authority_class": "CHECKPOINT_OR_CONTINUATION_BLOCKING_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Authoritative A-to-B semantic gate decision and missing checkpoint conditions.",
+      "relative_path": "process_a_parent_adjudication.json",
+      "supports_claim": "Authoritative A-to-B semantic gate decision and missing checkpoint conditions."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Proof that Process A used the repository production package, not a synthetic package.",
+      "relative_path": "process_a_real_package_identity.json",
+      "supports_claim": "Proof that Process A used the repository production package, not a synthetic package."
+    },
+    {
+      "authority_class": "CHECKPOINT_OR_CONTINUATION_BLOCKING_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Durable denial of Process B because Process A did not qualify.",
+      "relative_path": "process_b_launch_gate.json",
+      "supports_claim": "Durable denial of Process B because Process A did not qualify."
+    },
+    {
+      "authority_class": "PROCESS_SHUTDOWN_BOOKKEEPING",
+      "hard_block_future_continuation": true,
+      "reason": "Final PID inactivity, no Process B, no later transaction, and zero retry evidence.",
+      "relative_path": "process_quiescence.json",
+      "supports_claim": "Final PID inactivity, no Process B, no later transaction, and zero retry evidence."
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "hard_block_future_continuation": true,
+      "reason": "Canonical summary of the completed R5 pure qualification process.",
+      "relative_path": "pure_qualification_result.json",
+      "supports_claim": "Canonical summary of the completed R5 pure qualification process."
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "hard_block_future_continuation": false,
+      "reason": "Documents OS-process isolation between pure qualification and runtime.",
+      "relative_path": "pure_runtime_process_isolation.json",
+      "supports_claim": "Documents OS-process isolation between pure qualification and runtime."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Reproduction of the historical R4 fixed-predicate defect.",
+      "relative_path": "r4_fixed_actor_count_predicate_failure_reproduction.json",
+      "supports_claim": "Reproduction of the historical R4 fixed-predicate defect."
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "hard_block_future_continuation": false,
+      "reason": "Captures branch, commit, staged-index, and worktree authority at R5 entry.",
+      "relative_path": "repository_authority.json",
+      "supports_claim": "Captures branch, commit, staged-index, and worktree authority at R5 entry."
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "hard_block_future_continuation": false,
+      "reason": "Schema-level summary of the plan/observed per-actor equality contract.",
+      "relative_path": "transaction_ledger_actor_plan_binding_v1.json",
+      "supports_claim": "Schema-level summary of the plan/observed per-actor equality contract."
+    }
+  ],
+  "result": "PASS"
+}

@@ -1,0 +1,300 @@
+{
+  "artifact_file_count": 42,
+  "entries": [
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.073972Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.073972Z",
+      "relative_path": "actor_plan_count_authority_inventory.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.080783Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.080783Z",
+      "relative_path": "actor_plan_count_negative_matrix.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.079782Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.079782Z",
+      "relative_path": "actor_plan_dynamic_positive_matrix.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.005015Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:12.005015Z",
+      "relative_path": "ckpt1_preservation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.047184Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:12.047975Z",
+      "relative_path": "ckpt2_r5_pre_runtime_freeze.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.043501Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:12.043501Z",
+      "relative_path": "ckpt2_r5_preflight.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.041402Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:12.041925Z",
+      "relative_path": "ckpt2_r5_run_identity.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.072467Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.072467Z",
+      "relative_path": "clean_interpreter_baseline.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:42.135382Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:42.135382Z",
+      "relative_path": "failure_receipt.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T01:00:51.941061Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T01:03:42.305631Z",
+      "relative_path": "final_stop_adjudication.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.076563Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.076563Z",
+      "relative_path": "historical_actor_adam_plan_consistency.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:58:58.555778Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:58:58.555778Z",
+      "relative_path": "historical_ckpt2_preservation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:58:58.799700Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:58:58.799700Z",
+      "relative_path": "historical_ckpt2_r1_preservation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:58:59.071288Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:58:59.071828Z",
+      "relative_path": "historical_ckpt2_r2_preservation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:58:59.325667Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:58:59.325667Z",
+      "relative_path": "historical_ckpt2_r3_preservation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:58:59.898326Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:58:59.899325Z",
+      "relative_path": "historical_ckpt2_r4_preservation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.074976Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.074976Z",
+      "relative_path": "historical_dynamic_actor_plan_consistency.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.081784Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.081784Z",
+      "relative_path": "inherited_contract_preservation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:42.132870Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:42.134378Z",
+      "relative_path": "parent/parent_process_inventory.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.040871Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:12.040871Z",
+      "relative_path": "pre_runtime_harness_repair_log.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:10.993166Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:10.993166Z",
+      "relative_path": "preflight_ckpt1_pure.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:37.575674Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:37.575674Z",
+      "relative_path": "process_a/core_failure.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:32.952037Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:32.955083Z",
+      "relative_path": "process_a/core_process_config_authority.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.250004Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:14.365330Z",
+      "relative_path": "process_a/core_runtime_checkpoints.jsonl"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:37.572663Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:37.574167Z",
+      "relative_path": "process_a/core_tx1_failure.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:37.050450Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:37.057342Z",
+      "relative_path": "process_a/core_tx1_rollout_decision_evidence.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:32.124212Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:32.124212Z",
+      "relative_path": "process_a/environment_creation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:37.578682Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:37.579674Z",
+      "relative_path": "process_a/failure_receipt.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:32.524878Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:32.525381Z",
+      "relative_path": "process_a/initial_state.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.202904Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:12.204420Z",
+      "relative_path": "process_a/runtime_identity.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:38.134153Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:38.134678Z",
+      "relative_path": "process_a/shutdown_result.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:32.122707Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:32.122707Z",
+      "relative_path": "process_a_environment_creation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:31.113213Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:31.113213Z",
+      "relative_path": "process_a_environment_registration.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:42.130871Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:42.130871Z",
+      "relative_path": "process_a_parent_adjudication.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:31.112210Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:31.112210Z",
+      "relative_path": "process_a_real_package_identity.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:42.132870Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:42.132870Z",
+      "relative_path": "process_b_launch_gate.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T01:00:51.940055Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T01:00:51.941061Z",
+      "relative_path": "process_quiescence.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.094729Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.094729Z",
+      "relative_path": "pure_qualification_result.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:12.042440Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:12.042440Z",
+      "relative_path": "pure_runtime_process_isolation.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.074976Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.074976Z",
+      "relative_path": "r4_fixed_actor_count_predicate_failure_reproduction.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:58:58.225774Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:58:58.225774Z",
+      "relative_path": "repository_authority.json"
+    },
+    {
+      "creation_time_utc": "2026-09-24T00:59:11.077569Z",
+      "file_attributes": 32,
+      "metadata_excluded_from_byte_identity": true,
+      "mtime_utc": "2026-09-24T00:59:11.077569Z",
+      "relative_path": "transaction_ledger_actor_plan_binding_v1.json"
+    }
+  ],
+  "result": "PASS"
+}

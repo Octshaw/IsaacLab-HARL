@@ -1,0 +1,40 @@
+{
+  "byte_changed_files": 0,
+  "byte_changed_files_qualifier": "established; individual old SHA values unavailable",
+  "checkpoint_save_load": [
+    0,
+    0
+  ],
+  "classification": "PHASE-B2-T4-CKPT2-R6-HR1-INVENTORY-ALGORITHM-DRIFT-RECONCILED-AWAITING-GPT-REVIEW",
+  "core_authority_changed_files": 0,
+  "cuda_isaac_learner": [
+    0,
+    0,
+    0
+  ],
+  "current_inventory_algorithm": "same rows plus one LF byte 0a",
+  "current_inventory_digest": "21dd70b567c737efcd1dfe776ea4a1db0370acfbca3988db26a1dd392d4dc609",
+  "drift_category": "CASE C",
+  "git_add_commit_push": [
+    0,
+    0,
+    0
+  ],
+  "historical_inventory_algorithm": "compact sorted relative path/size/content-SHA rows plus literal bytes 5c6e",
+  "metadata_only_files": 0,
+  "next": "independent GPT review of CKPT2-R6-HR1",
+  "noncore_changed_files": 0,
+  "old_inventory_digest": "d9d940c8d10ea30945d438ec9b2c10cfca9e028de3c3993bc447dee41c68a8c1",
+  "old_per_file_inventory_recoverability": "AGGREGATE_ONLY",
+  "prospective_preservation_contract": "QUALIFIED",
+  "r5_artifact_count": {
+    "expected": 42,
+    "observed": 42
+  },
+  "r5_core_authority_integrity": "PASS",
+  "r6_direct_plan_repair": "STATICALLY PRESENT / NOT QUALIFIED",
+  "r6_historical_stop": "PRESERVED",
+  "r6_retry": "NOT AUTHORIZED",
+  "r7": "NOT AUTHORIZED",
+  "result": "PASS"
+}

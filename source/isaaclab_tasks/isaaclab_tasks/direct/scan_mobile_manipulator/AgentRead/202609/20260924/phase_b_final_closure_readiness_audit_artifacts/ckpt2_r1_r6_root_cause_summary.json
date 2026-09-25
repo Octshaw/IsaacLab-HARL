@@ -1,0 +1,99 @@
+{
+  "schema_version": "phase_b_final_closure_readiness_audit_v1",
+  "date": "2026-09-24",
+  "mode": "SOURCE_AND_RETAINED_EVIDENCE_ONLY",
+  "runtime_executed": false,
+  "attempts": [
+    {
+      "attempt": "CKPT2",
+      "root_cause": "HARNESS DEFECT",
+      "secondary_root_causes": [
+        "ORCHESTRATION DEFECT"
+      ],
+      "actual_finding": "LR hook ran after pre-collection fingerprint; optimizer LR difference tripped collection guard before learner mutation. Parent also trusted exit code 0 after SimulationApp.close and launched B without a checkpoint.",
+      "source_basis": "Original CKPT2 _apply_lr/collection hook and parent; R1 _load_inner_base/LR ordering, _adjudicate_process_a; retained original failure report.",
+      "returned_A_transactions": 0,
+      "successful_checkpoint_loads": 0,
+      "new_production_defect_established": false,
+      "unresolved_production_defect_established": false,
+      "historical_classification": "STOP retained; no retroactive PASS"
+    },
+    {
+      "attempt": "R1",
+      "root_cause": "HARNESS DEFECT",
+      "secondary_root_causes": [],
+      "actual_finding": "Post-return ledger indexed exact_execution_counts['event_return_computations'], an aggregate-only key; one real learner transaction had returned.",
+      "source_basis": "R1 after_transaction line452; real adapter transaction.real_audit.event_return_compute_count is the per-transaction authority.",
+      "returned_A_transactions": 1,
+      "successful_checkpoint_loads": 0,
+      "new_production_defect_established": false,
+      "unresolved_production_defect_established": false,
+      "historical_classification": "STOP retained; no retroactive PASS"
+    },
+    {
+      "attempt": "R2",
+      "root_cause": "HARNESS DEFECT",
+      "secondary_root_causes": [],
+      "actual_finding": "Ledger read r5_transaction.transaction_id, absent from B2RFullLearnerUpdateEvidenceV1; returned identity is quiescence_evidence.update_id.",
+      "source_basis": "R2 retained failure; current full-transaction returned DTO lines765-785 and R5 ledger line250.",
+      "returned_A_transactions": 1,
+      "successful_checkpoint_loads": 0,
+      "new_production_defect_established": false,
+      "unresolved_production_defect_established": false,
+      "historical_classification": "STOP retained; no retroactive PASS"
+    },
+    {
+      "attempt": "R3",
+      "root_cause": "HARNESS DEFECT",
+      "secondary_root_causes": [
+        "ORCHESTRATION DEFECT"
+      ],
+      "actual_finding": "Synthetic package installation for pure DTO imports polluted the runtime interpreter; Gym could not resolve ScanMobileManipulatorEnv.",
+      "source_basis": "R3 schema loader and R4 pure/runtime subprocess isolation; retained environment creation AttributeError.",
+      "returned_A_transactions": 0,
+      "successful_checkpoint_loads": 0,
+      "new_production_defect_established": false,
+      "unresolved_production_defect_established": false,
+      "historical_classification": "STOP retained; no retroactive PASS"
+    },
+    {
+      "attempt": "R4",
+      "root_cause": "HARNESS DEFECT",
+      "secondary_root_causes": [],
+      "actual_finding": "Valid tx2 actor steps (5,5,10) rejected by fixed (5,5,5) ledger predicate.",
+      "source_basis": "Production build_actor_update_plan_v1 counts nonempty minibatches; R5 historical plan/Adam consistency; current dynamic ledger lines253-279.",
+      "returned_A_transactions": 2,
+      "successful_checkpoint_loads": 0,
+      "new_production_defect_established": false,
+      "unresolved_production_defect_established": false,
+      "historical_classification": "STOP retained; no retroactive PASS"
+    },
+    {
+      "attempt": "R5",
+      "root_cause": "HARNESS DEFECT",
+      "secondary_root_causes": [],
+      "actual_finding": "Pre-mutation observer treated B2RResolvedConfigV1 as Mapping; epoch_count fallback0 caused PRE-MUTATION-PLAN-POLICY.",
+      "source_basis": "R5 _plan_receipt lines188-194; real adapter emits frozen DTO and expected_* fields before mutation.",
+      "returned_A_transactions": 0,
+      "successful_checkpoint_loads": 0,
+      "new_production_defect_established": false,
+      "unresolved_production_defect_established": false,
+      "historical_classification": "STOP retained; no retroactive PASS"
+    },
+    {
+      "attempt": "R6",
+      "root_cause": "EVIDENCE/FORENSIC DEFECT",
+      "secondary_root_causes": [],
+      "actual_finding": "Historical aggregate lock used literal 5c6e while _inventory appended LF0a; stopped before pure child/A/B.",
+      "source_basis": "R6 _history_preservation lines313-324; reviewed HR1 same42-row body reproduces both aggregates; source binder not runtime reached.",
+      "returned_A_transactions": 0,
+      "successful_checkpoint_loads": 0,
+      "new_production_defect_established": false,
+      "unresolved_production_defect_established": false,
+      "historical_classification": "STOP retained; no retroactive PASS"
+    }
+  ],
+  "production_defect_attempt_count": 0,
+  "unresolved_production_defect_items": [],
+  "interpretation": "These STOPs do not prove production correctness by themselves; independent source/retained core evidence supports readiness. They also do not provide a successful continuation."
+}

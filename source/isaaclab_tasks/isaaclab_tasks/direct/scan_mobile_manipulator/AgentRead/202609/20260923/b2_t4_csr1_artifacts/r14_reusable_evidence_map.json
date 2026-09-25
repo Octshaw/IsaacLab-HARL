@@ -1,0 +1,89 @@
+{
+  "authority_binding_pid_run_id_never_reused": true,
+  "entries": [
+    {
+      "gate": "transaction commit completeness",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "rollout and serializer completeness",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "decision-valid actor path",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "HAPPO factor correctness",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "critic update correctness",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "ValueNorm update continuity",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "optimizer continuity and numerical health",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "event-return correctness",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "lifecycle claim-complete-reopen",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "terminal/autoreset semantics",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "post-autoreset learning and P2 separation",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "immutable update-progress accounting",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_PASS"
+    },
+    {
+      "gate": "complete checkpoint state",
+      "learner_reuse": false,
+      "r14_evidence": "REQUIRES_FRESH_CONTINUATION_TEST"
+    },
+    {
+      "gate": "fresh-process strict load",
+      "learner_reuse": false,
+      "r14_evidence": "NOT_EVALUATED"
+    },
+    {
+      "gate": "post-load updates",
+      "learner_reuse": false,
+      "r14_evidence": "NOT_EVALUATED"
+    },
+    {
+      "gate": "historical Layer-A duplicate equality",
+      "learner_reuse": false,
+      "r14_evidence": "EXISTING_R14_FAIL"
+    }
+  ],
+  "evidence_reusable_for_named_subsystem_claims": true,
+  "historical_learner_never_reused": true,
+  "run_id": "b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c",
+  "schema_version": "b2_t4_csr1_r14_reusable_evidence_map_v1"
+}

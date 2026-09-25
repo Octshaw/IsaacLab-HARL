@@ -1,0 +1,475 @@
+{
+  "schema_version": "phase_b_final_closure_readiness_audit_v1",
+  "date": "2026-09-24",
+  "mode": "SOURCE_AND_RETAINED_EVIDENCE_ONLY",
+  "runtime_executed": false,
+  "status_vocabulary": [
+    "CLOSED",
+    "SUFFICIENT_FOR_PHASE_B",
+    "IMPLEMENTED_BUT_RUNTIME_NOT_ESTABLISHED",
+    "PARTIALLY_ESTABLISHED",
+    "NOT_ESTABLISHED",
+    "NOT_REQUIRED_FOR_PHASE_B",
+    "FUTURE/PAPER-EXPERIMENT"
+  ],
+  "sources": {
+    "L1": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_initial_claim_runtime.py",
+      "lines": "647-777",
+      "symbol": "InitialClaimDeriver.derive_candidate"
+    },
+    "L2": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_lifecycle_transaction_runtime.py",
+      "lines": "2212-2310;4148-4375;4591-4715",
+      "symbol": "LifecycleAuthorityTransactionCoordinator; authority candidate equations"
+    },
+    "L3": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_runtime_facade.py",
+      "lines": "609-716",
+      "symbol": "step_resolved_proposals"
+    },
+    "L4": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_policy_decision.py",
+      "lines": "569-655",
+      "symbol": "legal targets, forced rows, decision_valid_mask"
+    },
+    "T1": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_training_plans.py",
+      "lines": "443-561;634-754;869-921",
+      "symbol": "build_actor_update_plan_v1; factor transition; critic plan"
+    },
+    "T2": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_training_actor_mutation.py",
+      "lines": "653-685;819-1149",
+      "symbol": "_actor_loss_v1; execute_actor_sequence_v1"
+    },
+    "T3": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_training_critic_mutation.py",
+      "lines": "1103-1475",
+      "symbol": "execute_critic_sequence_v1"
+    },
+    "T4": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_gae_returns.py",
+      "lines": "236-442",
+      "symbol": "compute_event_gae_returns_v2"
+    },
+    "T5": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_training_full_transaction.py",
+      "lines": "789-948;996-1160",
+      "symbol": "execute_full_learner_transaction_v1; validate_quiescence_claim_v1"
+    },
+    "T6": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_training_real_isaac_adapter.py",
+      "lines": "529-558;638-765;1001-1105;1450-1555",
+      "symbol": "execute_real_isaac_single_transaction_v1; pre-mutation observer; real rollover"
+    },
+    "T7": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_training_control.py",
+      "lines": "594-688",
+      "symbol": "S0-S10 state machine and checkpoint eligibility"
+    },
+    "T8": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_event_learned_route.py",
+      "lines": "457",
+      "symbol": "collect_step"
+    },
+    "E1": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scan_mobile_manipulator_env.py",
+      "lines": "3100-3146;3230-3295",
+      "symbol": "pre-reset scan/critic snapshot; event termination/reset"
+    },
+    "E2": {
+      "path": "source/isaaclab/isaaclab/envs/direct_marl_env.py",
+      "lines": "389-396",
+      "symbol": "dones/rewards before automatic reset"
+    },
+    "C1": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_optimization_checkpoint.py",
+      "lines": "64-260;407-465;512-920",
+      "symbol": "boundary; progression; Adam validation; save/validate/load"
+    },
+    "C2": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_training.py",
+      "lines": "727-894",
+      "symbol": "runner guard, progression, optimization APIs and LR helper"
+    },
+    "C3": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_checkpoint_save.py",
+      "lines": "120-155;207-264;1095-1215",
+      "symbol": "semantic manifest construction and effective runtime capture"
+    },
+    "C4": {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_value_normalizer_checkpoint.py",
+      "symbol": "export/validate/restore_value_normalizer_checkpoint_state"
+    },
+    "H1": {
+      "path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_r6_real_fresh_process_checkpoint_continuation.py",
+      "lines": "82-204;313-389",
+      "symbol": "_load_base; _bind_receipt; _runtime_plan_receipt; history gate"
+    },
+    "H2": {
+      "path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_r5_real_fresh_process_checkpoint_continuation.py",
+      "lines": "181-229;243-303;331-386",
+      "symbol": "old Mapping bug; current inherited plan ledger and hook installation"
+    },
+    "H3": {
+      "path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_r1_real_fresh_process_checkpoint_continuation.py",
+      "lines": "84-105;341-403;404-465;506-550;707-754",
+      "symbol": "inherited A/B construction/load, LR boundary, save and semantic launch gate"
+    },
+    "H4": {
+      "path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_real_fresh_process_checkpoint_continuation.py",
+      "lines": "193-274;336",
+      "symbol": "state snapshots, Adam device classification, LR helper"
+    },
+    "Q1": {
+      "path": "scripts/environments/test_assignment_phase_b2_t4_ckpt1_optimization_checkpoint.py",
+      "lines": "211-291",
+      "symbol": "exact roundtrip, same-input update, atomicity, rollback tests"
+    }
+  },
+  "evidence_roots": {
+    "architecture": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260901/PHASE_B2_R0_TRAINING_UPDATE_READINESS_ARCHITECTURE_DESIGN.md",
+    "r7": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260909/PHASE_B2_R7_TRAINING_UPDATE_READINESS_FINAL_CLOSURE_REPORT.md",
+    "re1": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260910/PHASE_B2_T0_RE1_BOUNDED_REPEATED_UPDATE_CONTINUITY_REPORT.md",
+    "t1": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260911/PHASE_B2_T1_BOUNDED_SHORT_TRAINING_STABILITY_QUALIFICATION_REPORT.md",
+    "t2": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260911/PHASE_B2_T2_MEDIUM_LENGTH_TRAINING_OBSERVABILITY_STABILITY_QUALIFICATION_REPORT.md",
+    "t3": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260912/PHASE_B2_T3_TASK_PROGRESS_HORIZON_QUALIFICATION_REPORT.md",
+    "csr1": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/PHASE_B2_T4_CSR1_CLOSURE_SCOPE_REDUCTION_REPORT.md",
+    "ckpt1": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt1_artifacts",
+    "r14": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c",
+    "r5": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts",
+    "r6": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/PHASE_B2_T4_CKPT2_R6_REAL_FRESH_PROCESS_CHECKPOINT_CONTINUATION_REPORT.md",
+    "hr1": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/PHASE_B2_T4_CKPT2_R6_HR1_HISTORICAL_R5_ARTIFACT_DRIFT_RECONCILIATION_REPORT.md"
+  },
+  "claims": [
+    {
+      "id": 1,
+      "capability": "Lifecycle claim/continue/complete/release/reassign",
+      "current_implementation": "P2-only claim and lifecycle authority; release reopens eligible rows, reassignment is a later legal claim, not an actor-side owner overwrite",
+      "best_direct_evidence": "R14 W1/W2 and raw lifecycle steps 23/30/31; inherited reviewed lifecycle contracts. Disturbance campaign performance not claimed.",
+      "source_inspected": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "status": "SUFFICIENT_FOR_PHASE_B",
+      "must_block_closure": false
+    },
+    {
+      "id": 2,
+      "capability": "Proposal/effective separation",
+      "current_implementation": "Proposal resolution commits zero/one claim batch; physical step uses final P2",
+      "best_direct_evidence": "R14 raw_action_ids vs effective_assignment, W7 160 immutable updates; R7 inherited interface contracts",
+      "source_inspected": [
+        "L3",
+        "L4"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 3,
+      "capability": "Asynchronous event-gated decisions",
+      "current_implementation": "Row-local NEEDS_ASSIGNMENT and legal-target gating; EXECUTING does not resample",
+      "best_direct_evidence": "RE1 tx2 (0,0,1,0,0,0), tx3 (0,0,0,1,0,0); R14 lifecycle rows",
+      "source_inspected": [
+        "L4",
+        "T8"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 4,
+      "capability": "Lifecycle DVM/action admission",
+      "current_implementation": "DVM iff policy row; action availability does not imply a learner decision",
+      "best_direct_evidence": "R14 W3: tx2 actor0 DVM=0, backward/step=0, Adam/weights unchanged",
+      "source_inspected": [
+        "L4",
+        "T1",
+        "T2"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 5,
+      "capability": "Actor PPO and sequential HAPPO factor",
+      "current_implementation": "Behavior logprob ratio, clipped surrogate, active AND DVM loss, pre/post segment factor",
+      "best_direct_evidence": "R3/R7 reviewed qualification; RE1 dynamic counts; R14 actor progress/transaction ledger",
+      "source_inspected": [
+        "T1",
+        "T2"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 6,
+      "capability": "Critic update",
+      "current_implementation": "Raw event-return targets; source-faithful clipped/Huber loss; finite connected valid-zero or nonzero gradients",
+      "best_direct_evidence": "R4/R7 reviewed qualification; R14 1600 critic steps",
+      "source_inspected": [
+        "T3",
+        "T5"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 7,
+      "capability": "Event returns",
+      "current_implementation": "Separate NONE / true-terminal / TIME_LIMIT bootstrap and trace semantics; compute once; returns[:-1]",
+      "best_direct_evidence": "R14 160 rows each event_returns=1, stock_compute_returns=0; W4/W5",
+      "source_inspected": [
+        "T4",
+        "T5",
+        "E1",
+        "E2"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 8,
+      "capability": "Live ValueNorm update",
+      "current_implementation": "Canonical raw minibatch update then two same-state normalizations",
+      "best_direct_evidence": "R14 1600 live updates and 159 exact learner bridges; installed ValueNorm fields inspected",
+      "source_inspected": [
+        "T3",
+        "C4"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 9,
+      "capability": "S0-S10 transaction",
+      "current_implementation": "Frozen plan, actor then critic, audit, rollout mode, ordered rollover, quiescence",
+      "best_direct_evidence": "R14 all 160 S7/S8/S9/S10 flags true; R7 real transaction",
+      "source_inspected": [
+        "T5",
+        "T6",
+        "T7"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 10,
+      "capability": "Repeated learner updates",
+      "current_implementation": "Same learner handles, transaction-local authority, new rollout",
+      "best_direct_evidence": "RE1 3 updates; T1 30; T2 300; R14 raw 160 transactions",
+      "source_inspected": [
+        "T5",
+        "T6",
+        "T8"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 11,
+      "capability": "Persistent in-process optimizer continuity",
+      "current_implementation": "Passed learner objects are mutated in place; buffer rollover does not reconstruct optimizers",
+      "best_direct_evidence": "R14 159 bridges: exact state, persistent object identity, collection immutability all true; RE1 actor Adam 0->(5,5,5)->(10,10,15)->(20,15,20), critic 0->10->20->30",
+      "source_inspected": [
+        "T2",
+        "T3",
+        "T6"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 12,
+      "capability": "Normal-horizon runtime",
+      "current_implementation": "30 seconds / 300 environment steps, independent of rollout T=2",
+      "best_direct_evidence": "R14 config plus 160 transactions / 320 physical transitions; T3 horizon authority",
+      "source_inspected": [
+        "E1",
+        "T6"
+      ],
+      "status": "SUFFICIENT_FOR_PHASE_B",
+      "must_block_closure": false
+    },
+    {
+      "id": 13,
+      "capability": "Terminal/autoreset handling",
+      "current_implementation": "Environment-owned pre-reset history retained separately from current reset publication",
+      "best_direct_evidence": "R14 W5 tx150 keys (0,0,298)/(1,0,298), no missing/extra/duplicate; W6 tx151",
+      "source_inspected": [
+        "E1",
+        "E2",
+        "T4",
+        "T6"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 14,
+      "capability": "Task completion and decision reopening",
+      "current_implementation": "Complete clears ownership; only eligible work reopens NEEDS_ASSIGNMENT",
+      "best_direct_evidence": "R14 W2 selected env1 robot1 task10: claim step23/tx12, complete step30/tx15, reopen step31/tx16; raw rows independently inspected",
+      "source_inspected": [
+        "L1",
+        "L2",
+        "L4"
+      ],
+      "status": "SUFFICIENT_FOR_PHASE_B",
+      "must_block_closure": false
+    },
+    {
+      "id": 15,
+      "capability": "Zero-DVM / forced continuation",
+      "current_implementation": "Skip actor mutation without resetting accumulated factor; critic still updates",
+      "best_direct_evidence": "R14 W3 plus transaction ledger tx2; source expected_steps==0 branch",
+      "source_inspected": [
+        "T1",
+        "T2",
+        "T6"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 16,
+      "capability": "Real environment and learner construction",
+      "current_implementation": "Private event route plus real HARL actors/critic/ValueNorm",
+      "best_direct_evidence": "R14 and CKPT2-R4/R5 actual construction/learner evidence; not R3 intended counters",
+      "source_inspected": [
+        "T6",
+        "T8",
+        "H3"
+      ],
+      "status": "CLOSED",
+      "must_block_closure": false
+    },
+    {
+      "id": 17,
+      "capability": "Optimization checkpoint save",
+      "current_implementation": "Complete Adam/model/VN/progression/config state; staged generation and atomic pointer",
+      "best_direct_evidence": "CKPT1 exact CPU tests 1/3, retained roundtrip/atomicity; no real CUDA checkpoint save yet",
+      "source_inspected": [
+        "C1",
+        "C2",
+        "C4",
+        "Q1"
+      ],
+      "status": "IMPLEMENTED_BUT_RUNTIME_NOT_ESTABLISHED",
+      "must_block_closure": true,
+      "open_item": "B1"
+    },
+    {
+      "id": 18,
+      "capability": "Optimization strict load",
+      "current_implementation": "Validate before mutation; exact compatibility; full rollback / poison on incomplete rollback",
+      "best_direct_evidence": "CKPT1 tests 1/4/5 and retained rollback result; no successful real B load yet",
+      "source_inspected": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "Q1"
+      ],
+      "status": "IMPLEMENTED_BUT_RUNTIME_NOT_ESTABLISHED",
+      "must_block_closure": true,
+      "open_item": "B1"
+    },
+    {
+      "id": 19,
+      "capability": "Fresh-process optimizer continuation",
+      "current_implementation": "All actor Adam plus critic Adam load implemented",
+      "best_direct_evidence": "CKPT1 CPU same-input continuation only; all CKPT2/R* stop before successful B update",
+      "source_inspected": [
+        "C1",
+        "H3",
+        "H4"
+      ],
+      "status": "NOT_ESTABLISHED",
+      "must_block_closure": true,
+      "open_item": "B1"
+    },
+    {
+      "id": 20,
+      "capability": "Fresh-process ValueNorm continuation",
+      "current_implementation": "Project adapter preserves mean, mean-square, debiasing term",
+      "best_direct_evidence": "CKPT1 CPU exact state and controlled next update only",
+      "source_inspected": [
+        "C1",
+        "C4",
+        "H3"
+      ],
+      "status": "NOT_ESTABLISHED",
+      "must_block_closure": true,
+      "open_item": "B1"
+    },
+    {
+      "id": 21,
+      "capability": "Fresh-process progression/LR continuation",
+      "current_implementation": "completed/next/total/next-LR position; caller applies next scheduled LR",
+      "best_direct_evidence": "CKPT1 CPU p=1->2 of12; no real A-to-B proof",
+      "source_inspected": [
+        "C1",
+        "C2",
+        "H3",
+        "H4"
+      ],
+      "status": "NOT_ESTABLISHED",
+      "must_block_closure": true,
+      "open_item": "B1"
+    },
+    {
+      "id": 22,
+      "capability": "Clean shutdown and quiescence",
+      "current_implementation": "S10 plus environment close, process wait and semantic A-to-B gate",
+      "best_direct_evidence": "R14 process_quiescence/env_close; R1-R5 correctly deny B without checkpoint",
+      "source_inspected": [
+        "T5",
+        "T7",
+        "H3"
+      ],
+      "status": "SUFFICIENT_FOR_PHASE_B",
+      "must_block_closure": false
+    },
+    {
+      "id": 23,
+      "capability": "Full simulator/RNG/rollout exact resume",
+      "current_implementation": "Excluded: fresh environment/rollout boundary is intentional",
+      "best_direct_evidence": "CSR1/CKPT1 scope and checkpoint payload inspection",
+      "source_inspected": [
+        "C1"
+      ],
+      "status": "NOT_REQUIRED_FOR_PHASE_B",
+      "must_block_closure": false
+    },
+    {
+      "id": 24,
+      "capability": "Public CLI / paper campaign packaging",
+      "current_implementation": "Dormant public route; use reviewed event coordinator, not stock runner.train/run as an event equivalent",
+      "best_direct_evidence": "R7 and current separate event/native runner APIs; authorization/packaging not a newly found semantic defect",
+      "source_inspected": [
+        "T5",
+        "T6",
+        "C2"
+      ],
+      "status": "FUTURE/PAPER-EXPERIMENT",
+      "must_block_closure": false
+    },
+    {
+      "id": 25,
+      "capability": "Variable cardinality / Transformer",
+      "current_implementation": "Not needed for first fixed-scale paper",
+      "best_direct_evidence": "Current fixed M/N contract",
+      "source_inspected": [
+        "L4",
+        "T1"
+      ],
+      "status": "FUTURE/PAPER-EXPERIMENT",
+      "must_block_closure": false
+    }
+  ],
+  "interpretation": "Rows17-21 are one bundled B1 closure smoke, not five new semantic defects."
+}

@@ -1,0 +1,19 @@
+{
+  "byte_changed_files_established": 0,
+  "category_name": "METADATA_OR_INVENTORY_ALGORITHM_DRIFT",
+  "classification": "PHASE-B2-T4-CKPT2-R6-HR1-INVENTORY-ALGORITHM-DRIFT-RECONCILED-AWAITING-GPT-REVIEW",
+  "core_authority_byte_drift_established": false,
+  "current_rows_reproduce_old_aggregate_under_recorded_old_algorithm": true,
+  "inventory_algorithm_caused_drift": true,
+  "lock_timing_caused_drift": false,
+  "metadata_caused_drift": false,
+  "metadata_only_files_established": 0,
+  "noncore_byte_drift_established": false,
+  "old_per_file_inventory_recoverability": "AGGREGATE_ONLY",
+  "primary_category": "CASE C",
+  "r5_core_authority_integrity": "PASS",
+  "rationale": "The full current 42-entry byte inventory exactly reproduces both disputed digests when only the two recorded terminators are changed. The lock was after finalization, and no R5 artifact mtime postdates it. Individual old SHA fields were not persisted and are not fabricated.",
+  "result": "PASS",
+  "same_current_rows_reproduce_r5_harness_aggregate_under_harness_algorithm": true,
+  "specific_cause": "Cross-algorithm terminator mismatch: literal 5c6e versus LF 0a."
+}

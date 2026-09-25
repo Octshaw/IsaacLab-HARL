@@ -1,0 +1,20 @@
+{
+  "allowed_save_boundary": "after a complete train/update transaction: all actor and critic optimizer steps and the ValueNorm update are complete, no backward/step is in flight, and before the next rollout collection",
+  "current_code_observation": "HARL saves after train and before after_update; this is acceptable only as an explicit fresh-rollout boundary because buffers/environment are discarded, but complete optimizer state and update index are still missing",
+  "environment_state_required": false,
+  "forbidden_save_boundaries": [
+    "mid-rollout",
+    "mid-backward",
+    "between optimizer steps",
+    "between ValueNorm pre/post update",
+    "during terminal/autoreset reconciliation",
+    "while checkpoint completion marker is partially published"
+  ],
+  "learner_state_quiescent": true,
+  "next_run_initialization": "fresh process, fresh environment/reset, fresh rollout buffer and warmup; restore complete learner state before first new rollout/update",
+  "optimizer_step_complete": true,
+  "rollout_buffer_state_required": false,
+  "schema_version": "b2_t4_csr1_checkpoint_boundary_contract_v1",
+  "transaction_complete": true,
+  "valuenorm_update_complete": true
+}

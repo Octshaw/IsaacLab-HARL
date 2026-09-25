@@ -1,0 +1,25 @@
+{
+  "actor_critic_update_evidence": false,
+  "actor_optimizer": false,
+  "actor_parameters": false,
+  "basis": [
+    "failure was in Layer-A after environment close and after NORM/PPQ success",
+    "checkpoint_io_count was zero",
+    "canonical NORM exactly equals deterministic replay from retained raw evidence",
+    "comparator is read-only and has no path to learner state"
+  ],
+  "checkpoint_load_affected": false,
+  "classification": "DIAGNOSTIC_NONBLOCKING",
+  "critic_optimizer": false,
+  "critic_parameters": false,
+  "event_return_semantics": false,
+  "exact_label": "POST_RUNTIME_EPHEMERAL_EVIDENCE_REPRESENTATION_MISMATCH",
+  "historical_poison_status_changed": false,
+  "learner_counters": false,
+  "lifecycle_semantics": false,
+  "only_between_post_runtime_evidence_representations": true,
+  "paper_metrics_affected": false,
+  "schema_version": "b2_t4_csr1_r14_canonical_norm_drift_impact_v1",
+  "terminal_semantics": false,
+  "valuenorm_persistent_state": false
+}

@@ -1,0 +1,519 @@
+{
+  "schema": "phase_b_large_file_audit_v1",
+  "date": "2026-09-25",
+  "snapshot": "Before closeout ignore rule; includes 9 initially untracked final fixture tensors, not arbitrary pre-existing ignored files.",
+  "threshold_unit": "decimal bytes; strictly greater than threshold",
+  "counts": {
+    "1000000": 63,
+    "10000000": 12,
+    "50000000": 8,
+    "100000000": 0
+  },
+  "files": [
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_final_result.json",
+      "size_bytes": 82663470,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/b2_t4_re6_r12_normal_horizon_20260922_formal01_final_result.json",
+      "size_bytes": 82375124,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/b2_t4_re6_r9_normal_horizon_20260922_formal01_final_result.json",
+      "size_bytes": 82090666,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/re6_r1_worker_raw_result.json",
+      "size_bytes": 81658067,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/b2_t4_re6_r3_normal_horizon_20260920_formal01_final_result.json",
+      "size_bytes": 80000891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/re5_worker_raw_result.json",
+      "size_bytes": 79776217,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/b2_t4_re6_r1_normal_horizon_20260920_formal01_final_result.json",
+      "size_bytes": 78259063,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/b2_t4_re5_normal_horizon_20260916_formal01_final_result.json",
+      "size_bytes": 76393052,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/runtime_layer_a_raw_final.json",
+      "size_bytes": 48712152,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/repository_authority.json",
+      "size_bytes": 10489024,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/preflight/b2-t4-re6-r14-preflight-ab3f96420b5948f3af1cc2f1c5f1e351/stage_a_artifacts/repository_authority.json",
+      "size_bytes": 10489024,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/repository_authority.json",
+      "size_bytes": 10460892,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/repository_authority.json",
+      "size_bytes": 8079600,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/repository_authority.json",
+      "size_bytes": 8061659,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/repository_authority.json",
+      "size_bytes": 8045145,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/re6_r14_static_authority.json",
+      "size_bytes": 6574591,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_process_config_authority.json",
+      "size_bytes": 6570023,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/preflight/b2-t4-re6-r14-preflight-ab3f96420b5948f3af1cc2f1c5f1e351/stage_a_artifacts/b2-t4-re6-r14-preflight-70bd7bc477b942878804cec2c345186b/re6_r14_static_authority.json",
+      "size_bytes": 6554259,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/re6_r13_static_authority.json",
+      "size_bytes": 6524768,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/b2_t4_re6_r12_normal_horizon_20260922_formal01_process_config_authority.json",
+      "size_bytes": 6275429,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/re6_r12_static_authority.json",
+      "size_bytes": 6272513,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/b2-t4-re6-r11-20260922-formal01-c266e95ab2b34167ba37505dcc6908d1/re6_r11_static_authority.json",
+      "size_bytes": 6253722,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/b2-t4-re6-r10-20260922-formal01-11b4e53a29764470b1831a360468fd8e/re6_r10_static_authority.json",
+      "size_bytes": 6244560,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/re6_r9_static_authority.json",
+      "size_bytes": 6003458,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/b2_t4_re6_r9_normal_horizon_20260922_formal01_process_config_authority.json",
+      "size_bytes": 5996725,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/re6_r8_static_authority.json",
+      "size_bytes": 5989206,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_norm_r1_artifacts/repository_authority.json",
+      "size_bytes": 5811253,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/repository_authority.json",
+      "size_bytes": 5700911,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/repository_authority.json",
+      "size_bytes": 5689086,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_r1_artifacts/repository_authority.json",
+      "size_bytes": 5648770,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r6_artifacts/repository_authority.json",
+      "size_bytes": 5645987,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_artifacts/repository_authority.json",
+      "size_bytes": 5635830,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r5_artifacts/repository_authority.json",
+      "size_bytes": 5633377,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r4_artifacts/repository_authority.json",
+      "size_bytes": 5622563,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_r1_artifacts/repository_authority.json",
+      "size_bytes": 5616620,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_artifacts/repository_authority.json",
+      "size_bytes": 5610900,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/re6_r3_static_authority.json",
+      "size_bytes": 4034268,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/b2_t4_re6_r3_normal_horizon_20260920_formal01_process_config_authority.json",
+      "size_bytes": 4031620,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_ppq_artifacts/repository_authority.json",
+      "size_bytes": 3780209,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/lifecycle_task_progress.jsonl",
+      "size_bytes": 2860891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/b2_t4_re6_r9_normal_horizon_20260922_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2860891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/b2_t4_re5_normal_horizon_20260916_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2860891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/lifecycle_task_progress.jsonl",
+      "size_bytes": 2860891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/b2_t4_re6_r12_normal_horizon_20260922_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2860891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/b2_t4_re6_r3_normal_horizon_20260920_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2860891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/lifecycle_task_progress.jsonl",
+      "size_bytes": 2860891,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/lifecycle_task_progress.jsonl",
+      "size_bytes": 2860731,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/lifecycle_task_progress.jsonl",
+      "size_bytes": 2860731,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2860731,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/b2_t4_re6_r1_normal_horizon_20260920_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2860731,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/runtime_normalization_result.json",
+      "size_bytes": 2503742,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/runtime_normalization_result.json",
+      "size_bytes": 2503739,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/runtime_normalization_result.json",
+      "size_bytes": 2503739,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/runtime_normalization_result.json",
+      "size_bytes": 2502781,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts/b2_t4_re4_normal_horizon_20260916_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2308398,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/static_authority.json",
+      "size_bytes": 2279349,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/re6_r1_static_authority.json",
+      "size_bytes": 2279349,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/b2_t4_re6_r1_normal_horizon_20260920_formal01_process_config_authority.json",
+      "size_bytes": 2279054,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_ppq_artifacts/re6_r1_artifact_identity.json",
+      "size_bytes": 1477170,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actor_optimizers/000_adam.pt",
+      "size_bytes": 1441834,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actor_optimizers/001_adam.pt",
+      "size_bytes": 1441834,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actor_optimizers/002_adam.pt",
+      "size_bytes": 1441834,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/critic/adam.pt",
+      "size_bytes": 1411114,
+      "category": "F_GENERATED_RUNTIME_ARTIFACT",
+      "generated": true,
+      "required_in_git": false,
+      "recommendation": "KEEP_LOCAL_ONLY"
+    }
+  ],
+  "safe_to_delete": 0
+}

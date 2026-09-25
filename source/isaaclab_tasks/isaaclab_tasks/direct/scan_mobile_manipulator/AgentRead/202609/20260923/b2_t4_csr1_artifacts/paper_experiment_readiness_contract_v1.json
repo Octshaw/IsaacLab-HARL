@@ -1,0 +1,41 @@
+{
+  "core_gate_count": 12,
+  "includes_core_runtime_contract": true,
+  "paper_specific_gate_count": 6,
+  "paper_specific_gates": [
+    {
+      "blocking": true,
+      "gate": "immutable config and seed manifest",
+      "id": "E1"
+    },
+    {
+      "blocking": true,
+      "gate": "canonical NORM/raw metric reconciliation",
+      "id": "E2"
+    },
+    {
+      "blocking": true,
+      "gate": "fixed evaluation protocol and checkpoint selection",
+      "id": "E3"
+    },
+    {
+      "blocking": true,
+      "gate": "baseline parity and comparison plan",
+      "id": "E4"
+    },
+    {
+      "blocking": true,
+      "gate": "dynamic-disturbance experiment matrix",
+      "id": "E5"
+    },
+    {
+      "blocking": true,
+      "gate": "statistical aggregation plus raw result provenance",
+      "id": "E6"
+    }
+  ],
+  "schema_version": "b2_t4_csr1_paper_experiment_readiness_contract_v1",
+  "separate_from_checkpoint_continuation": true,
+  "status": "CONTRACT_DEFINED_NOT_EXECUTED_NOT_AUTHORIZED",
+  "total_gate_count": 18
+}

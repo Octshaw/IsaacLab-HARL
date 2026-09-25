@@ -1,0 +1,19 @@
+{
+  "HEAD": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "branch": "main",
+  "git_mutations_by_hr1": {
+    "add": 0,
+    "checkout": 0,
+    "clean": 0,
+    "commit": 0,
+    "push": 0,
+    "reset": 0
+  },
+  "merge_base": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "origin_main": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "porcelain_bytes": 12853784,
+  "porcelain_entry_count": 51198,
+  "porcelain_sha256": "bf80c608888e05d39a3b41f6db0402e005a1f285a53faadd243161640748ff87",
+  "staged_index_sha256": "a40169043c3bfffd481a7ed1bddf3e52663d61379bedfd2610781457d11f947c",
+  "staged_path_count": 359
+}

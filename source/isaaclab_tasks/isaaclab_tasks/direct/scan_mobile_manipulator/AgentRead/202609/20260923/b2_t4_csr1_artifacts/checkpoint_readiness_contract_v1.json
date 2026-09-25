@@ -1,0 +1,59 @@
+{
+  "blocking_gaps": [
+    "actor optimizer states absent",
+    "critic optimizer state absent",
+    "progression/update counter absent",
+    "fresh-process continuation with preserved optimizer state not tested"
+  ],
+  "checkpoint_specific_gate_count": 8,
+  "checkpoint_specific_gates": [
+    {
+      "blocking": true,
+      "gate": "complete actor/critic/optimizer/ValueNorm/progression state inventory",
+      "id": "K1"
+    },
+    {
+      "blocking": true,
+      "gate": "semantic manifest, fingerprint, actor ordering, and shape compatibility",
+      "id": "K2"
+    },
+    {
+      "blocking": true,
+      "gate": "quiescent post-update fresh-rollout boundary",
+      "id": "K3"
+    },
+    {
+      "blocking": true,
+      "gate": "atomic durable files and completion-marker-last publication",
+      "id": "K4"
+    },
+    {
+      "blocking": true,
+      "gate": "file hashes, tensor inventories, and full readback",
+      "id": "K5"
+    },
+    {
+      "blocking": true,
+      "gate": "fresh-process strict all-or-rollback restore",
+      "id": "K6"
+    },
+    {
+      "blocking": true,
+      "gate": "pre-save/post-load equality for weights, optimizer moments, ValueNorm, counters",
+      "id": "K7"
+    },
+    {
+      "blocking": true,
+      "gate": "several valid new post-load updates with continuity evidence",
+      "id": "K8"
+    }
+  ],
+  "core_gate_count": 12,
+  "current_implementation_pass": false,
+  "current_status": "CONTRACT_DEFINED_NOT_EXECUTED",
+  "includes_core_runtime_contract": true,
+  "layer_a_required": false,
+  "layer_b_requirement": "clean process exit and no checkpoint writer remain active",
+  "schema_version": "b2_t4_csr1_checkpoint_readiness_contract_v1",
+  "total_gate_count": 20
+}

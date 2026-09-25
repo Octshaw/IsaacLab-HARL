@@ -1,0 +1,79 @@
+{
+  "difference": "Only the serialized inventory terminator differs: 5c6e versus 0a.",
+  "historical_lock_algorithm": {
+    "absolute_path_included": false,
+    "authority": "R6 pre-start ad-hoc read-only command captured in Codex session log",
+    "custom_tool_call_jsonl_line": 40963,
+    "custom_tool_call_ordinal": 40962,
+    "custom_tool_output_jsonl_line": 40966,
+    "custom_tool_output_ordinal": 40965,
+    "fields": [
+      "path",
+      "bytes",
+      "sha256"
+    ],
+    "file_mode_included": false,
+    "inventory_includes_itself": false,
+    "json": "json.dumps(sort_keys=True,separators=(',',':'),ensure_ascii=True)",
+    "mtime_included": false,
+    "relative_path": "Path.relative_to(root).as_posix()",
+    "session_log": "C:\\Users\\33506\\.codex\\sessions\\2026\\08\\31\\rollout-2026-08-31T23-45-37-01a0587f-601a-7f83-b734-3a9655e48e78.jsonl",
+    "size_included": true,
+    "sort_rule": "Windows Path ordering over one common absolute root",
+    "terminal_bytes_hex": "5c6e",
+    "terminal_bytes_meaning": "literal backslash plus lowercase n",
+    "traversal": "sorted(root.rglob('*')); files only"
+  },
+  "historical_locked_digest": "d9d940c8d10ea30945d438ec9b2c10cfca9e028de3c3993bc447dee41c68a8c1",
+  "r5_harness_inventory_algorithm": {
+    "absolute_path_included": false,
+    "fields": [
+      "path",
+      "bytes",
+      "sha256"
+    ],
+    "file_mode_included": false,
+    "inventory_includes_itself": false,
+    "json": "json.dumps(sort_keys=True,separators=(',',':'),ensure_ascii=True)",
+    "mtime_included": false,
+    "relative_path": "Path.relative_to(root).as_posix()",
+    "size_included": true,
+    "source_fragment": [
+      {
+        "line": 108,
+        "text": "def _inventory(root: Path) -> tuple[list[dict[str, Any]], str]:"
+      },
+      {
+        "line": 109,
+        "text": "    rows = ["
+      },
+      {
+        "line": 110,
+        "text": "        {\"path\": path.relative_to(root).as_posix(), \"bytes\": path.stat().st_size, \"sha256\": _sha(path)}"
+      },
+      {
+        "line": 111,
+        "text": "        for path in sorted(root.rglob(\"*\")) if path.is_file()"
+      },
+      {
+        "line": 112,
+        "text": "    ]"
+      },
+      {
+        "line": 113,
+        "text": "    encoded = json.dumps(rows, sort_keys=True, separators=(\",\", \":\"), ensure_ascii=True).encode() + b\"\\n\""
+      },
+      {
+        "line": 114,
+        "text": "    return rows, hashlib.sha256(encoded).hexdigest()"
+      }
+    ],
+    "source_path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_r5_real_fresh_process_checkpoint_continuation.py",
+    "source_sha256": "e6546bdae034a7abb18d1ad70e16a4e2f5eab897251ba4561acf2e5d604fd039",
+    "symbol": "_inventory",
+    "terminal_bytes_hex": "0a",
+    "terminal_bytes_meaning": "one LF byte",
+    "traversal": "sorted(root.rglob('*')); files only"
+  },
+  "result": "PASS"
+}

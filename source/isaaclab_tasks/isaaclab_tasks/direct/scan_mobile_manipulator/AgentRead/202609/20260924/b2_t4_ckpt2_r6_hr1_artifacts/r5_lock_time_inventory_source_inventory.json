@@ -1,0 +1,33 @@
+{
+  "artifact_root_manifest_found": false,
+  "final_result_embedded_manifest_found": false,
+  "per_file_manifest_found": false,
+  "recoverable_sources": [
+    {
+      "contains_old_digest": true,
+      "contains_per_file_rows": false,
+      "jsonl_lines": [
+        40963,
+        40966
+      ],
+      "kind": "aggregate_creation_command_and_output",
+      "path": "C:\\Users\\33506\\.codex\\sessions\\2026\\08\\31\\rollout-2026-08-31T23-45-37-01a0587f-601a-7f83-b734-3a9655e48e78.jsonl",
+      "role": "Exact algorithm, lock timestamp, file count, and aggregate digest authority."
+    },
+    {
+      "contains_per_file_rows": false,
+      "kind": "embedded_aggregate_constant",
+      "path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_r6_real_fresh_process_checkpoint_continuation.py",
+      "role": "R6 expected aggregate value used by the failed historical gate.",
+      "sha256": "d71fe3a32ec3bc5493587a4dfad148faf58263ea1595ef1030031e8d75beefb4"
+    },
+    {
+      "contains_per_file_rows": false,
+      "kind": "failed_preservation_receipt",
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r6_artifacts/historical_ckpt2_r5_preservation.json",
+      "role": "Records old/current aggregate mismatch and stable harness/report anchors.",
+      "sha256": "f2bf52c1776598ba86e435c1b46ba06370ca2c51692673392c698ec13aba57e2"
+    }
+  ],
+  "result": "PASS"
+}

@@ -1,0 +1,6 @@
+{
+  "algorithm": "SHA-256",
+  "manifest_path": "prospective_historical_preservation_contract_v1.json",
+  "manifest_sha256": "1a426b8673a86f05604658dfa21b604de2bda9d4b6838bb7def711ea146d13ec",
+  "self_referential": false
+}

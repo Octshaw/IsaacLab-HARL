@@ -1,0 +1,299 @@
+{
+  "advisory_policy": [
+    "changed derived summary",
+    "changed diagnostic",
+    "extra noncore diagnostic"
+  ],
+  "algorithm_version": "sorted-relative-byte-sha256-v1",
+  "external_manifest_sha256_required_after_write": true,
+  "forbidden_inputs": [
+    "mtime",
+    "creation time",
+    "absolute path",
+    "directory iteration order",
+    "locale"
+  ],
+  "hard_fail_policy": [
+    "missing core",
+    "changed core bytes",
+    "changed required checkpoint-blocking authority"
+  ],
+  "immutable_core_entries": [
+    {
+      "relative_path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_r5_real_fresh_process_checkpoint_continuation.py",
+      "sha256": "e6546bdae034a7abb18d1ad70e16a4e2f5eab897251ba4561acf2e5d604fd039",
+      "size": 50054
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/PHASE_B2_T4_CKPT2_R5_REAL_FRESH_PROCESS_CHECKPOINT_CONTINUATION_REPORT.md",
+      "sha256": "88bcbadf81b8c531274b000b79a6912a6a915c6788aa149180deb7dac572d19e",
+      "size": 8496
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/actor_plan_count_authority_inventory.json",
+      "sha256": "32db3a31221725645bd180e798d115bb7e61d9537dd2c5c2963970c2e3b5a313",
+      "size": 1711
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/ckpt1_preservation.json",
+      "sha256": "e7c389e3ed4ccbe45c000905164f0d718fc0d0cf819d800557f1965c4cdfece9",
+      "size": 814
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/ckpt2_r5_pre_runtime_freeze.json",
+      "sha256": "8207d759d14a24acc75c831e2c55949ccf8e9f16e8d24ad8b94a9b4e1a082438",
+      "size": 1087
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/failure_receipt.json",
+      "sha256": "0adb1b716d607ae755c8bb71ae433371fc504338657318ddfbd3d2c761acbd91",
+      "size": 822
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/final_stop_adjudication.json",
+      "sha256": "67d1459e41f83f630429d4597819691387a31e23de370ff4f02b5b484000ba31",
+      "size": 1808
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/core_process_config_authority.json",
+      "sha256": "7c3cbb68e38de90657a2585ad2c464ac116d9e04e6d6e9990d56b9dbc70e9535",
+      "size": 12513
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/core_tx1_failure.json",
+      "sha256": "d0988fe99517145cdd88542d7fb58f4bee0e2f71574abf2c24715188413da3aa",
+      "size": 1944
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/core_tx1_rollout_decision_evidence.json",
+      "sha256": "5ae871957284a85ca58d08738dee436966f6a695d4353bd7416c5563baa308fe",
+      "size": 30028
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/failure_receipt.json",
+      "sha256": "aca17ce11cc5d040e0618326b928a789579cfb134bc04b54288097ea713c1a62",
+      "size": 3431
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/initial_state.json",
+      "sha256": "e1849d175e1d792277a315ab2812be3cae19ad2d7a1f394398dcfd577788c092",
+      "size": 20298
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/runtime_identity.json",
+      "sha256": "4b4501b67ecb5fef0ec69e19c45a5fdcfd3bce183b94254706b37a9807456bad",
+      "size": 381
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/shutdown_result.json",
+      "sha256": "b7aecae22191e5a8b86bb99a6600bc90eb1bfb71132fe92ab0d18cb8e4fa8b1a",
+      "size": 191
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a_environment_creation.json",
+      "sha256": "7fc469ecd6726ff0f6997366bc09d512b3e1d49857de2e340ad5babe09c521fa",
+      "size": 231
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a_environment_registration.json",
+      "sha256": "44d0921abd5f1c0ffab7aa85203785321252d48539a850af5eadb4bdc12eb10d",
+      "size": 367
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a_parent_adjudication.json",
+      "sha256": "4e751596637e3bdf110de8c63c9d638cddd6f40986d279992bfde7b6e3ee03ba",
+      "size": 600
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a_real_package_identity.json",
+      "sha256": "94b332d75cd3f338f6c193135580ac120a7dac73e7042554d84d4819dff158b8",
+      "size": 546
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_b_launch_gate.json",
+      "sha256": "0816de03c8f41f3b09f3e63f214c3178a4eb570f210fb0a7f6869e8bc5edced4",
+      "size": 573
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_quiescence.json",
+      "sha256": "1f775dbeb6d220704ebbfeedb5cb7a49c449164c5aa754aace97260ab81810ab",
+      "size": 365
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/pure_qualification_result.json",
+      "sha256": "f331e8ada258e61e9fa39c98635818ce96d76140af7bb5074edbe486f9fc8800",
+      "size": 341
+    }
+  ],
+  "lock_boundary": "after worker shutdown, process quiescence, final adjudication, final report, and TASK_PROGRESS archive",
+  "manifest_digest": "54bf0cb465f579ac4ab82504344077509fc5dc246821effb86c0ed65188e9827",
+  "manifest_digest_scope": "canonical core and optional entry payload; excludes this manifest file",
+  "optional_noncore_entries": [
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/actor_plan_count_negative_matrix.json",
+      "sha256": "49709200c2733dc170bbcff220e52885cb994f196e7547982d8bc9a36b9f1745",
+      "size": 2303
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/actor_plan_dynamic_positive_matrix.json",
+      "sha256": "53047ed79b7c3ddaefb28190213c4bab4249fbeb1a2ac414c337f38b80c28281",
+      "size": 11150
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/ckpt2_r5_preflight.json",
+      "sha256": "96ac0f39b48d34a3f8941b22c164ddfc4b62532ab07bd828469fcb74d2c090f1",
+      "size": 806
+    },
+    {
+      "authority_class": "OTHER",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/ckpt2_r5_run_identity.json",
+      "sha256": "0c9740b4d612b3156a5320e7d2b3fd64473310c071ac6d218d659a9a3984599e",
+      "size": 143
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/clean_interpreter_baseline.json",
+      "sha256": "7f3680f6aa901dae589cd6ed0c9fcb28f2e96c5e15dc9453ef1f33063228b667",
+      "size": 241
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/historical_actor_adam_plan_consistency.json",
+      "sha256": "62e8448c903744c017f35f62858a5f2be78c44497b9395a19b1e8fbc766c6a8a",
+      "size": 577
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/historical_ckpt2_preservation.json",
+      "sha256": "fcd77c938371483ab5df8e6fba909f12828a13be0ff99044aee3a353571f7e55",
+      "size": 413
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/historical_ckpt2_r1_preservation.json",
+      "sha256": "b4a73dedf1f90167a0046f571638e36145f4d2288f0c6bd945ee3f8d8a141b4c",
+      "size": 413
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/historical_ckpt2_r2_preservation.json",
+      "sha256": "4a77ad5a7d11c89928b8cd7211c143a6ef5f586d9a61aee1ca14ae8f86be1166",
+      "size": 413
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/historical_ckpt2_r3_preservation.json",
+      "sha256": "94a2017acab0cdcad4e9e369fca1ba496137b9fc3add63467ba61a38b2e417f5",
+      "size": 413
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/historical_ckpt2_r4_preservation.json",
+      "sha256": "3e005d4988d20b981b5494261498072e79a95b51243ba320dd5169f1e100e69d",
+      "size": 476
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/historical_dynamic_actor_plan_consistency.json",
+      "sha256": "941dfa10db0480d55ee43748c1e3931b0fbe927e51f4b46525f51b099f5dd553",
+      "size": 2259
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/inherited_contract_preservation.json",
+      "sha256": "9b21d34b2ea4ab352925ceb79b5b99e5cd6e4f65cec7109f5682cd4ecbaf02d5",
+      "size": 388
+    },
+    {
+      "authority_class": "PROCESS_SHUTDOWN_BOOKKEEPING",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/parent/parent_process_inventory.json",
+      "sha256": "cbfbfc4af7b4a11bd590f6c73e495785614fe86e8cf9e4e7a0ec8d5eaa145461",
+      "size": 422
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/pre_runtime_harness_repair_log.json",
+      "sha256": "e5a50f85c3871b528e4510c5ea5ab0b02ba285124570ba138e08f4587712386d",
+      "size": 371
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/preflight_ckpt1_pure.json",
+      "sha256": "a383d829196bfaed5ef95bc6b501c1748241aabd8267834d38933c60d43b72ae",
+      "size": 2833
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/core_failure.json",
+      "sha256": "d0988fe99517145cdd88542d7fb58f4bee0e2f71574abf2c24715188413da3aa",
+      "size": 1944
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/core_runtime_checkpoints.jsonl",
+      "sha256": "63509b08a3afa753013f5a3d8521de5cf8331689159b95263746e2f79335d199",
+      "size": 2768
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/environment_creation.json",
+      "sha256": "7fc469ecd6726ff0f6997366bc09d512b3e1d49857de2e340ad5babe09c521fa",
+      "size": 231
+    },
+    {
+      "authority_class": "DIAGNOSTIC",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/pure_runtime_process_isolation.json",
+      "sha256": "1117886d762c3c663a8bb223f638911b24d9363ac6353fa7aa0d0211943bf0ab",
+      "size": 222
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/r4_fixed_actor_count_predicate_failure_reproduction.json",
+      "sha256": "d8cb646de9da5eb6c2fdb1ab558ead114d0b9b0cbcbf4b2f0554934bf05bc7a8",
+      "size": 375
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/repository_authority.json",
+      "sha256": "a829e8df1f87f6e2492babc040728a9725903cf0a7428c3dc28df7a9f726dc78",
+      "size": 1395
+    },
+    {
+      "authority_class": "DERIVED_SUMMARY",
+      "drift_policy": "ADVISORY",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/transaction_ledger_actor_plan_binding_v1.json",
+      "sha256": "76ee828ce4d6713154983d3e1a2d81d7d0d772d515247586a31519cbe07d69f6",
+      "size": 526
+    }
+  ],
+  "phase": "B2-T4-CKPT2-R5",
+  "result": "QUALIFIED_BY_OFFLINE_MATRIX",
+  "root_semantics": "repository root; relative POSIX paths only",
+  "self_referential_manifest": false,
+  "version": "b2_t4_historical_preservation_v1"
+}

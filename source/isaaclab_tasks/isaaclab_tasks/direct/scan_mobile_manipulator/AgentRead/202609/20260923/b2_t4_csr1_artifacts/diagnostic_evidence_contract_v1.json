@@ -1,0 +1,133 @@
+{
+  "artifact_count": 14,
+  "items": [
+    {
+      "artifact": "PPQ",
+      "detects": "forensic receipt unavailable while direct evidence remains",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "PPQ diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it aggregates already validated direct evidence and has no mutation or checkpoint-state role"
+    },
+    {
+      "artifact": "artifact ownership",
+      "detects": "audit artifact collision",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "artifact ownership diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it protects forensic output paths, not learner or checkpoint contents"
+    },
+    {
+      "artifact": "namespace purity",
+      "detects": "provenance namespace contaminated",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "namespace purity diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it protects provenance separation, not executed optimization semantics"
+    },
+    {
+      "artifact": "source-phase authority",
+      "detects": "phase claim cannot be published",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "source-phase authority diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it authorizes an audit claim but does not create or validate learner state"
+    },
+    {
+      "artifact": "source-phase binding",
+      "detects": "run provenance incomplete",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "source-phase binding diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it binds provenance identity but does not affect model or optimizer state"
+    },
+    {
+      "artifact": "runtime authority",
+      "detects": "formal audit identity incomplete",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "runtime authority diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it is formal-run provenance rather than a learner-state dependency"
+    },
+    {
+      "artifact": "RACQ run binding",
+      "detects": "RACQ publication cannot be qualified",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "RACQ run binding diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it binds a forensic adjudicator and has no checkpoint-state dependency"
+    },
+    {
+      "artifact": "shared Layer-A source projection",
+      "detects": "forensic projection unavailable",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "shared Layer-A source projection diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it is a redundant projection of canonical evidence"
+    },
+    {
+      "artifact": "Layer-A 43/90 receipt",
+      "detects": "rich receipt unavailable",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "Layer-A 43/90 receipt diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it is a rich envelope over direct evidence and does not mutate the learner"
+    },
+    {
+      "artifact": "39/39 inherited predicates",
+      "detects": "aggregate audit receipt incomplete",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "39/39 inherited predicates diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "they re-adjudicate direct gates already retained in the core contract"
+    },
+    {
+      "artifact": "9/9 RACQ predicates",
+      "detects": "authority receipt incomplete",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "9/9 RACQ predicates diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "they adjudicate provenance of the forensic envelope, not learner state"
+    },
+    {
+      "artifact": "supervisor result",
+      "detects": "summary unavailable; direct evidence remains",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "supervisor result diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it summarizes child results and cannot change already persisted learner evidence"
+    },
+    {
+      "artifact": "success-gate aggregation",
+      "detects": "aggregate verdict unavailable",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "success-gate aggregation diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it combines heterogeneous consequences into one verdict without adding semantics"
+    },
+    {
+      "artifact": "runtime_normalization_result equality",
+      "detects": "projection copy differs from canonical",
+      "failure_severity": "WARNING_AND_AFFECTED_CLAIM_ONLY",
+      "still_produce": true,
+      "visibility": "diagnostic receipt and final report",
+      "warning": "runtime_normalization_result equality diagnostic incomplete; its own forensic claim is not qualified",
+      "why_cannot_corrupt_learner_checkpoint_or_experiment": "it compares a canonical artifact with a post-runtime duplicate after learner mutation and environment close"
+    }
+  ],
+  "rule": "a diagnostic failure may not qualify its own forensic/provenance claim, but cannot block core/checkpoint/paper paths absent a concrete dependency",
+  "schema_version": "b2_t4_csr1_diagnostic_evidence_contract_v1"
+}

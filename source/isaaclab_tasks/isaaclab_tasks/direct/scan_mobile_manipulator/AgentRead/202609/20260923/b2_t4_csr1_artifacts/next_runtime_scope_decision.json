@@ -1,0 +1,9 @@
+{
+  "decision": "OPTION 2",
+  "full_160_transaction_repetition_required": false,
+  "next_fresh_execution": "bounded checkpoint-focused continuation: short valid training, atomic save, process exit, fresh-process load, exact learner-state comparison, several post-load updates",
+  "prerequisite_before_runtime": "separately authorize and implement optimizer/progression checkpoint completeness with pure/static tests",
+  "r15_authorized": false,
+  "reason": "R14 direct core-runtime evidence is sufficient for the named subsystem claims; the unresolved work is checkpoint-state completeness, not another normal-horizon proof",
+  "schema_version": "b2_t4_csr1_next_runtime_scope_decision_v1"
+}

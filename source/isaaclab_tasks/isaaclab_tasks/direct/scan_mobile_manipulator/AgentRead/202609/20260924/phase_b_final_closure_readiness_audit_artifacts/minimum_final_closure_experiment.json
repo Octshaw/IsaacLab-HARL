@@ -1,0 +1,91 @@
+{
+  "schema_version": "phase_b_final_closure_readiness_audit_v1",
+  "date": "2026-09-24",
+  "mode": "SOURCE_AND_RETAINED_EVIDENCE_ONLY",
+  "runtime_executed": false,
+  "authorization": "DESIGN ONLY; no runtime or harness changes authorized by this audit",
+  "recommended_transactions": {
+    "process_A": 1,
+    "process_B": 1,
+    "total": 2
+  },
+  "justification": "One nonempty real update fills every scoped Adam optimizer and makes ValueNorm/progression nontrivial; one real post-load update proves usable restored state. Repeated in-process rollover is already demonstrated, so neither 3+3 nor another normal-horizon campaign is logically necessary.",
+  "configuration": {
+    "profile": "event_gated_local_mrta",
+    "T": 2,
+    "E": 2,
+    "M": 3,
+    "N": 12,
+    "actor_epochs": 5,
+    "actor_minibatches": 2,
+    "critic_epochs": 5,
+    "critic_minibatches": 2,
+    "ValueNorm": true,
+    "independent_actors": true,
+    "schedule_total_updates": 12,
+    "environment_horizon": "A frozen previously qualified checkpoint-focused fixture may be reused; not a new normal-horizon proof."
+  },
+  "A": "Fresh real process/learner; LR position1 before rollout; one update p=1 through S10; populate all actor/critic Adam; snapshot at declared LR boundary and atomic strict save; clean exit.",
+  "B": "Fresh real process/learner; strict load before new rollout; exact same-boundary state comparison; use p+1=2 of12, then one real update; completed=2, next/LR position=3; S10 and clean exit.",
+  "minimum_precondition": "All actors must have nonempty Adam and participate in the chosen first rollout. If absent, reject the fixture/precondition; do not dynamically expand runtime without approval.",
+  "gates": [
+    {
+      "id": "G1",
+      "assertion": "Same effective fixed-scale event configuration and source in A/B; separate fresh OS processes; no old learner reuse or pure-import namespace pollution."
+    },
+    {
+      "id": "G2",
+      "assertion": "A completes one real S0-S10 update, every actor Adam and critic Adam populated, ValueNorm nontrivial, all required learner state finite; expected counts come from each frozen plan."
+    },
+    {
+      "id": "G3",
+      "assertion": "Save only at actual S10: no partial update, poison, pending permits, gradients, active optimizer/load or writer. Save does not change learner state."
+    },
+    {
+      "id": "G4",
+      "assertion": "One complete checkpoint generation atomically published and strictly validated, including all models/Adam/VN/progression/effective semantic configuration."
+    },
+    {
+      "id": "G5",
+      "assertion": "A exits and becomes inactive; parent requires durable semantic success plus validated checkpoint, never exit code alone, before launching B."
+    },
+    {
+      "id": "G6",
+      "assertion": "B strictly loads before collecting/training; all model tensors, Adam groups/moments/steps, VN fields and progression equal A's same-boundary snapshot, with correct device placement (ordinary Adam scalar step may stay CPU)."
+    },
+    {
+      "id": "G7",
+      "assertion": "B uses saved next update p+1 and saved total horizon; nonzero expected LR from original base LR, applied before pre-collection fingerprint; no scheduler restart or LR mutation inside collection."
+    },
+    {
+      "id": "G8",
+      "assertion": "One fresh B rollout and real S0-S10 update succeeds under reviewed event-return/DVM contracts; plan-derived actor and critic Adam deltas match actual steps and do not reset; legitimate zero-plan actors remain unchanged."
+    },
+    {
+      "id": "G9",
+      "assertion": "B ValueNorm progresses from the loaded state with exactly planned updates; completed/next/LR position advances once; all required learner/optimizer state remains finite."
+    },
+    {
+      "id": "G10",
+      "assertion": "B ends at S10, environment/application close and worker inactivity established; durable core results suffice to adjudicate, with no uncontrolled further update/retry."
+    }
+  ],
+  "not_required": [
+    "new lifecycle negative matrix",
+    "dynamic actor-plan theory reproof",
+    "event-return architecture reproof",
+    "all historical inventories",
+    "duplicate Layer-A/B/PPQ aggregation",
+    "new 160-update run",
+    "matching stochastic B trajectory to uninterrupted A",
+    "second checkpoint save",
+    "performance/convergence threshold"
+  ],
+  "repair_policy": {
+    "verdict": "SAFE WITH CORE-EVIDENCE AND AUTHORITY QUALIFICATIONS",
+    "before_first_mutation": "Clearly local harness/path/type/serialization/receipt corrections may be made under explicit final-run authority, logged and source-frozen again, with focused preflight. Recreate runtime process if imports or construction were contaminated. No new numbered phase needed.",
+    "after_mutation": "Never hot-patch active learner/harness, reinterpret expectations, or retry an update. Stop on semantic/checkpoint/restore/Adam/VN/progression failures AND when missing/ambiguous required core evidence prevents safe adjudication. Diagnostic-only publication failures may be repaired offline from immutable sufficient raw evidence; they do not automatically poison a valid S10 learner.",
+    "poison": "Use actual incomplete/ambiguous mutation or failed rollback, not any report error. If safety cannot be proved, stop and discard; preserve the failed attempt.",
+    "not_blanket_permission": "Do not make or execute any such repair/run in this audit; retries beyond reviewed scope require authorization."
+  }
+}

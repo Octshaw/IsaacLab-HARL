@@ -1,0 +1,16 @@
+{
+  "final_adjudication_artifact_utc": "2026-09-24T01:03:42.3056308Z",
+  "latest_r5_artifact_mtime_utc": "2026-09-24T01:03:42.305631Z",
+  "latest_r5_artifact_relative_path": "final_stop_adjudication.json",
+  "legitimate_r5_file_emission_after_lock": false,
+  "lock_after_all_r5_artifacts": true,
+  "lock_after_r5_report_finalization": true,
+  "lock_timing_drift": false,
+  "old_aggregate_lock_output_utc": "2026-09-24T01:56:12.389Z",
+  "process_a_runtime_started_utc": "2026-09-24T00:59:12.2044195Z",
+  "process_a_shutdown_artifact_utc": "2026-09-24T00:59:38.1346777Z",
+  "process_quiescence_artifact_utc": "2026-09-24T01:00:51.9410606Z",
+  "r5_report_final_mtime_utc": "2026-09-24T01:03:42.306623Z",
+  "r6_gate_failure_utc": "2026-09-24T02:04:52.253493Z",
+  "result": "PASS"
+}

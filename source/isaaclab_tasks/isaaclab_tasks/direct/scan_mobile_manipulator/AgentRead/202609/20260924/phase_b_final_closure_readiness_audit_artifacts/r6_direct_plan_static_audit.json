@@ -1,0 +1,36 @@
+{
+  "schema_version": "phase_b_final_closure_readiness_audit_v1",
+  "date": "2026-09-24",
+  "mode": "SOURCE_AND_RETAINED_EVIDENCE_ONLY",
+  "runtime_executed": false,
+  "verdict": "R6 DIRECT-PLAN REPAIR STATICALLY SOUND",
+  "scope": "Expected actor backward/step binding, not full R6 runtime qualification.",
+  "source_refs": [
+    "H1",
+    "H2",
+    "H3",
+    "T1",
+    "T5",
+    "T6"
+  ],
+  "checks": {
+    "direct_frozen_backward_fields": true,
+    "direct_frozen_step_fields": true,
+    "resolved_config_provenance_only": true,
+    "active_mapping_only_count_dependency": false,
+    "active_epoch_zero_fallback": false,
+    "active_fixed_555_acceptance_predicate": false,
+    "observed_counts_used_as_expected": false,
+    "returned_counts_and_adam_checked_against_plan": true,
+    "pre_mutation_source_boundary_checked": true,
+    "semantic_A_to_B_gate_present": true,
+    "pure_runtime_subprocess_separation_present": true
+  },
+  "caveats": [
+    "Historical (5,5,5) literals and the overridden R5 Mapping function remain in inherited text/diagnostics, not the R6 active count-acceptance path.",
+    "R6 adapter stamps plan_frozen/source flags; its digest equality alone is not an independent anti-tamper proof. Authority comes from the inspected frozen-plan producer, S3/S5 ordering and production post-update audit.",
+    "No pure qualification or real transaction was run by R6. This audit runs none.",
+    "Current historical aggregate gate remains C1; SOUND does not mean unmodified R6 executable or authorized."
+  ],
+  "harness_sha256": "d71fe3a32ec3bc5493587a4dfad148faf58263ea1595ef1030031e8d75beefb4"
+}

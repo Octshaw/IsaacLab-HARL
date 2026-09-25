@@ -1,0 +1,17 @@
+{
+  "flow": [
+    "raw runtime evidence",
+    "reviewed NORM-R1",
+    "atomic canonical runtime_normalization_result.json",
+    "read-only PPQ/paper/diagnostic consumers"
+  ],
+  "recommended": true,
+  "rules": [
+    "freeze or canonicalize once before publication",
+    "persist exactly once",
+    "all consumers reload canonical bytes",
+    "never compare an unretained mutable alias as a blocking gate",
+    "consumer projection failures emit warnings and block only the affected claim"
+  ],
+  "schema_version": "b2_t4_csr1_normalized_single_source_of_truth_design_v1"
+}

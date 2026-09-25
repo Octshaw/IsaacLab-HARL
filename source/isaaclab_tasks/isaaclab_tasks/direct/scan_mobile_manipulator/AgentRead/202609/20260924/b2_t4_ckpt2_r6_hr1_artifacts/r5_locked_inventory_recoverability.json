@@ -1,0 +1,10 @@
+{
+  "classification": "AGGREGATE_ONLY",
+  "current_complete_rows_reproduce_old_aggregate": true,
+  "interpretation": "No historical per-file manifest was persisted. Current complete byte rows reproduce the old aggregate under its exact recorded algorithm, but current per-file hashes are not relabeled as historical per-file records.",
+  "old_aggregate_algorithm_available": true,
+  "old_aggregate_digest_available": true,
+  "old_per_file_sha256_available": false,
+  "old_per_file_sizes_available": false,
+  "result": "PASS"
+}

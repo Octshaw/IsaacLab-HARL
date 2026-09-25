@@ -1,0 +1,414 @@
+{
+  "audited_major_gate_family_count": 40,
+  "class_counts": {
+    "CHECKPOINT_CONTINUATION_BLOCKING": 1,
+    "CORE_RUNTIME_BLOCKING": 23,
+    "DIAGNOSTIC_NONBLOCKING": 14,
+    "PAPER_EXPERIMENT_BLOCKING": 2
+  },
+  "classification_rule": "primary class is selected by concrete failure consequence, not historical position in the aggregate gate",
+  "gates": [
+    {
+      "failure_consequence": "partial or missing update",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "runtime transaction completion",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "complete update transaction",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "uncommitted update presented as complete",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "production S10",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "commit boundary",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "missing, duplicate, or reordered updates",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "transaction ledger",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "ordered update identity",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "learner or lifecycle discontinuity",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "bridge continuity",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "state continuity across updates",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "invalid bootstrap input",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "NR",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "nonterminal rollout completeness",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "runtime facts cannot be trusted",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "SR",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "serializer and post-S10 bookkeeping",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "actor update semantics invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "ZD",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "decision-valid zero-DVM actor path",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "actor optimization not established",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "actor evidence",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "actor backward and optimizer step",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "multi-agent update attribution invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "factor evidence",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "HAPPO sequential factor",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "critic optimization not established",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "critic evidence",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "critic loss/backward/step",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "critic targets change discontinuously",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "ValueNorm continuity",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "persistent return normalization",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "optimization continuity not established",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "Adam continuity",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "optimizer identity and moments",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "training target semantics invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "event returns",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "event-aware return semantics",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "terminal targets and lifecycle semantics invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "terminal/autoreset",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "terminal pre-reset facts",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "normal-horizon learning continuity absent",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "post-autoreset learning",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "continued learning after reset",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "missing/duplicate/out-of-order update records",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "PW",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "immutable optimizer-progress accounting",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "reported metrics cannot be qualified",
+      "future_blocking": "EXPERIMENT",
+      "gate_or_artifact": "NORM-R1",
+      "primary_class": "PAPER_EXPERIMENT_BLOCKING",
+      "protects": "canonical paper metric derivation",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "normalized experiment claims diverge from raw evidence",
+      "future_blocking": "EXPERIMENT",
+      "gate_or_artifact": "raw/normalized crosscheck",
+      "primary_class": "PAPER_EXPERIMENT_BLOCKING",
+      "protects": "metric lineage",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "forensic receipt unavailable while direct evidence remains",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "PPQ",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "90-field success receipt aggregation",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "lifecycle semantics invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "W1 cross-update ownership",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "ownership continuity",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "completion semantics invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "W2 multi-update completion",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "claim-complete-reopen lifecycle",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "actor evidence invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "W3 real zero-DVM actor",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "zero-DVM actor validity",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "critic target invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "W4 nonterminal bootstrap",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "nonterminal return bootstrap",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "terminal semantics invalid",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "W5 terminal/autoreset",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "terminal and reset boundary",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "continuation after autoreset absent",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "W6 post-autoreset training",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "new-generation learning",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "learner may mutate runtime P2",
+      "future_blocking": "CORE",
+      "gate_or_artifact": "W7 P2 immutability",
+      "primary_class": "CORE_RUNTIME_BLOCKING",
+      "protects": "learner/runtime separation",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": true,
+      "touches_learner_state": true
+    },
+    {
+      "failure_consequence": "audit artifact collision",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "artifact ownership",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "write-once evidence paths",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "provenance namespace contaminated",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "namespace purity",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "preflight/formal evidence separation",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "phase claim cannot be published",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "source-phase authority",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "audit phase provenance",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "run provenance incomplete",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "source-phase binding",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "run-to-authority provenance",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "formal audit identity incomplete",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "runtime authority",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "runtime identity provenance",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "RACQ publication cannot be qualified",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "RACQ run binding",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "RACQ provenance",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "forensic projection unavailable",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "shared Layer-A source projection",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "single projection builder",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "rich receipt unavailable",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "Layer-A 43/90 receipt",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "rich forensic envelope",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "aggregate audit receipt incomplete",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "39/39 inherited predicates",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "redundant aggregate adjudication",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "authority receipt incomplete",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "9/9 RACQ predicates",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "authority aggregate adjudication",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "fresh-process continuation unsafe",
+      "future_blocking": "CHECKPOINT",
+      "gate_or_artifact": "Layer-B process quiescence",
+      "primary_class": "CHECKPOINT_CONTINUATION_BLOCKING",
+      "protects": "clean process and checkpoint boundary",
+      "touches_checkpoint_state": true,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "summary unavailable; direct evidence remains",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "supervisor result",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "formal orchestration summary",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "aggregate verdict unavailable",
+      "future_blocking": "ADVISORY",
+      "gate_or_artifact": "success-gate aggregation",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "single historical 85-slot verdict",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    },
+    {
+      "failure_consequence": "projection copy differs from canonical",
+      "future_blocking": "ADVISORY_WITH_WARNING",
+      "gate_or_artifact": "runtime_normalization_result equality",
+      "primary_class": "DIAGNOSTIC_NONBLOCKING",
+      "protects": "duplicate post-runtime representation equality",
+      "touches_checkpoint_state": false,
+      "touches_experiment_semantics": false,
+      "touches_learner_state": false
+    }
+  ],
+  "historical_r14_aggregated_gate_count": 85,
+  "schema_version": "b2_t4_csr1_existing_closure_gate_inventory_v1"
+}

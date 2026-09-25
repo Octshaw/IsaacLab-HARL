@@ -1,0 +1,43 @@
+{
+  "schema": "staged_359_path_audit_v1",
+  "date": "2026-09-25",
+  "source": "git diff --cached --raw --no-abbrev -M; blob/mode/path inspection",
+  "index_sha256": "b6f207f1c398e1e0104583ab9abf403f8387389228d448829674f879ba250d61",
+  "logical_staged_entries": 359,
+  "raw_no_renames_paths": 718,
+  "staged_status": {
+    "R100": 359
+  },
+  "classification": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 359,
+    "E": 0,
+    "F": 0,
+    "G": 0,
+    "H": 0
+  },
+  "months": {
+    "202606": 95,
+    "202607": 172,
+    "202608": 92
+  },
+  "identical_blob_pairs": 359,
+  "identical_mode_pairs": 359,
+  "markdown_files": 359,
+  "exact_monthly_mapping_pairs": 359,
+  "unstaged_migrated_document_path_repairs": 266,
+  "unstaged_non_migration_content_exceptions": 0,
+  "answers": {
+    "entirely_monthly_migration": true,
+    "production": false,
+    "test_harness": false,
+    "generated_runtime": false,
+    "unrelated": false,
+    "git_currently_recognizes_all_renames": true,
+    "raw_add_delete_pairs_without_rename_detection": 359
+  },
+  "path_inventory": "phase_b_manual_commit_paths.json: commit A groups and removed_groups (plus two non-staged migration documents)",
+  "index_modified": false
+}

@@ -1,0 +1,12 @@
+{
+  "audited_major_gate_family_count": 40,
+  "checkpoint_blocking_surface_reduction_percent": 76.47,
+  "current_r14_blocking_gate_count": 85,
+  "diagnostic_only_count": 14,
+  "duplicate_or_redundant_blocking_predicates_removed_from_checkpoint_path": 65,
+  "note": "counts describe grouped consequence gates; they do not weaken any direct learner/lifecycle/checkpoint requirement",
+  "proposed_checkpoint_gate_count": 20,
+  "proposed_core_runtime_gate_count": 12,
+  "proposed_experiment_gate_count": 18,
+  "schema_version": "b2_t4_csr1_closure_complexity_reduction_summary_v1"
+}

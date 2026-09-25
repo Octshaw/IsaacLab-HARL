@@ -1,0 +1,24 @@
+{
+  "layer_a": {
+    "advisory_for": [
+      "core runtime",
+      "checkpoint continuation"
+    ],
+    "blocking_for": [
+      "its own rich forensic/provenance publication"
+    ],
+    "future_role": "MIXED",
+    "reason": "direct core evidence and canonical checkpoint evidence must be authoritative; 43/90 and 39+9 aggregation are redundant projections"
+  },
+  "layer_b": {
+    "advisory_for": [
+      "broad supervisor aggregation unrelated to checkpoint safety"
+    ],
+    "blocking_for": [
+      "process quiescence at fresh-process checkpoint continuation"
+    ],
+    "future_role": "MIXED",
+    "reason": "worker/writer quiescence protects the checkpoint boundary, while the full historical orchestration envelope does not"
+  },
+  "schema_version": "b2_t4_csr1_layer_roles_v1"
+}

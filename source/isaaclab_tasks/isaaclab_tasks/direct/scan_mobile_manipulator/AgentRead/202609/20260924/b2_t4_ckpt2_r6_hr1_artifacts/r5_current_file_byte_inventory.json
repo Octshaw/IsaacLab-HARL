@@ -1,0 +1,218 @@
+{
+  "aggregate_under_r5_harness_algorithm": "21dd70b567c737efcd1dfe776ea4a1db0370acfbca3988db26a1dd392d4dc609",
+  "artifact_file_count": 42,
+  "entries": [
+    {
+      "byte_size": 1711,
+      "relative_path": "actor_plan_count_authority_inventory.json",
+      "sha256": "32db3a31221725645bd180e798d115bb7e61d9537dd2c5c2963970c2e3b5a313"
+    },
+    {
+      "byte_size": 2303,
+      "relative_path": "actor_plan_count_negative_matrix.json",
+      "sha256": "49709200c2733dc170bbcff220e52885cb994f196e7547982d8bc9a36b9f1745"
+    },
+    {
+      "byte_size": 11150,
+      "relative_path": "actor_plan_dynamic_positive_matrix.json",
+      "sha256": "53047ed79b7c3ddaefb28190213c4bab4249fbeb1a2ac414c337f38b80c28281"
+    },
+    {
+      "byte_size": 814,
+      "relative_path": "ckpt1_preservation.json",
+      "sha256": "e7c389e3ed4ccbe45c000905164f0d718fc0d0cf819d800557f1965c4cdfece9"
+    },
+    {
+      "byte_size": 1087,
+      "relative_path": "ckpt2_r5_pre_runtime_freeze.json",
+      "sha256": "8207d759d14a24acc75c831e2c55949ccf8e9f16e8d24ad8b94a9b4e1a082438"
+    },
+    {
+      "byte_size": 806,
+      "relative_path": "ckpt2_r5_preflight.json",
+      "sha256": "96ac0f39b48d34a3f8941b22c164ddfc4b62532ab07bd828469fcb74d2c090f1"
+    },
+    {
+      "byte_size": 143,
+      "relative_path": "ckpt2_r5_run_identity.json",
+      "sha256": "0c9740b4d612b3156a5320e7d2b3fd64473310c071ac6d218d659a9a3984599e"
+    },
+    {
+      "byte_size": 241,
+      "relative_path": "clean_interpreter_baseline.json",
+      "sha256": "7f3680f6aa901dae589cd6ed0c9fcb28f2e96c5e15dc9453ef1f33063228b667"
+    },
+    {
+      "byte_size": 822,
+      "relative_path": "failure_receipt.json",
+      "sha256": "0adb1b716d607ae755c8bb71ae433371fc504338657318ddfbd3d2c761acbd91"
+    },
+    {
+      "byte_size": 1808,
+      "relative_path": "final_stop_adjudication.json",
+      "sha256": "67d1459e41f83f630429d4597819691387a31e23de370ff4f02b5b484000ba31"
+    },
+    {
+      "byte_size": 577,
+      "relative_path": "historical_actor_adam_plan_consistency.json",
+      "sha256": "62e8448c903744c017f35f62858a5f2be78c44497b9395a19b1e8fbc766c6a8a"
+    },
+    {
+      "byte_size": 413,
+      "relative_path": "historical_ckpt2_preservation.json",
+      "sha256": "fcd77c938371483ab5df8e6fba909f12828a13be0ff99044aee3a353571f7e55"
+    },
+    {
+      "byte_size": 413,
+      "relative_path": "historical_ckpt2_r1_preservation.json",
+      "sha256": "b4a73dedf1f90167a0046f571638e36145f4d2288f0c6bd945ee3f8d8a141b4c"
+    },
+    {
+      "byte_size": 413,
+      "relative_path": "historical_ckpt2_r2_preservation.json",
+      "sha256": "4a77ad5a7d11c89928b8cd7211c143a6ef5f586d9a61aee1ca14ae8f86be1166"
+    },
+    {
+      "byte_size": 413,
+      "relative_path": "historical_ckpt2_r3_preservation.json",
+      "sha256": "94a2017acab0cdcad4e9e369fca1ba496137b9fc3add63467ba61a38b2e417f5"
+    },
+    {
+      "byte_size": 476,
+      "relative_path": "historical_ckpt2_r4_preservation.json",
+      "sha256": "3e005d4988d20b981b5494261498072e79a95b51243ba320dd5169f1e100e69d"
+    },
+    {
+      "byte_size": 2259,
+      "relative_path": "historical_dynamic_actor_plan_consistency.json",
+      "sha256": "941dfa10db0480d55ee43748c1e3931b0fbe927e51f4b46525f51b099f5dd553"
+    },
+    {
+      "byte_size": 388,
+      "relative_path": "inherited_contract_preservation.json",
+      "sha256": "9b21d34b2ea4ab352925ceb79b5b99e5cd6e4f65cec7109f5682cd4ecbaf02d5"
+    },
+    {
+      "byte_size": 422,
+      "relative_path": "parent/parent_process_inventory.json",
+      "sha256": "cbfbfc4af7b4a11bd590f6c73e495785614fe86e8cf9e4e7a0ec8d5eaa145461"
+    },
+    {
+      "byte_size": 371,
+      "relative_path": "pre_runtime_harness_repair_log.json",
+      "sha256": "e5a50f85c3871b528e4510c5ea5ab0b02ba285124570ba138e08f4587712386d"
+    },
+    {
+      "byte_size": 2833,
+      "relative_path": "preflight_ckpt1_pure.json",
+      "sha256": "a383d829196bfaed5ef95bc6b501c1748241aabd8267834d38933c60d43b72ae"
+    },
+    {
+      "byte_size": 1944,
+      "relative_path": "process_a/core_failure.json",
+      "sha256": "d0988fe99517145cdd88542d7fb58f4bee0e2f71574abf2c24715188413da3aa"
+    },
+    {
+      "byte_size": 12513,
+      "relative_path": "process_a/core_process_config_authority.json",
+      "sha256": "7c3cbb68e38de90657a2585ad2c464ac116d9e04e6d6e9990d56b9dbc70e9535"
+    },
+    {
+      "byte_size": 2768,
+      "relative_path": "process_a/core_runtime_checkpoints.jsonl",
+      "sha256": "63509b08a3afa753013f5a3d8521de5cf8331689159b95263746e2f79335d199"
+    },
+    {
+      "byte_size": 1944,
+      "relative_path": "process_a/core_tx1_failure.json",
+      "sha256": "d0988fe99517145cdd88542d7fb58f4bee0e2f71574abf2c24715188413da3aa"
+    },
+    {
+      "byte_size": 30028,
+      "relative_path": "process_a/core_tx1_rollout_decision_evidence.json",
+      "sha256": "5ae871957284a85ca58d08738dee436966f6a695d4353bd7416c5563baa308fe"
+    },
+    {
+      "byte_size": 231,
+      "relative_path": "process_a/environment_creation.json",
+      "sha256": "7fc469ecd6726ff0f6997366bc09d512b3e1d49857de2e340ad5babe09c521fa"
+    },
+    {
+      "byte_size": 3431,
+      "relative_path": "process_a/failure_receipt.json",
+      "sha256": "aca17ce11cc5d040e0618326b928a789579cfb134bc04b54288097ea713c1a62"
+    },
+    {
+      "byte_size": 20298,
+      "relative_path": "process_a/initial_state.json",
+      "sha256": "e1849d175e1d792277a315ab2812be3cae19ad2d7a1f394398dcfd577788c092"
+    },
+    {
+      "byte_size": 381,
+      "relative_path": "process_a/runtime_identity.json",
+      "sha256": "4b4501b67ecb5fef0ec69e19c45a5fdcfd3bce183b94254706b37a9807456bad"
+    },
+    {
+      "byte_size": 191,
+      "relative_path": "process_a/shutdown_result.json",
+      "sha256": "b7aecae22191e5a8b86bb99a6600bc90eb1bfb71132fe92ab0d18cb8e4fa8b1a"
+    },
+    {
+      "byte_size": 231,
+      "relative_path": "process_a_environment_creation.json",
+      "sha256": "7fc469ecd6726ff0f6997366bc09d512b3e1d49857de2e340ad5babe09c521fa"
+    },
+    {
+      "byte_size": 367,
+      "relative_path": "process_a_environment_registration.json",
+      "sha256": "44d0921abd5f1c0ffab7aa85203785321252d48539a850af5eadb4bdc12eb10d"
+    },
+    {
+      "byte_size": 600,
+      "relative_path": "process_a_parent_adjudication.json",
+      "sha256": "4e751596637e3bdf110de8c63c9d638cddd6f40986d279992bfde7b6e3ee03ba"
+    },
+    {
+      "byte_size": 546,
+      "relative_path": "process_a_real_package_identity.json",
+      "sha256": "94b332d75cd3f338f6c193135580ac120a7dac73e7042554d84d4819dff158b8"
+    },
+    {
+      "byte_size": 573,
+      "relative_path": "process_b_launch_gate.json",
+      "sha256": "0816de03c8f41f3b09f3e63f214c3178a4eb570f210fb0a7f6869e8bc5edced4"
+    },
+    {
+      "byte_size": 365,
+      "relative_path": "process_quiescence.json",
+      "sha256": "1f775dbeb6d220704ebbfeedb5cb7a49c449164c5aa754aace97260ab81810ab"
+    },
+    {
+      "byte_size": 341,
+      "relative_path": "pure_qualification_result.json",
+      "sha256": "f331e8ada258e61e9fa39c98635818ce96d76140af7bb5074edbe486f9fc8800"
+    },
+    {
+      "byte_size": 222,
+      "relative_path": "pure_runtime_process_isolation.json",
+      "sha256": "1117886d762c3c663a8bb223f638911b24d9363ac6353fa7aa0d0211943bf0ab"
+    },
+    {
+      "byte_size": 375,
+      "relative_path": "r4_fixed_actor_count_predicate_failure_reproduction.json",
+      "sha256": "d8cb646de9da5eb6c2fdb1ab558ead114d0b9b0cbcbf4b2f0554934bf05bc7a8"
+    },
+    {
+      "byte_size": 1395,
+      "relative_path": "repository_authority.json",
+      "sha256": "a829e8df1f87f6e2492babc040728a9725903cf0a7428c3dc28df7a9f726dc78"
+    },
+    {
+      "byte_size": 526,
+      "relative_path": "transaction_ledger_actor_plan_binding_v1.json",
+      "sha256": "76ee828ce4d6713154983d3e1a2d81d7d0d772d515247586a31519cbe07d69f6"
+    }
+  ],
+  "result": "PASS",
+  "root_role": "read-only historical R5 artifact root"
+}

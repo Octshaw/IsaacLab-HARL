@@ -1,0 +1,48 @@
+{
+  "case_count": 8,
+  "cases": [
+    {
+      "case": "same_core_bytes",
+      "outcome": "PASS",
+      "result": "PASS"
+    },
+    {
+      "case": "changed_core_byte",
+      "outcome": "STOP",
+      "result": "PASS"
+    },
+    {
+      "case": "missing_core_file",
+      "outcome": "STOP",
+      "result": "PASS"
+    },
+    {
+      "case": "changed_derived_diagnostic",
+      "outcome": "ADVISORY",
+      "result": "PASS"
+    },
+    {
+      "case": "mtime_only_change",
+      "outcome": "PASS",
+      "result": "PASS"
+    },
+    {
+      "case": "absolute_root_relocation",
+      "outcome": "PASS",
+      "result": "PASS"
+    },
+    {
+      "case": "directory_iteration_reordering",
+      "outcome": "PASS",
+      "result": "PASS"
+    },
+    {
+      "case": "extra_untracked_diagnostic",
+      "outcome": "ADVISORY",
+      "result": "PASS"
+    }
+  ],
+  "pass_count": 8,
+  "result": "PASS",
+  "runtime_imports": false
+}

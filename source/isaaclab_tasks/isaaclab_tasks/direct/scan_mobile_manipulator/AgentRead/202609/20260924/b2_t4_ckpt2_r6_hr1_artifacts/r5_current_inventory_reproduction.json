@@ -1,0 +1,22 @@
+{
+  "approximate_algorithm_used": false,
+  "artifact_file_count": 42,
+  "historical_ad_hoc_encoding": {
+    "encoded_bytes": 5654,
+    "exact_match": true,
+    "expected_sha256": "d9d940c8d10ea30945d438ec9b2c10cfca9e028de3c3993bc447dee41c68a8c1",
+    "reproduced_sha256": "d9d940c8d10ea30945d438ec9b2c10cfca9e028de3c3993bc447dee41c68a8c1",
+    "suffix_hex": "5c6e"
+  },
+  "inventory_json_body_bytes": 5652,
+  "inventory_json_body_sha256": "18d5c4fee2800abe5dff09cb357e776041b2c247eb8b36e123634659b8ca7244",
+  "r5_harness_encoding": {
+    "encoded_bytes": 5653,
+    "exact_match": true,
+    "expected_sha256": "21dd70b567c737efcd1dfe776ea4a1db0370acfbca3988db26a1dd392d4dc609",
+    "reproduced_sha256": "21dd70b567c737efcd1dfe776ea4a1db0370acfbca3988db26a1dd392d4dc609",
+    "suffix_hex": "0a"
+  },
+  "result": "PASS",
+  "same_input_rows_used_for_both_digests": true
+}

@@ -1,0 +1,52 @@
+{
+  "authority_rule": "runtime_normalization_result.json is the sole normalized evidence authority; downstream consumers read it and do not republish or compare an ephemeral duplicate",
+  "representations": [
+    {
+      "canonical": true,
+      "creation_time": "post-runtime before PPQ",
+      "diagnostic_only": false,
+      "mutable_after_creation": false,
+      "name": "runtime_normalization_result.json",
+      "producer": "reviewed NORM-R1 in formal_worker",
+      "required_for_checkpoint": false,
+      "required_for_learner_continuation": false,
+      "required_for_paper_metrics": true,
+      "sha256": "b65cf8ad5c439fb2180db7792edb06bec9f4d17b8ebdf275d45b62e87febf081"
+    },
+    {
+      "canonical": false,
+      "creation_time": "same normalization call",
+      "diagnostic_only": true,
+      "mutable_after_creation": "not frozen; passed by reference",
+      "name": "formal_worker local converted",
+      "producer": "reviewed NORM-R1",
+      "required_for_checkpoint": false,
+      "required_for_learner_continuation": false,
+      "required_for_paper_metrics": false,
+      "retained": false
+    },
+    {
+      "canonical": false,
+      "creation_time": "post-NORM",
+      "diagnostic_only": true,
+      "mutable_after_creation": "PPQ code deep-copies before phase rewrite",
+      "name": "converted.normalized consumed by PPQ",
+      "producer": "projection of local converted",
+      "required_for_checkpoint": false,
+      "required_for_learner_continuation": false,
+      "required_for_paper_metrics": false
+    },
+    {
+      "canonical": false,
+      "creation_time": "post-runtime Layer-A",
+      "diagnostic_only": true,
+      "mutable_after_creation": false,
+      "name": "Layer-A canonical source-map reload",
+      "producer": "build_layer_a_source_map_from_canonical_artifacts",
+      "required_for_checkpoint": false,
+      "required_for_learner_continuation": false,
+      "required_for_paper_metrics": false
+    }
+  ],
+  "schema_version": "b2_t4_csr1_normalized_evidence_authority_inventory_v1"
+}

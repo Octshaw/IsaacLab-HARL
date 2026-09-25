@@ -1,0 +1,178 @@
+{
+  "artifact_root_core_count": 19,
+  "artifact_root_entries": [
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 1711,
+      "downstream_dependency": "R5 report sections C and G",
+      "relative_path": "actor_plan_count_authority_inventory.json",
+      "sha256": "32db3a31221725645bd180e798d115bb7e61d9537dd2c5c2963970c2e3b5a313",
+      "supported_claims": "frozen expected-count authority"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "byte_size": 814,
+      "downstream_dependency": "R5 report sections A and E",
+      "relative_path": "ckpt1_preservation.json",
+      "sha256": "e7c389e3ed4ccbe45c000905164f0d718fc0d0cf819d800557f1965c4cdfece9",
+      "supported_claims": "inherited production/installed-source preservation"
+    },
+    {
+      "authority_class": "REPOSITORY_PRESERVATION",
+      "byte_size": 1087,
+      "downstream_dependency": "all causal interpretation of the real attempt",
+      "relative_path": "ckpt2_r5_pre_runtime_freeze.json",
+      "sha256": "8207d759d14a24acc75c831e2c55949ccf8e9f16e8d24ad8b94a9b4e1a082438",
+      "supported_claims": "frozen R5 harness and production identities"
+    },
+    {
+      "authority_class": "CHECKPOINT_OR_CONTINUATION_BLOCKING_AUTHORITY",
+      "byte_size": 822,
+      "downstream_dependency": "R5 report sections H through J",
+      "relative_path": "failure_receipt.json",
+      "sha256": "0adb1b716d607ae755c8bb71ae433371fc504338657318ddfbd3d2c761acbd91",
+      "supported_claims": "parent semantic-gate STOP and no valid checkpoint"
+    },
+    {
+      "authority_class": "FINAL_ADJUDICATION_AUTHORITY",
+      "byte_size": 1808,
+      "downstream_dependency": "R5 final classification",
+      "relative_path": "final_stop_adjudication.json",
+      "sha256": "67d1459e41f83f630429d4597819691387a31e23de370ff4f02b5b484000ba31",
+      "supported_claims": "final causal classification, zero mutation, no checkpoint, no poison"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 12513,
+      "downstream_dependency": "R5 report section F",
+      "relative_path": "process_a/core_process_config_authority.json",
+      "sha256": "7c3cbb68e38de90657a2585ad2c464ac116d9e04e6d6e9990d56b9dbc70e9535",
+      "supported_claims": "real process/learner/runtime configuration authority"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 1944,
+      "downstream_dependency": "R5 report sections G, N, and O",
+      "relative_path": "process_a/core_tx1_failure.json",
+      "sha256": "d0988fe99517145cdd88542d7fb58f4bee0e2f71574abf2c24715188413da3aa",
+      "supported_claims": "S5 failure boundary and exact mutation counters"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 30028,
+      "downstream_dependency": "R5 report section G",
+      "relative_path": "process_a/core_tx1_rollout_decision_evidence.json",
+      "sha256": "5ae871957284a85ca58d08738dee436966f6a695d4353bd7416c5563baa308fe",
+      "supported_claims": "tx001 rollout provenance and collection preservation"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 3431,
+      "downstream_dependency": "R5 final causal adjudication",
+      "relative_path": "process_a/failure_receipt.json",
+      "sha256": "aca17ce11cc5d040e0618326b928a789579cfb134bc04b54288097ea713c1a62",
+      "supported_claims": "causal traceback and process-local STOP"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 20298,
+      "downstream_dependency": "R5 report section F",
+      "relative_path": "process_a/initial_state.json",
+      "sha256": "e1849d175e1d792277a315ab2812be3cae19ad2d7a1f394398dcfd577788c092",
+      "supported_claims": "fresh learner semantic state"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 381,
+      "downstream_dependency": "R5 report section F",
+      "relative_path": "process_a/runtime_identity.json",
+      "sha256": "4b4501b67ecb5fef0ec69e19c45a5fdcfd3bce183b94254706b37a9807456bad",
+      "supported_claims": "fresh interpreter, CUDA readiness, and one learner"
+    },
+    {
+      "authority_class": "PROCESS_SHUTDOWN_BOOKKEEPING",
+      "byte_size": 191,
+      "downstream_dependency": "R5 report section Q",
+      "relative_path": "process_a/shutdown_result.json",
+      "sha256": "b7aecae22191e5a8b86bb99a6600bc90eb1bfb71132fe92ab0d18cb8e4fa8b1a",
+      "supported_claims": "clean environment and SimulationApp shutdown"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 231,
+      "downstream_dependency": "R5 report section F",
+      "relative_path": "process_a_environment_creation.json",
+      "sha256": "7fc469ecd6726ff0f6997366bc09d512b3e1d49857de2e340ad5babe09c521fa",
+      "supported_claims": "real environment construction"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 367,
+      "downstream_dependency": "R5 report section F",
+      "relative_path": "process_a_environment_registration.json",
+      "sha256": "44d0921abd5f1c0ffab7aa85203785321252d48539a850af5eadb4bdc12eb10d",
+      "supported_claims": "real reviewed Gym entry point"
+    },
+    {
+      "authority_class": "CHECKPOINT_OR_CONTINUATION_BLOCKING_AUTHORITY",
+      "byte_size": 600,
+      "downstream_dependency": "R5 report sections I and J",
+      "relative_path": "process_a_parent_adjudication.json",
+      "sha256": "4e751596637e3bdf110de8c63c9d638cddd6f40986d279992bfde7b6e3ee03ba",
+      "supported_claims": "A-to-B denial conditions"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 546,
+      "downstream_dependency": "R5 report section F",
+      "relative_path": "process_a_real_package_identity.json",
+      "sha256": "94b332d75cd3f338f6c193135580ac120a7dac73e7042554d84d4819dff158b8",
+      "supported_claims": "real repository package identity"
+    },
+    {
+      "authority_class": "CHECKPOINT_OR_CONTINUATION_BLOCKING_AUTHORITY",
+      "byte_size": 573,
+      "downstream_dependency": "R5 report sections I through M",
+      "relative_path": "process_b_launch_gate.json",
+      "sha256": "0816de03c8f41f3b09f3e63f214c3178a4eb570f210fb0a7f6869e8bc5edced4",
+      "supported_claims": "Process B was not authorized or launched"
+    },
+    {
+      "authority_class": "PROCESS_SHUTDOWN_BOOKKEEPING",
+      "byte_size": 365,
+      "downstream_dependency": "R5 report section Q",
+      "relative_path": "process_quiescence.json",
+      "sha256": "1f775dbeb6d220704ebbfeedb5cb7a49c449164c5aa754aace97260ab81810ab",
+      "supported_claims": "process inactivity and zero retry"
+    },
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 341,
+      "downstream_dependency": "R5 report sections B through E",
+      "relative_path": "pure_qualification_result.json",
+      "sha256": "f331e8ada258e61e9fa39c98635818ce96d76140af7bb5074edbe486f9fc8800",
+      "supported_claims": "R5 pure qualification completion"
+    }
+  ],
+  "external_anchor_count": 2,
+  "external_anchors": [
+    {
+      "authority_class": "CORE_SEMANTIC_AUTHORITY",
+      "byte_size": 50054,
+      "downstream_dependency": "all R5 evidence interpretation",
+      "relative_path": "scripts/environments/test_assignment_phase_b2_t4_ckpt2_r5_real_fresh_process_checkpoint_continuation.py",
+      "sha256": "e6546bdae034a7abb18d1ad70e16a4e2f5eab897251ba4561acf2e5d604fd039",
+      "supported_claims": "exact executed R5 harness logic"
+    },
+    {
+      "authority_class": "FINAL_ADJUDICATION_AUTHORITY",
+      "byte_size": 8496,
+      "downstream_dependency": "historical handoff",
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/PHASE_B2_T4_CKPT2_R5_REAL_FRESH_PROCESS_CHECKPOINT_CONTINUATION_REPORT.md",
+      "sha256": "88bcbadf81b8c531274b000b79a6912a6a915c6788aa149180deb7dac572d19e",
+      "supported_claims": "reviewable R5 final narrative and non-claims"
+    }
+  ],
+  "result": "PASS",
+  "selection_rule": "Minimum dependency-backed set for reviewed R5 claims; duplicates and diagnostics excluded."
+}

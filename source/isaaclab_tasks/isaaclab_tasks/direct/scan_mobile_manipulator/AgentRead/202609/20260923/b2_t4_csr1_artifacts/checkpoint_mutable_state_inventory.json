@@ -1,0 +1,174 @@
+{
+  "complete": true,
+  "current_capability": "VALIDATED_WEIGHT_CONTINUATION_WITH_EXPLICIT_RESET_ACKNOWLEDGEMENT",
+  "current_gap": "actor/critic optimizer state and progression counters are not serialized or restored",
+  "items": [
+    {
+      "blocking": true,
+      "canonical_checkpoint_source": "actor_agent_<identity>.pt",
+      "deterministic_replay_only": false,
+      "evidence": "AssignmentOnPolicyHARunner.save; AssignmentTrainingStateManifest.actor_artifacts",
+      "mutable": true,
+      "required_for_continuation": true,
+      "runtime_owner": "runner.actor[i].actor",
+      "serialized_today": true,
+      "state": "all ordered actor network state_dicts"
+    },
+    {
+      "blocking": true,
+      "canonical_checkpoint_source": "critic_agent.pt",
+      "deterministic_replay_only": false,
+      "evidence": "AssignmentOnPolicyHARunner.save",
+      "mutable": true,
+      "required_for_continuation": true,
+      "runtime_owner": "runner.critic.critic",
+      "serialized_today": true,
+      "state": "critic network state_dict"
+    },
+    {
+      "blocking": true,
+      "canonical_checkpoint_source": "MISSING",
+      "deterministic_replay_only": false,
+      "evidence": "training_state.actor_optimizer_available=false; save passes no optimizer state",
+      "mutable": true,
+      "required_for_continuation": true,
+      "runtime_owner": "runner.actor[i].actor_optimizer",
+      "serialized_today": false,
+      "state": "all actor Adam optimizer state_dicts"
+    },
+    {
+      "blocking": true,
+      "canonical_checkpoint_source": "MISSING",
+      "deterministic_replay_only": false,
+      "evidence": "training_state.critic_optimizer_available=false",
+      "mutable": true,
+      "required_for_continuation": true,
+      "runtime_owner": "runner.critic.critic_optimizer",
+      "serialized_today": false,
+      "state": "critic Adam optimizer state_dict"
+    },
+    {
+      "blocking": true,
+      "canonical_checkpoint_source": "value_normalizer.pt",
+      "deterministic_replay_only": false,
+      "evidence": "assignment_value_normalizer_checkpoint canonical adapter",
+      "mutable": true,
+      "required_for_continuation": true,
+      "runtime_owner": "runner.value_normalizer",
+      "serialized_today": true,
+      "state": "ValueNorm running_mean/running_mean_sq/debiasing_term"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "NOT_APPLICABLE",
+      "deterministic_replay_only": false,
+      "evidence": "installed HARL OnPolicyBase.lr_decay and VCritic.lr_decay",
+      "mutable": false,
+      "required_for_continuation": false,
+      "runtime_owner": "none; update_linear_schedule mutates optimizer param-group LR",
+      "serialized_today": false,
+      "state": "separate scheduler object"
+    },
+    {
+      "blocking": true,
+      "canonical_checkpoint_source": "MISSING; episode_or_update_index is metadata only and restore ignores it",
+      "deterministic_replay_only": false,
+      "evidence": "linear LR decay is indexed by episode; training_counters_available=false",
+      "mutable": true,
+      "required_for_continuation": true,
+      "runtime_owner": "OnPolicyBaseRunner.run local episode plus config",
+      "serialized_today": false,
+      "state": "completed episode/update index and total schedule horizon"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "assignment_training_state.json metadata",
+      "deterministic_replay_only": false,
+      "evidence": "save coordinator marker",
+      "mutable": true,
+      "required_for_continuation": false,
+      "runtime_owner": "runner._assignment_checkpoint_generation",
+      "serialized_today": true,
+      "state": "checkpoint generation"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "MISSING",
+      "deterministic_replay_only": false,
+      "evidence": "affects best-model selection, not gradient correctness",
+      "mutable": true,
+      "required_for_continuation": false,
+      "runtime_owner": "runner.best_avg_reward",
+      "serialized_today": false,
+      "state": "best_avg_reward/checkpoint-selection state"
+    },
+    {
+      "blocking": true,
+      "canonical_checkpoint_source": "assignment_checkpoint_manifest.json plus fingerprint",
+      "deterministic_replay_only": false,
+      "evidence": "strict actor ordering and full contract comparison",
+      "mutable": false,
+      "required_for_continuation": true,
+      "runtime_owner": "wrapper/runner configuration",
+      "serialized_today": true,
+      "state": "ordered policy identities and semantic reconstruction config"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "MISSING",
+      "deterministic_replay_only": true,
+      "evidence": "rng_state_available=false; required only for bitwise replay contract",
+      "mutable": true,
+      "required_for_continuation": false,
+      "runtime_owner": "process-global RNGs",
+      "serialized_today": false,
+      "state": "Python/NumPy/Torch CPU/CUDA RNG"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "FORBIDDEN BY BOUNDARY",
+      "deterministic_replay_only": false,
+      "evidence": "checkpoint boundary requires completed optimizer and ValueNorm steps",
+      "mutable": true,
+      "required_for_continuation": false,
+      "runtime_owner": "learner call stack",
+      "serialized_today": false,
+      "state": "in-flight learner transaction"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "NOT REQUIRED AT FRESH-ROLLOUT BOUNDARY",
+      "deterministic_replay_only": true,
+      "evidence": "rollout_buffer_state_available=false; new process warmup starts a new rollout",
+      "mutable": true,
+      "required_for_continuation": false,
+      "runtime_owner": "actor_buffer/critic_buffer",
+      "serialized_today": false,
+      "state": "rollout buffers/RNN rollout state"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "NOT REQUIRED FOR LEARNER CHECKPOINT",
+      "deterministic_replay_only": true,
+      "evidence": "environment_resolver_state_available=false; exact mid-episode restore is out of scope",
+      "mutable": true,
+      "required_for_continuation": false,
+      "runtime_owner": "environment and wrapper",
+      "serialized_today": false,
+      "state": "Isaac environment/resolver/P2 state"
+    },
+    {
+      "blocking": false,
+      "canonical_checkpoint_source": "experiment ledger, not learner checkpoint",
+      "deterministic_replay_only": false,
+      "evidence": "needed for paper bookkeeping, not optimizer correctness",
+      "mutable": true,
+      "required_for_continuation": false,
+      "runtime_owner": "logger",
+      "serialized_today": false,
+      "state": "logger total steps and experiment metric accumulators"
+    }
+  ],
+  "required_target": "OPTIMIZATION_CONTINUATION",
+  "schema_version": "b2_t4_csr1_checkpoint_mutable_state_inventory_v1"
+}
