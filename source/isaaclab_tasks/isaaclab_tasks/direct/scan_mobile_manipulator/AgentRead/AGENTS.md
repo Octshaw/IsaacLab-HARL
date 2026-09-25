@@ -312,24 +312,34 @@ As a guideline, keep `TASK_PROGRESS.md` under about 200-300 lines.
 
 If the file becomes too long, do not keep appending to it. Instead:
 
-1. Archive the previous full file under `AgentRead/YYYYMMDD/`, for example:
+1. Archive the previous full file under `AgentRead/YYYYMM/YYYYMMDD/`, for example:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMMDD/TASK_PROGRESS_ARCHIVE_<short_description>.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMM/YYYYMMDD/TASK_PROGRESS_ARCHIVE_<short_description>.md
 ```
 
 2. Rewrite `TASK_PROGRESS.md` as a concise current handoff summary.
 3. Add the archive path under `Detailed reports / archives`.
 
-### Daily planning and archive folder rule
+### Monthly-grouped daily planning and archive folder rule
 
-All newly created plan, report, design-note, investigation, and phase-summary markdown files must be placed under a date-named folder:
+All newly created plan, report, design-note, investigation, and phase-summary markdown files must be placed under a month directory containing the preserved date-named directory:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMMDD/
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMM/YYYYMMDD/
 ```
 
-Use the current local date in `YYYYMMDD` format.
+Use the current local date in `YYYYMMDD` format and derive `YYYYMM` from its
+first six digits. If the current month directory does not exist, create
+`AgentRead/YYYYMM/` first, then create `AgentRead/YYYYMM/YYYYMMDD/`. Never fall
+back to the legacy one-level daily layout merely because a new month directory
+is absent.
+
+For example, the first report on 2026-10-01 belongs under:
+
+```text
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202610/20261001/
+```
 
 Do not place new long-form plan/report documents directly under the top-level `AgentRead/` folder unless the user explicitly requests it.
 
@@ -344,7 +354,7 @@ Every time `TASK_PROGRESS.md` is condensed, rewritten, or substantially shortene
 Use a descriptive archive filename, for example:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMMDD/TASK_PROGRESS_ARCHIVE_BEFORE_<short_description>_YYYYMMDD.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMM/YYYYMMDD/TASK_PROGRESS_ARCHIVE_BEFORE_<short_description>_YYYYMMDD.md
 ```
 
 Then rewrite the top-level `TASK_PROGRESS.md` as a concise current handoff.
@@ -355,20 +365,22 @@ Example structure:
 
 ```text
 AgentRead/
+  AGENTS.md
   TASK_PROGRESS.md
-  20260610/
-    TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md
-    STAGE4_REAL_COMPONENT_FIXEDN_EVALUATION_PLAN.md
+  202606/
+    20260610/
+      TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md
+      STAGE4_REAL_COMPONENT_FIXEDN_EVALUATION_PLAN.md
 ```
 
 When a task is documentation-only, report clearly which documentation files were created or modified, and confirm that no code, training, simulation logic, HARL files, or installed `site-packages` files were changed.
 
 ### Detailed reports
 
-Detailed investigations, design notes, long command outputs, and phase-specific reports should be written as separate files under `AgentRead/YYYYMMDD/`, for example:
+Detailed investigations, design notes, long command outputs, and phase-specific reports should be written as separate files under `AgentRead/YYYYMM/YYYYMMDD/`, for example:
 
 ```text
-source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMMDD/PHASE4_ASSIGNMENT_PLAY_EVAL_REPORT.md
+source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/YYYYMM/YYYYMMDD/PHASE4_ASSIGNMENT_PLAY_EVAL_REPORT.md
 ```
 
 Then reference that report from `TASK_PROGRESS.md`.
