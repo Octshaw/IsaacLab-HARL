@@ -222,6 +222,23 @@ def inspect_value_normalizer_target(value_normalizer: Any) -> ValueNormalizerTar
     )
 
 
+def extract_value_normalizer_runtime_state(
+    value_normalizer: Any,
+) -> OrderedDict[str, torch.Tensor]:
+    """Clone canonical live ValueNorm fields without changing device or dtype."""
+
+    inventory = inspect_value_normalizer_target(value_normalizer)
+    output: OrderedDict[str, torch.Tensor] = OrderedDict()
+    for field in inventory.fields:
+        value = getattr(value_normalizer, field.name)
+        output[field.name] = value.detach().clone()
+    return _validate_checkpoint_mapping(
+        output,
+        inventory=inventory,
+        operation="extract ValueNorm runtime state",
+    )
+
+
 def build_value_normalizer_contract(value_normalizer: Any | None, *, enabled: bool) -> dict[str, Any]:
     """Build the immutable enabled/disabled ValueNorm contract from live state."""
 
@@ -389,15 +406,9 @@ def validate_value_normalizer_checkpoint_state(
 def export_value_normalizer_checkpoint_state(value_normalizer: Any) -> OrderedDict[str, torch.Tensor]:
     """Export explicit mutable ValueNorm runtime state without Module state APIs."""
 
-    inventory = inspect_value_normalizer_target(value_normalizer)
-    output: OrderedDict[str, torch.Tensor] = OrderedDict()
-    for field in inventory.fields:
-        value = getattr(value_normalizer, field.name)
-        output[field.name] = value.detach().clone().cpu()
-    return _validate_checkpoint_mapping(
-        output,
-        inventory=inventory,
-        operation="export ValueNorm checkpoint state",
+    return OrderedDict(
+        (name, value.cpu())
+        for name, value in extract_value_normalizer_runtime_state(value_normalizer).items()
     )
 
 
@@ -462,6 +473,7 @@ __all__ = [
     "ValueNormalizerFieldInventory",
     "ValueNormalizerTargetInventory",
     "build_value_normalizer_contract",
+    "extract_value_normalizer_runtime_state",
     "export_value_normalizer_checkpoint_state",
     "inspect_value_normalizer_target",
     "normalize_value_normalizer_dtype",

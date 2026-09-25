@@ -50,6 +50,15 @@ try:
     from .assignment_harl_adapter import get_harl_scalar_action_dim
     from .assignment_harl_wrapper import AssignmentHarlWrapper
     from .assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence
+    from .assignment_optimization_checkpoint import (
+        OptimizationCheckpointRuntimeGuard,
+        OptimizationProgressionState,
+        OptimizationProgressionTracker,
+        linear_lr_for_next_update,
+        load_optimization_checkpoint,
+        save_optimization_checkpoint,
+        validate_optimization_checkpoint,
+    )
     from .assignment_profile_contract import (
         AssignmentProfileResolutionOrigin,
         ResolvedAssignmentProfile,
@@ -71,6 +80,15 @@ except ImportError:  # Allows direct file-based smoke tests after adding this di
     from assignment_harl_adapter import get_harl_scalar_action_dim  # type: ignore
     from assignment_harl_wrapper import AssignmentHarlWrapper  # type: ignore
     from assignment_lifecycle_training_contract import validate_assignment_lifecycle_policy_sequence  # type: ignore
+    from assignment_optimization_checkpoint import (  # type: ignore
+        OptimizationCheckpointRuntimeGuard,
+        OptimizationProgressionState,
+        OptimizationProgressionTracker,
+        linear_lr_for_next_update,
+        load_optimization_checkpoint,
+        save_optimization_checkpoint,
+        validate_optimization_checkpoint,
+    )
     from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_profile_contract import (  # type: ignore
         AssignmentProfileResolutionOrigin,
         ResolvedAssignmentProfile,
@@ -507,6 +525,9 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
         self._assignment_checkpoint_generation = 0
         self._assignment_checkpoint_coordinator: AssignmentCheckpointSaveCoordinator | None = None
         self.assignment_checkpoint_load_result = None
+        self._assignment_optimization_guard: OptimizationCheckpointRuntimeGuard | None = None
+        self._assignment_optimization_progression: OptimizationProgressionTracker | None = None
+        self.assignment_optimization_checkpoint_load_result = None
         self.assignment_policy_sequence_contract = (
             validate_assignment_lifecycle_policy_sequence(
                 resolved_assignment_profile=self.resolved_assignment_profile,
@@ -703,6 +724,18 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
                     args, algo_args, env_args, self.num_agents, self.writter, self.run_dir
                 )
         self.algo_args["model"]["hidden_sizes"] = self.hidden_sizes
+        if self.assignment_rl:
+            total_updates = (
+                int(self.algo_args["train"]["num_env_steps"])
+                // int(self.algo_args["train"]["episode_length"])
+                // int(self.algo_args["train"]["n_rollout_threads"])
+            )
+            if total_updates <= 0:
+                raise RuntimeError("assignment optimization checkpoint requires at least one configured update")
+            self._assignment_optimization_guard = OptimizationCheckpointRuntimeGuard()
+            self._assignment_optimization_progression = OptimizationProgressionTracker(
+                OptimizationProgressionState.after_update(0, total_updates)
+            )
         if self.algo_args["train"]["model_dir"] is not None:
             self.restore()
 
@@ -710,6 +743,8 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
         super().warmup()
         if not self.assignment_rl:
             return
+        assert self._assignment_optimization_guard is not None
+        self._assignment_optimization_guard.mark_rollout_or_update_started()
         available_actions = getattr(self.env, "last_available_actions", None)
         if available_actions is None:
             raise RuntimeError("assignment_rl warmup expected last_available_actions, got None")
@@ -729,6 +764,9 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
         )
 
     def collect(self, step):
+        if self.assignment_rl:
+            assert self._assignment_optimization_guard is not None
+            self._assignment_optimization_guard.mark_rollout_or_update_started()
         if self.assignment_rl and not self._assignment_collect_mask_printed:
             for agent_id, actor_buffer in enumerate(self.actor_buffer):
                 if actor_buffer.available_actions is None:
@@ -736,6 +774,124 @@ class AssignmentOnPolicyHARunner(OnPolicyHARunner):
             print("[INFO]: Assignment RL collect passes available_actions[:, agent_id, :] to each actor policy")
             self._assignment_collect_mask_printed = True
         return super().collect(step)
+
+    def train(self):
+        """Track the exact clean boundary surrounding the inherited HA update."""
+
+        if not self.assignment_rl:
+            return super().train()
+        assert self._assignment_optimization_guard is not None
+        assert self._assignment_optimization_progression is not None
+        self._assignment_optimization_guard.mark_rollout_or_update_started()
+        try:
+            result = super().train()
+        except Exception:
+            self._assignment_optimization_guard.mark_update_failed()
+            raise
+        self._assignment_optimization_progression.record_completed_update()
+        self._assignment_optimization_guard.mark_update_complete()
+        return result
+
+    def _assignment_optimization_semantic_config(self) -> dict[str, Any]:
+        runtime_state = capture_assignment_checkpoint_runtime_state(self)
+        return build_assignment_checkpoint_contract_manifest(runtime_state).to_mapping()
+
+    def save_optimization_continuation_checkpoint(self, checkpoint_root):
+        """Save complete learner state only at the tracked post-update boundary."""
+
+        if not self.assignment_rl:
+            raise RuntimeError("optimization-continuation checkpoints are assignment_rl only")
+        assert self._assignment_optimization_guard is not None
+        assert self._assignment_optimization_progression is not None
+        runtime_state = capture_assignment_checkpoint_runtime_state(self)
+        return save_optimization_checkpoint(
+            checkpoint_root=checkpoint_root,
+            boundary=self._assignment_optimization_guard.snapshot(),
+            actor_modules=tuple(
+                (name, self.actor[index].actor)
+                for index, name in enumerate(runtime_state.ordered_agent_names)
+            ),
+            actor_optimizers=tuple(
+                (name, self.actor[index].actor_optimizer)
+                for index, name in enumerate(runtime_state.ordered_agent_names)
+            ),
+            critic_module=self.critic.critic,
+            critic_optimizer=self.critic.critic_optimizer,
+            value_normalizer=self.value_normalizer,
+            progression=self._assignment_optimization_progression.state,
+            semantic_config=self._assignment_optimization_semantic_config(),
+        )
+
+    def validate_optimization_continuation_checkpoint(self, checkpoint_path):
+        """Validate complete continuation state without mutating this runner."""
+
+        if not self.assignment_rl:
+            raise RuntimeError("optimization-continuation checkpoints are assignment_rl only")
+        runtime_state = capture_assignment_checkpoint_runtime_state(self)
+        return validate_optimization_checkpoint(
+            checkpoint_path,
+            expected_semantic_config=self._assignment_optimization_semantic_config(),
+            actor_modules=tuple(
+                (name, self.actor[index].actor)
+                for index, name in enumerate(runtime_state.ordered_agent_names)
+            ),
+            actor_optimizers=tuple(
+                (name, self.actor[index].actor_optimizer)
+                for index, name in enumerate(runtime_state.ordered_agent_names)
+            ),
+            critic_module=self.critic.critic,
+            critic_optimizer=self.critic.critic_optimizer,
+            value_normalizer=self.value_normalizer,
+        )
+
+    def restore_optimization_continuation_checkpoint(self, checkpoint_path):
+        """Strictly restore full learner state; legacy weights-only input is rejected."""
+
+        if not self.assignment_rl:
+            raise RuntimeError("optimization-continuation checkpoints are assignment_rl only")
+        assert self._assignment_optimization_guard is not None
+        assert self._assignment_optimization_progression is not None
+        runtime_state = capture_assignment_checkpoint_runtime_state(self)
+        self.assignment_optimization_checkpoint_load_result = load_optimization_checkpoint(
+            checkpoint_path,
+            expected_semantic_config=self._assignment_optimization_semantic_config(),
+            actor_modules=tuple(
+                (name, self.actor[index].actor)
+                for index, name in enumerate(runtime_state.ordered_agent_names)
+            ),
+            actor_optimizers=tuple(
+                (name, self.actor[index].actor_optimizer)
+                for index, name in enumerate(runtime_state.ordered_agent_names)
+            ),
+            critic_module=self.critic.critic,
+            critic_optimizer=self.critic.critic_optimizer,
+            value_normalizer=self.value_normalizer,
+            progression_tracker=self._assignment_optimization_progression,
+            runtime_guard=self._assignment_optimization_guard,
+        )
+        return self.assignment_optimization_checkpoint_load_result
+
+    def apply_optimization_continuation_lr_schedule(self) -> dict[str, float]:
+        """Apply the exact next saved linear-schedule position before the next update."""
+
+        if not self.assignment_rl or self._assignment_optimization_progression is None:
+            raise RuntimeError("optimization-continuation LR schedule is assignment_rl only")
+        progression = self._assignment_optimization_progression.state
+        actor_lrs: list[float] = []
+        seen_optimizers: set[int] = set()
+        for actor in self.actor:
+            optimizer = actor.actor_optimizer
+            if id(optimizer) in seen_optimizers:
+                continue
+            seen_optimizers.add(id(optimizer))
+            lr = linear_lr_for_next_update(float(actor.lr), progression)
+            for group in optimizer.param_groups:
+                group["lr"] = lr
+            actor_lrs.append(lr)
+        critic_lr = linear_lr_for_next_update(float(self.critic.critic_lr), progression)
+        for group in self.critic.critic_optimizer.param_groups:
+            group["lr"] = critic_lr
+        return {"actor_lr": actor_lrs[0], "critic_lr": critic_lr}
 
     def save(
         self,
