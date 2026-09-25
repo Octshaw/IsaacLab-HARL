@@ -1,0 +1,15 @@
+{
+  "schema": "b2_t4_ckpt1_save_boundary_qualification_v1",
+  "result": "PASS",
+  "clean_boundary_accepted": true,
+  "required_true": ["transaction_complete", "optimizer_mutation_complete", "value_normalizer_mutation_complete"],
+  "required_false": ["partial_update", "active_backward", "active_optimizer_step", "active_load", "poisoned"],
+  "negative_cases": [
+    "boundary_transaction_incomplete", "boundary_partial_update",
+    "boundary_optimizer_mutation_incomplete", "boundary_valuenorm_mutation_incomplete",
+    "boundary_active_backward", "boundary_active_optimizer_step",
+    "boundary_active_load", "boundary_poisoned"
+  ],
+  "negative_pass_count": 8,
+  "negative_unexpected_count": 0
+}

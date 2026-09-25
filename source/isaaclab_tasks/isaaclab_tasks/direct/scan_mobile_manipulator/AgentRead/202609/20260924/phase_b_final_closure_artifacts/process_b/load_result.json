@@ -1,0 +1,260 @@
+{
+  "before_any_collection": true,
+  "collection_steps": 0,
+  "fresh_default_valuenorm": {
+    "debiasing_term": {
+      "dtype": "torch.float32",
+      "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+      "shape": []
+    },
+    "running_mean": {
+      "dtype": "torch.float32",
+      "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+      "shape": [
+        1
+      ]
+    },
+    "running_mean_sq": {
+      "dtype": "torch.float32",
+      "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+      "shape": [
+        1
+      ]
+    }
+  },
+  "loaded_state": {
+    "actor_adam_steps": [
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    ],
+    "critic_adam_steps": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "finite": true,
+    "group_digests": {
+      "actor_adam": "74dac9efd26b31015cccc142ec71c989e8e09d768ebe3f83e11e1c601844e933",
+      "actor_weights": "86fc84f36dd282aadea04df221b56b24264b0f5e78c5c487589d85c7109de0f2",
+      "critic_adam": "76c5880f2dcc78cd53d953708daedad59c8c4edd0abb59273ec82a6e55911c23",
+      "critic_weights": "c21d9e2ae21e5c1614da6d4665729b8a41435550910e3435d39f37b46c4a1392",
+      "progression": "14090dc37cd37de96666c013c146687831d1db007e4e68d195b0ef96fd3003cb",
+      "semantic_config": "53c0520183a4b9ffc353b582f92bcdcc70dc5b60db3bd4f4eabac2a0d437c7c4",
+      "valuenorm": "1ecd1313425929c271a7e64afe189e1446cd1c9ae4f450181fb49e41d9df2c62"
+    },
+    "optimizer_groups": [
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ]
+    ],
+    "progression": {
+      "completed_update_index": 1,
+      "linear_lr_schedule_position": 2,
+      "next_update_index": 2,
+      "total_update_count": 12
+    },
+    "valuenorm": {
+      "debiasing_term": {
+        "dtype": "torch.float32",
+        "sha256": "4eac079c1c9cebda82e3fabcda3b12ceb7dfaa07fe796c03a9ed8e2ed844fa7b",
+        "shape": []
+      },
+      "running_mean": {
+        "dtype": "torch.float32",
+        "sha256": "e11ab1914d9005631b3e95589b94ec8d1ddbc6d4209a6a19aac310dfd2a2d721",
+        "shape": [
+          1
+        ]
+      },
+      "running_mean_sq": {
+        "dtype": "torch.float32",
+        "sha256": "df04282eb6c86af621674be455393915bd9615083ef4cca512cc096d57310997",
+        "shape": [
+          1
+        ]
+      }
+    }
+  },
+  "pass": true,
+  "result": {
+    "generation": 0,
+    "generation_directory": "E:\\Project\\IsaacLab_HARL\\source\\isaaclab_tasks\\isaaclab_tasks\\direct\\scan_mobile_manipulator\\AgentRead\\202609\\20260924\\phase_b_final_closure_artifacts\\checkpoint\\generation_00000000",
+    "progression": {
+      "completed_update_index": 1,
+      "linear_lr_schedule_position": 2,
+      "next_update_index": 2,
+      "total_update_count": 12
+    },
+    "rollback_performed": false
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "b2_t4_ckpt1_static_source_guards_v1",
+  "result": "PASS",
+  "ast_parse": "PASS",
+  "py_compile": "PASS",
+  "implementation_public_api_present": true,
+  "runner_integration_api_present": true,
+  "forbidden_in_implementation": {
+    "torch.cuda": false,
+    "AppLauncher": false,
+    "gym.make": false,
+    "PPQ": false,
+    "Layer-A": false,
+    "RACQ": false
+  },
+  "matching_python_process_count_after_qualification": 0,
+  "installed_harl_modification_count": 0
+}

@@ -1,0 +1,107 @@
+{
+  "actor_optimizer_steps_before_emit": 0,
+  "actor_order": [
+    0,
+    2,
+    1
+  ],
+  "actor_plan_digest": "ca5774c70afaedf1ca22f1037903f1f683e15f9ca8173dfd4dd826ddc74d4c35",
+  "all_A_actor_Adam_will_populate": true,
+  "critic_optimizer_steps_before_emit": 0,
+  "critic_plan_digest": "102166a23ebb35775d8f68a849243b4b5a8c1ae1d1d90a17040394f9f15386eb",
+  "current_s0_s4_state_history": [
+    "S0_ROLLOUT_COMPLETE",
+    "S1_FINAL_VALUE_EVALUATED",
+    "S2_EVENT_RETURNS_FROZEN",
+    "S3_UPDATE_PLAN_FROZEN",
+    "S4_TRAINING_MODE_ENTERED"
+  ],
+  "current_stage_before_first_actor_mutation": "S5_ACTOR_SEQUENCE",
+  "durable_before_first_actor_optimizer_step": true,
+  "event_return_compute_count": 1,
+  "expected_actor_backward": [
+    [
+      0,
+      5
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      2,
+      10
+    ]
+  ],
+  "expected_actor_optimizer_step": [
+    [
+      0,
+      5
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      2,
+      10
+    ]
+  ],
+  "expected_critic_backward": 10,
+  "expected_critic_optimizer_step": 10,
+  "expected_live_valuenorm_update": 10,
+  "harness_sha256": "76a216cd859f38878b99e4ff8d3e8252735b52d78859f956ecea89739a66ba2e",
+  "live_valuenorm_updates_before_emit": 0,
+  "pid": 36724,
+  "resolved_config": {
+    "actor_epoch_count": 5,
+    "actor_minibatch_count": 2,
+    "actor_partition_policy": "reviewed_exact_coverage",
+    "critic_epoch_count": 5,
+    "critic_minibatch_count": 2,
+    "critic_partition_policy": "reviewed_exact_coverage",
+    "fixed_order": false,
+    "ppo_happo_settings": [
+      [
+        "clip_param",
+        0.2
+      ],
+      [
+        "entropy_coef",
+        0.01
+      ],
+      [
+        "max_grad_norm",
+        10.0
+      ],
+      [
+        "use_clipped_value_loss",
+        true
+      ],
+      [
+        "use_huber_loss",
+        true
+      ],
+      [
+        "use_max_grad_norm",
+        true
+      ],
+      [
+        "use_policy_active_masks",
+        true
+      ],
+      [
+        "value_loss_coef",
+        1.0
+      ]
+    ],
+    "resolved_E": 2,
+    "resolved_M": 3,
+    "resolved_N": 12,
+    "resolved_T": 2,
+    "schema_version": "b2r_resolved_config_v1",
+    "valuenorm_enabled": true
+  },
+  "source_authority_digest": "ec8c32df27a4336e6d5a2f8b010fa05b5dee2ab22063857036ff52fc8cb983a0",
+  "update_position": 2
+}

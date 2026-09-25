@@ -1,0 +1,12 @@
+{
+  "schema": "b2_t4_ckpt1_csr1_preservation_v1",
+  "csr1_review_disposition": "GPT REVIEW PASS/CLOSED",
+  "report_path": "../PHASE_B2_T4_CSR1_CLOSURE_SCOPE_REDUCTION_REPORT.md",
+  "report_bytes": 14028,
+  "report_sha256": "b9ef60ab804c7f8e4d2ce8e0c730e94264cd2430806f9729d955336a6613a42c",
+  "final_result_path": "../b2_t4_csr1_artifacts/final_result.json",
+  "final_result_bytes": 1251,
+  "final_result_sha256": "3b834329dc725a5f883379d512c4726a6c584568f53cbf24a517fe942401dfc8",
+  "preserved": true,
+  "scope_reduction_contract_followed": true
+}

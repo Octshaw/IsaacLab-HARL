@@ -1,0 +1,19 @@
+{
+  "schema": "b2_t4_ckpt1_negative_matrix_v1",
+  "result": "PASS",
+  "case_count": 25,
+  "expected_rejection_count": 25,
+  "unexpected_count": 0,
+  "cases": [
+    "boundary_transaction_incomplete", "boundary_partial_update",
+    "boundary_optimizer_mutation_incomplete", "boundary_valuenorm_mutation_incomplete",
+    "boundary_active_backward", "boundary_active_optimizer_step", "boundary_active_load", "boundary_poisoned",
+    "missing_artifact", "artifact_digest_mismatch", "unexpected_artifact",
+    "manifest_schema_mismatch", "manifest_incomplete_status", "optimizer_coverage_false",
+    "actor_order_identity_mismatch", "progression_next_index_invalid", "actor_tensor_shape_mismatch",
+    "actor_optimizer_empty_state", "actor_optimizer_moment_shape_mismatch",
+    "critic_optimizer_group_mismatch", "latest_pointer_digest_mismatch",
+    "semantic_config_mismatch", "valuenorm_target_shape_mismatch",
+    "legacy_weights_only_optimization_reject", "missing_latest_pointer"
+  ]
+}

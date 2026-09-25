@@ -1,0 +1,17 @@
+{
+  "schema": "b2_t4_ckpt1_state_coverage_v1",
+  "actual_state_coverage": 7,
+  "required_state_coverage": 7,
+  "complete": true,
+  "components": {
+    "all_actor_weights": "PASS",
+    "all_actor_adam_optimizers": "PASS",
+    "critic_weights": "PASS",
+    "critic_adam_optimizer": "PASS",
+    "project_value_normalizer_fields": "PASS",
+    "progression_and_lr_schedule": "PASS",
+    "semantic_reconstruction_config": "PASS"
+  },
+  "environment_or_rollout_state_required": false,
+  "rng_state_required": false
+}

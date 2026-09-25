@@ -1,0 +1,9 @@
+{
+  "A_inactive": true,
+  "A_pid": 23380,
+  "durable_semantic_receipt": true,
+  "gate_ns": 1790247844279496700,
+  "generation": 0,
+  "pass": true,
+  "strict_parent_validation": true
+}

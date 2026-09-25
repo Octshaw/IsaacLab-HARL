@@ -1,0 +1,15 @@
+{
+  "app_launcher_normal": true,
+  "cuda_ready": true,
+  "effective_config_digest": "53c0520183a4b9ffc353b582f92bcdcc70dc5b60db3bd4f4eabac2a0d437c7c4",
+  "fresh_learner_constructions": 1,
+  "fresh_process": true,
+  "harness_sha256": "76a216cd859f38878b99e4ff8d3e8252735b52d78859f956ecea89739a66ba2e",
+  "parent_pid": 19728,
+  "pid": 36724,
+  "python": "C:\\isaacenvs\\isaac45_harl\\python.exe",
+  "real_environment_constructions": 1,
+  "real_task_package": "e:/project/isaaclab_harl/source/isaaclab_tasks/isaaclab_tasks/__init__.py",
+  "source_authority_digest": "ec8c32df27a4336e6d5a2f8b010fa05b5dee2ab22063857036ff52fc8cb983a0",
+  "worker": "b"
+}

@@ -1,0 +1,105 @@
+{
+  "generation_count": 1,
+  "manifest": {
+    "actor_order": [
+      "actor_000",
+      "actor_001",
+      "actor_002"
+    ],
+    "artifacts": [
+      {
+        "component": "actor_weights",
+        "identity": "actor_000",
+        "path": "actors/000_weights.pt",
+        "sha256": "e057bfcb0989cef23ea8f5a58d292e81f10407686d571ffa511dc88f599cf934"
+      },
+      {
+        "component": "actor_weights",
+        "identity": "actor_001",
+        "path": "actors/001_weights.pt",
+        "sha256": "de561838d868eeed0ee28d4fbcb7e2c2369c38c33258395f71418a41d12e0c56"
+      },
+      {
+        "component": "actor_weights",
+        "identity": "actor_002",
+        "path": "actors/002_weights.pt",
+        "sha256": "273d794833e128420bbc7375c2aab6f9601ae68652efdc49e4d5d8b824bae8e0"
+      },
+      {
+        "component": "actor_optimizer",
+        "identity": "actor_000",
+        "path": "actor_optimizers/000_adam.pt",
+        "sha256": "4cd8aff4071957e2858a709412ef904b16d1f88f0fa027b4985db72e76d005ac"
+      },
+      {
+        "component": "actor_optimizer",
+        "identity": "actor_001",
+        "path": "actor_optimizers/001_adam.pt",
+        "sha256": "de3d1773e57c74abc827c30fba8ff9efbf76208b26a17b9fc7dd83240f941409"
+      },
+      {
+        "component": "actor_optimizer",
+        "identity": "actor_002",
+        "path": "actor_optimizers/002_adam.pt",
+        "sha256": "a2ad60e540aa9d6bfdef27bb017dbe11c8bbefaa78d68ea0c739f2166ef4f0af"
+      },
+      {
+        "component": "critic_weights",
+        "identity": "central_critic",
+        "path": "critic/weights.pt",
+        "sha256": "b17d20f781a4547d53879a40ce076e4b236f7f3bc1d81b7c868c3f12e3423853"
+      },
+      {
+        "component": "critic_optimizer",
+        "identity": "central_critic",
+        "path": "critic/adam.pt",
+        "sha256": "40ad320f23b198fe1070c7f3cbe9431c17a1e4798ef447c1dc205af7633d7d7e"
+      },
+      {
+        "component": "value_normalizer",
+        "identity": "project_adapter",
+        "path": "value_normalizer/state.pt",
+        "sha256": "0d0ea68f9cfc0ba0b09a3ae90d919266f40d07f414337360a494a17ff29b9fad"
+      },
+      {
+        "component": "progression",
+        "identity": "update_schedule",
+        "path": "progression.json",
+        "sha256": "d1342b14c7f8bb5241741d7e0c29f6ed0a44c24f574c6455389bf83ebd4fff89"
+      },
+      {
+        "component": "semantic_config",
+        "identity": "assignment_runtime",
+        "path": "semantic_config.json",
+        "sha256": "dcb3c283ffb746cd803544194fa8b91b7e0f280d1fe4b497fb54b39936a84e37"
+      }
+    ],
+    "generation": 0,
+    "optimizer_algorithm": "torch.optim.Adam",
+    "purpose": "optimization_continuation",
+    "schema": "lifecycle_mrta_optimization_checkpoint_v1",
+    "semantic_config_sha256": "dcb3c283ffb746cd803544194fa8b91b7e0f280d1fe4b497fb54b39936a84e37",
+    "serialization": "state_dict_only",
+    "state_coverage": {
+      "actor_optimizers": true,
+      "actor_weights": true,
+      "critic_optimizer": true,
+      "critic_weights": true,
+      "progression_schedule": true,
+      "semantic_reconstruction_config": true,
+      "value_normalizer": true
+    },
+    "status": "complete",
+    "value_normalizer_enabled": true
+  },
+  "pass": true,
+  "result": {
+    "generation": 0,
+    "generation_directory": "E:\\Project\\IsaacLab_HARL\\source\\isaaclab_tasks\\isaaclab_tasks\\direct\\scan_mobile_manipulator\\AgentRead\\202609\\20260924\\phase_b_final_closure_artifacts\\checkpoint\\generation_00000000",
+    "manifest_path": "E:\\Project\\IsaacLab_HARL\\source\\isaaclab_tasks\\isaaclab_tasks\\direct\\scan_mobile_manipulator\\AgentRead\\202609\\20260924\\phase_b_final_closure_artifacts\\checkpoint\\generation_00000000\\checkpoint_manifest.json",
+    "manifest_sha256": "118faf9bd94164835fe2479d8b59dc14009bbfcb8a5e6371482943771c6c706c",
+    "previous_generation_preserved": true
+  },
+  "save_nonmutation": true,
+  "strict_readback": true
+}

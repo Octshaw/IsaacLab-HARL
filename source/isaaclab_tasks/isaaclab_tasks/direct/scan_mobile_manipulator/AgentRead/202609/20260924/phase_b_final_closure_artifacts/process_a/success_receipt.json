@@ -1,0 +1,11 @@
+{
+  "S10": true,
+  "checkpoint_generation": 0,
+  "manifest_sha256": "118faf9bd94164835fe2479d8b59dc14009bbfcb8a5e6371482943771c6c706c",
+  "pass": true,
+  "pid": 23380,
+  "real_updates": 1,
+  "save_nonmutation": true,
+  "save_validate": true,
+  "source_freeze": "76a216cd859f38878b99e4ff8d3e8252735b52d78859f956ecea89739a66ba2e"
+}

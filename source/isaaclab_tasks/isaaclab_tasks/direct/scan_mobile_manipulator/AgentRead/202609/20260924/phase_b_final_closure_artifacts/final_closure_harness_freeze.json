@@ -1,0 +1,17 @@
+{
+  "additional_cpu_preflight_checks": ["checkpoint_API_keyword_binding", "checkpoint_result_DTO_serialization", "scalar_tensor_digest", "progression_LR_positions_1_2"],
+  "checks": [
+    "syntax",
+    "audited_source_identity",
+    "real_event_path",
+    "no_generic_runner",
+    "direct_nonuniform_plan_binding",
+    "explicit_AB_config_LR_progression"
+  ],
+  "harness_sha256": "76a216cd859f38878b99e4ff8d3e8252735b52d78859f956ecea89739a66ba2e",
+  "preflight_ns": 1790247746751080000,
+  "python": "C:\\isaacenvs\\isaac45_harl\\python.exe",
+  "refreeze_at_plan_required": true,
+  "source_authority_digest": "ec8c32df27a4336e6d5a2f8b010fa05b5dee2ab22063857036ff52fc8cb983a0",
+  "status": "PREFLIGHT_PASS_FROZEN"
+}

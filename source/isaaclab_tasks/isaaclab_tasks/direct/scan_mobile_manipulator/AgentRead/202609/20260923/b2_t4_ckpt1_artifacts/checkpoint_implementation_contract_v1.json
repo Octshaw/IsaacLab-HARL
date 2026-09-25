@@ -1,0 +1,22 @@
+{
+  "schema": "b2_t4_ckpt1_implementation_contract_v1",
+  "checkpoint_schema": "lifecycle_mrta_optimization_checkpoint_v1",
+  "purpose": "optimization_continuation",
+  "serialization": "state_dict_only",
+  "public_apis": [
+    "save_optimization_checkpoint",
+    "validate_optimization_checkpoint",
+    "load_optimization_checkpoint"
+  ],
+  "runner_apis": [
+    "save_optimization_continuation_checkpoint",
+    "validate_optimization_continuation_checkpoint",
+    "restore_optimization_continuation_checkpoint",
+    "apply_optimization_continuation_lr_schedule"
+  ],
+  "validation_before_mutation": true,
+  "partial_apply_policy": "full_target_rollback",
+  "legacy_weights_only_optimization_policy": "reject_missing_optimizer_state",
+  "legacy_evaluation_path_preserved": true,
+  "real_runtime_activation_claimed": false
+}

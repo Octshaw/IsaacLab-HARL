@@ -1,0 +1,17 @@
+{
+  "schema": "b2_t4_ckpt1_repository_authority_v1",
+  "captured_before_ckpt1_writes": true,
+  "branch": "main",
+  "head": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "origin_main": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "merge_base": "b71d85a32f51be6ada324f870813a56bb45dd396",
+  "initial_full_porcelain_path_count": 50543,
+  "initial_full_porcelain_sha256": "c15df545970492da0ce6b6f970e56c6ed88b5c7b13b7d8dc085d393aacceb198",
+  "initial_staged_path_count": 359,
+  "initial_raw_index_sha256": "a40169043c3bfffd481a7ed1bddf3e52663d61379bedfd2610781457d11f947c",
+  "initial_agentread_relevant_path_count": 50444,
+  "initial_agentread_relevant_set_sha256": "963bb01016a7636fd6d1e4e89f2b412ccfb06c1c5e7ab0643807ce99f60f5aea",
+  "matched_csr1_authority_snapshot": true,
+  "unrelated_worktree_preserved": true,
+  "git_add_commit_push": [0, 0, 0]
+}

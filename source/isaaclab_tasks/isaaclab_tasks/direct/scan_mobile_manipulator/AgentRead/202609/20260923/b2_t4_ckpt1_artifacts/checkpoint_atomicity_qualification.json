@@ -1,0 +1,13 @@
+{
+  "schema": "b2_t4_ckpt1_atomicity_qualification_v1",
+  "result": "PASS",
+  "component_write_location": "hidden temporary generation directory",
+  "manifest_written_last_in_staging": true,
+  "full_readback_before_publish": true,
+  "generation_publish": "atomic directory rename",
+  "authority_publish": "atomic latest.json replace",
+  "immutable_prior_generations": true,
+  "injected_failure_phase": "after_readback_validation_before_generation_publish",
+  "old_latest_pointer_byte_preserved": true,
+  "old_generations_preserved": true
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "b2_t4_ckpt1_failed_load_safety_v1",
+  "result": "PASS",
+  "validation_failure_mutates_target": false,
+  "injected_partial_apply_phase": "after_actor_optimizers",
+  "rollback_scope": [
+    "all_actor_weights", "all_actor_optimizers", "critic_weights",
+    "critic_optimizer", "value_normalizer", "progression"
+  ],
+  "target_exactly_unchanged_after_rollback": true,
+  "rollback_incomplete_policy": "raise explicit poisoned-target error",
+  "poisoned_or_partial_target_load_allowed": false
+}

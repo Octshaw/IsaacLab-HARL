@@ -1,0 +1,108 @@
+{
+  "E": 2,
+  "M": 3,
+  "N": 12,
+  "T": 2,
+  "actor_architecture": "StochasticPolicy(\n  (base): MLPBase(\n    (feature_norm): LayerNorm((421,), eps=1e-05, elementwise_affine=True)\n    (mlp): MLPLayer(\n      (fc): Sequential(\n        (0): Linear(in_features=421, out_features=256, bias=True)\n        (1): ReLU()\n        (2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)\n        (3): Linear(in_features=256, out_features=256, bias=True)\n        (4): ReLU()\n        (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)\n      )\n    )\n  )\n  (act): ACTLayer(\n    (action_out): Categorical(\n      (linear): Linear(in_features=256, out_features=13, bias=True)\n    )\n  )\n)",
+  "actor_base_lr": [
+    0.0005,
+    0.0005,
+    0.0005
+  ],
+  "actor_epochs": [
+    5,
+    5,
+    5
+  ],
+  "actor_minibatches": [
+    2,
+    2,
+    2
+  ],
+  "actor_rnn_shape": [
+    1,
+    256
+  ],
+  "algorithm": {
+    "action_aggregation": "prod",
+    "actor_num_mini_batch": 2,
+    "clip_param": 0.2,
+    "critic_epoch": 5,
+    "critic_num_mini_batch": 2,
+    "entropy_coef": 0.01,
+    "fixed_order": false,
+    "gae_lambda": 0.95,
+    "gamma": 0.99,
+    "huber_delta": 10.0,
+    "max_grad_norm": 10.0,
+    "ppo_epoch": 5,
+    "share_param": false,
+    "use_clipped_value_loss": true,
+    "use_gae": true,
+    "use_huber_loss": true,
+    "use_max_grad_norm": true,
+    "use_policy_active_masks": true,
+    "value_loss_coef": 1
+  },
+  "buffer_train": {
+    "episode_length": 2,
+    "eval_interval": 25,
+    "log_interval": 5,
+    "model_dir": null,
+    "n_rollout_threads": 2,
+    "num_env_steps": 10000000,
+    "use_linear_lr_decay": true,
+    "use_proper_time_limits": true,
+    "use_valuenorm": true
+  },
+  "control_dt": 0.1,
+  "critic_architecture": "VNet(\n  (base): MLPBase(\n    (feature_norm): LayerNorm((418,), eps=1e-05, elementwise_affine=True)\n    (mlp): MLPLayer(\n      (fc): Sequential(\n        (0): Linear(in_features=418, out_features=256, bias=True)\n        (1): ReLU()\n        (2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)\n        (3): Linear(in_features=256, out_features=256, bias=True)\n        (4): ReLU()\n        (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)\n      )\n    )\n  )\n  (v_out): Linear(in_features=256, out_features=1, bias=True)\n)",
+  "critic_base_lr": 0.0005,
+  "critic_epochs": 5,
+  "critic_minibatches": 2,
+  "device": "cuda:0",
+  "environment": "Isaac-Scan-Mobile-Manipulator-Direct-v0",
+  "environment_horizon_seconds": 30.0,
+  "environment_horizon_steps": 300,
+  "fixed_order": false,
+  "fresh_environment_rng": "same declared seed; simulator/rollout/RNG restoration not claimed",
+  "lr_save_convention": "save current optimizer LR; apply saved NEXT schedule position after exact B-load equality, before collection",
+  "model": {
+    "activation_func": "relu",
+    "critic_lr": 0.0005,
+    "data_chunk_length": 10,
+    "gain": 0.01,
+    "hidden_sizes": [
+      256,
+      256
+    ],
+    "hidden_sizes_critic": [
+      512,
+      256
+    ],
+    "initialization_method": "orthogonal_",
+    "lr": 0.0005,
+    "opti_eps": 1e-05,
+    "recurrent_n": 1,
+    "std_x_coef": 1,
+    "std_y_coef": 0.5,
+    "use_feature_normalization": true,
+    "use_naive_recurrent_policy": false,
+    "use_recurrent_policy": false,
+    "weight_decay": 0
+  },
+  "normalizer": {
+    "beta": 0.99999,
+    "epsilon": 1e-05,
+    "input_shape": 1,
+    "norm_axes": 1,
+    "per_element_update": false
+  },
+  "profile": "event_gated_local_mrta",
+  "seed": {
+    "seed": 1,
+    "seed_specify": true
+  },
+  "total_updates": 12,
+  "valuenorm": true
+}

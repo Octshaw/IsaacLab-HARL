@@ -1,0 +1,9 @@
+{
+  "schema": "b2_t4_ckpt1_legacy_compatibility_v1",
+  "legacy_weights_only_evaluation_path": "PRESERVED",
+  "legacy_weights_only_optimization_continuation": "REJECTED",
+  "rejection_code": "OPTIMIZER_STATE_REQUIRED_FOR_OPTIMIZATION_CONTINUATION",
+  "silent_optimizer_reinitialization": false,
+  "existing_assignment_checkpoint_contract_v2_modules_modified": false,
+  "result": "PASS"
+}

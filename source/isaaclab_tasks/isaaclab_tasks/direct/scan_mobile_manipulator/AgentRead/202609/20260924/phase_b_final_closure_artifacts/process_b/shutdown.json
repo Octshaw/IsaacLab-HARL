@@ -1,0 +1,9 @@
+{
+  "environment_closed": true,
+  "parent_wait_completed": true,
+  "parent_wait_returncode": 0,
+  "pid": 36724,
+  "pid_inactive": true,
+  "semantic_success": true,
+  "simulation_app_close_requested": true
+}

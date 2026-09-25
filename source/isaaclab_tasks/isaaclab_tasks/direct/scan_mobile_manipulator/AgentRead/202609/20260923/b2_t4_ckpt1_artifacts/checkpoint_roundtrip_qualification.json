@@ -1,0 +1,14 @@
+{
+  "schema": "b2_t4_ckpt1_roundtrip_qualification_v1",
+  "result": "PASS",
+  "device": "cpu",
+  "actor_count": 2,
+  "critic_count": 1,
+  "actor_optimizer_count": 2,
+  "critic_optimizer_count": 1,
+  "optimizers_populated": true,
+  "value_normalizer_nontrivial": true,
+  "progression_nonzero": true,
+  "comparison": "recursive tensor-exact and scalar-exact",
+  "all_components_equal_after_load": true
+}

@@ -1,0 +1,255 @@
+{
+  "actual_S10": {
+    "actor_cursors_reset": true,
+    "actor_modes_rollout": true,
+    "checkpoint_boundary_eligible_by_state_machine": true,
+    "critic_cursor_reset": true,
+    "critic_mode_rollout": true,
+    "event_returns_compute_once_reset": true,
+    "gradients_clean": true,
+    "incomplete_actor_receipts": 0,
+    "incomplete_critic_receipts": 0,
+    "next_rollout_guards_established": true,
+    "pending_backward_permits": 0,
+    "pending_optimizer_permits": 0,
+    "pending_valuenorm_permits": 0,
+    "route_poisoned": false,
+    "schema_version": "b2r_full_update_quiescence_evidence_v1",
+    "unconsumed_terminal_keys": 0,
+    "update_id": "phase-b-final-a-23380-update1"
+  },
+  "guard": {
+    "active_backward": false,
+    "active_load": false,
+    "active_optimizer_step": false,
+    "optimizer_mutation_complete": true,
+    "partial_update": false,
+    "poisoned": false,
+    "transaction_complete": true,
+    "value_normalizer_mutation_complete": true
+  },
+  "lr_convention": "save current optimizer LR; apply saved NEXT schedule position after exact B-load equality, before collection",
+  "state": {
+    "actor_adam_steps": [
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    ],
+    "critic_adam_steps": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "finite": true,
+    "group_digests": {
+      "actor_adam": "74dac9efd26b31015cccc142ec71c989e8e09d768ebe3f83e11e1c601844e933",
+      "actor_weights": "86fc84f36dd282aadea04df221b56b24264b0f5e78c5c487589d85c7109de0f2",
+      "critic_adam": "76c5880f2dcc78cd53d953708daedad59c8c4edd0abb59273ec82a6e55911c23",
+      "critic_weights": "c21d9e2ae21e5c1614da6d4665729b8a41435550910e3435d39f37b46c4a1392",
+      "progression": "14090dc37cd37de96666c013c146687831d1db007e4e68d195b0ef96fd3003cb",
+      "semantic_config": "53c0520183a4b9ffc353b582f92bcdcc70dc5b60db3bd4f4eabac2a0d437c7c4",
+      "valuenorm": "1ecd1313425929c271a7e64afe189e1446cd1c9ae4f450181fb49e41d9df2c62"
+    },
+    "optimizer_groups": [
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004583333333333333,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ]
+    ],
+    "progression": {
+      "completed_update_index": 1,
+      "linear_lr_schedule_position": 2,
+      "next_update_index": 2,
+      "total_update_count": 12
+    },
+    "valuenorm": {
+      "debiasing_term": {
+        "dtype": "torch.float32",
+        "sha256": "4eac079c1c9cebda82e3fabcda3b12ceb7dfaa07fe796c03a9ed8e2ed844fa7b",
+        "shape": []
+      },
+      "running_mean": {
+        "dtype": "torch.float32",
+        "sha256": "e11ab1914d9005631b3e95589b94ec8d1ddbc6d4209a6a19aac310dfd2a2d721",
+        "shape": [
+          1
+        ]
+      },
+      "running_mean_sq": {
+        "dtype": "torch.float32",
+        "sha256": "df04282eb6c86af621674be455393915bd9615083ef4cca512cc096d57310997",
+        "shape": [
+          1
+        ]
+      }
+    }
+  }
+}

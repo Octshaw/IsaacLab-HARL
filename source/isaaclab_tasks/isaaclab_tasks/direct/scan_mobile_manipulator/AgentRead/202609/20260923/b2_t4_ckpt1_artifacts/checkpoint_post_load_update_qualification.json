@@ -1,0 +1,14 @@
+{
+  "schema": "b2_t4_ckpt1_post_load_update_qualification_v1",
+  "result": "PASS",
+  "device": "cpu",
+  "source_and_restored_targets_received_identical_inputs": true,
+  "source_and_restored_targets_received_identical_lr_schedule_position": true,
+  "actor_weights_after_update": "EXACT",
+  "actor_adam_state_after_update": "EXACT",
+  "critic_weights_after_update": "EXACT",
+  "critic_adam_state_after_update": "EXACT",
+  "value_normalizer_after_update": "EXACT",
+  "progression_after_update": "EXACT",
+  "real_learner_continuation_claimed": false
+}

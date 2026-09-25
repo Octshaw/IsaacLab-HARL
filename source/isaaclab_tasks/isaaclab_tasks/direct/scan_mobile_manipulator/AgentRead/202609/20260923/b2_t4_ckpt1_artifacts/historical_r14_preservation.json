@@ -1,0 +1,12 @@
+{
+  "schema": "b2_t4_ckpt1_historical_r14_preservation_v1",
+  "report_path": "../PHASE_B2_T4_RE6_R14_FORMAL_NAMESPACE_PURITY_NORMAL_HORIZON_INTEGRATION_REPORT.md",
+  "report_bytes": 6148,
+  "report_sha256": "5ace6838d79847fd216c25147534de3e63b593a49680d61cd106175cd17a7106",
+  "freeze_path": "../b2_t4_re6_r14_artifacts/stage_a_final_freeze.json",
+  "freeze_bytes": 469,
+  "freeze_sha256": "11c3fece1bd09b8a1e70e8847bd5d07277707a735b95e15c8176aa6505273ced",
+  "historical_poisoned_run_retained": true,
+  "historical_poisoned_run_reused": false,
+  "r15_authorized": false
+}

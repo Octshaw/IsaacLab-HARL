@@ -67,5 +67,8 @@ _build
 # Pre-Trained Checkpoints
 /.pretrained_checkpoints/
 
+# Phase-B final closure smoke: retain compact JSON evidence, keep tensors local.
+/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_*/*/*.pt
+
 # Teleop Recorded Dataset
 datasets

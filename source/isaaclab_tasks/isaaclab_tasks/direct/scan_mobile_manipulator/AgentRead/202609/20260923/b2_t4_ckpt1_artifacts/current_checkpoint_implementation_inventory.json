@@ -1,0 +1,21 @@
+{
+  "schema": "b2_t4_ckpt1_implementation_inventory_v1",
+  "implementation": {
+    "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_optimization_checkpoint.py",
+    "bytes": 44663,
+    "sha256": "b0fec513bad87af961450345f1ee5849cca04c4da5429a483af5f31f8a6e76b9"
+  },
+  "runner_integration": {
+    "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/assignment_harl_training.py",
+    "bytes": 47153,
+    "sha256": "31295d60a01d11657b924e6d8332f160b278eeeb236109b59409bfbf55f7e787",
+    "pre_ckpt1_sha256": "b6f32510ae663b3e443891cdd09219dd9a5c9ceb9de9c720c73192c7488597fd"
+  },
+  "qualification": {
+    "path": "scripts/environments/test_assignment_phase_b2_t4_ckpt1_optimization_checkpoint.py",
+    "bytes": 25077,
+    "sha256": "a1d26908bca976451b30bd91189aa5ec5bb658b5f66a2eec97929b0c36222753"
+  },
+  "legacy_weight_checkpoint_modules_modified": 0,
+  "installed_harl_files_modified": 0
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "lifecycle_mrta_optimization_checkpoint_v1",
+  "pointer_schema": "lifecycle_mrta_optimization_checkpoint_pointer_v1",
+  "generation_directory_pattern": "generation_00000000",
+  "manifest": "checkpoint_manifest.json",
+  "authoritative_pointer": "latest.json",
+  "artifacts": [
+    "actors/NNN_weights.pt",
+    "actor_optimizers/NNN_adam.pt",
+    "critic/weights.pt",
+    "critic/adam.pt",
+    "value_normalizer/state.pt",
+    "progression.json",
+    "semantic_config.json"
+  ],
+  "manifest_fields": [
+    "schema", "purpose", "generation", "status", "serialization", "actor_order",
+    "optimizer_algorithm", "value_normalizer_enabled", "state_coverage",
+    "semantic_config_sha256", "artifacts"
+  ],
+  "manifest_authoritative": true,
+  "artifact_sha256_required": true,
+  "unexpected_files_rejected": true
+}

@@ -1,0 +1,494 @@
+{
+  "S10": {
+    "actor_cursors_reset": true,
+    "actor_modes_rollout": true,
+    "checkpoint_boundary_eligible_by_state_machine": true,
+    "critic_cursor_reset": true,
+    "critic_mode_rollout": true,
+    "event_returns_compute_once_reset": true,
+    "gradients_clean": true,
+    "incomplete_actor_receipts": 0,
+    "incomplete_critic_receipts": 0,
+    "next_rollout_guards_established": true,
+    "pending_backward_permits": 0,
+    "pending_optimizer_permits": 0,
+    "pending_valuenorm_permits": 0,
+    "route_poisoned": false,
+    "schema_version": "b2r_full_update_quiescence_evidence_v1",
+    "unconsumed_terminal_keys": 0,
+    "update_id": "phase-b-final-b-36724-update2"
+  },
+  "after": {
+    "actor_adam_steps": [
+      [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ]
+    ],
+    "critic_adam_steps": [
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "finite": true,
+    "group_digests": {
+      "actor_adam": "63dbc131155e62eae2d3ae5b0e1ef3b99bd74929a31cdd330e88daf86d933255",
+      "actor_weights": "91bbe7333eae0516f66bba7cbf2468b5e16a342c1877ddeb1000ec94bbff0098",
+      "critic_adam": "d001d30f4ffc2fca996581878632699c9cc2860983770dc820401a689036474b",
+      "critic_weights": "54946ee648b72341936019350ce4ae3f2779c55072aef5f4f76576c69de2ef1a",
+      "progression": "688668adb6770a942a5ff778a98397d3befe1ead373150b911008f7b3edacf47",
+      "semantic_config": "53c0520183a4b9ffc353b582f92bcdcc70dc5b60db3bd4f4eabac2a0d437c7c4",
+      "valuenorm": "b7710153bee80f38cd198cfa2516ce4942264a17ee3399248b4f931266dd4f1f"
+    },
+    "optimizer_groups": [
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ]
+    ],
+    "progression": {
+      "completed_update_index": 2,
+      "linear_lr_schedule_position": 3,
+      "next_update_index": 3,
+      "total_update_count": 12
+    },
+    "valuenorm": {
+      "debiasing_term": {
+        "dtype": "torch.float32",
+        "sha256": "edbf66b2b9f779d8053dc2becb7812d14ce2fc3d2e3514e5dd4d64aec2e9eb9d",
+        "shape": []
+      },
+      "running_mean": {
+        "dtype": "torch.float32",
+        "sha256": "15a052e4acdd6a2412e26dd45c6ae38c5c45e2fefa4797638354e68335532613",
+        "shape": [
+          1
+        ]
+      },
+      "running_mean_sq": {
+        "dtype": "torch.float32",
+        "sha256": "2cf63d18109c1283635db8f26f1186e9084658c3deecc039c0414b41ec9db67e",
+        "shape": [
+          1
+        ]
+      }
+    }
+  },
+  "before": {
+    "actor_adam_steps": [
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    ],
+    "critic_adam_steps": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "finite": true,
+    "group_digests": {
+      "actor_adam": "a01d69adc66aec6ac5addd2d2cca8a2d92d30bdbc681bd91b71c42c9798f0101",
+      "actor_weights": "86fc84f36dd282aadea04df221b56b24264b0f5e78c5c487589d85c7109de0f2",
+      "critic_adam": "975c072c78efcee8fa31d08f420ff0224ab494b7d237b6960b1c6b78ac63c5a0",
+      "critic_weights": "c21d9e2ae21e5c1614da6d4665729b8a41435550910e3435d39f37b46c4a1392",
+      "progression": "14090dc37cd37de96666c013c146687831d1db007e4e68d195b0ef96fd3003cb",
+      "semantic_config": "53c0520183a4b9ffc353b582f92bcdcc70dc5b60db3bd4f4eabac2a0d437c7c4",
+      "valuenorm": "1ecd1313425929c271a7e64afe189e1446cd1c9ae4f450181fb49e41d9df2c62"
+    },
+    "optimizer_groups": [
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ],
+      [
+        {
+          "amsgrad": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "capturable": false,
+          "differentiable": false,
+          "eps": 1e-05,
+          "foreach": null,
+          "fused": null,
+          "lr": 0.0004166666666666667,
+          "maximize": false,
+          "params": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "weight_decay": 0
+        }
+      ]
+    ],
+    "progression": {
+      "completed_update_index": 1,
+      "linear_lr_schedule_position": 2,
+      "next_update_index": 2,
+      "total_update_count": 12
+    },
+    "valuenorm": {
+      "debiasing_term": {
+        "dtype": "torch.float32",
+        "sha256": "4eac079c1c9cebda82e3fabcda3b12ceb7dfaa07fe796c03a9ed8e2ed844fa7b",
+        "shape": []
+      },
+      "running_mean": {
+        "dtype": "torch.float32",
+        "sha256": "e11ab1914d9005631b3e95589b94ec8d1ddbc6d4209a6a19aac310dfd2a2d721",
+        "shape": [
+          1
+        ]
+      },
+      "running_mean_sq": {
+        "dtype": "torch.float32",
+        "sha256": "df04282eb6c86af621674be455393915bd9615083ef4cca512cc096d57310997",
+        "shape": [
+          1
+        ]
+      }
+    }
+  },
+  "loaded_equals_A_saved": true,
+  "lr": [
+    {
+      "base": 0.0005,
+      "effective": 0.0004166666666666667,
+      "position": 2
+    },
+    {
+      "base": 0.0005,
+      "effective": 0.0004166666666666667,
+      "position": 2
+    },
+    {
+      "base": 0.0005,
+      "effective": 0.0004166666666666667,
+      "position": 2
+    },
+    {
+      "base": 0.0005,
+      "effective": 0.0004166666666666667,
+      "position": 2
+    }
+  ],
+  "optimizer_deltas_equal_plan": true,
+  "pass": true,
+  "saved_next_position_consumed": 2,
+  "vn_exact_recurrence_updates": 10
+}

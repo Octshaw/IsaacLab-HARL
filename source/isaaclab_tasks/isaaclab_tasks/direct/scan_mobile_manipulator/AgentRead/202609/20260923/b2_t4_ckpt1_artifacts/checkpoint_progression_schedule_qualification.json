@@ -1,0 +1,13 @@
+{
+  "schema": "b2_t4_ckpt1_progression_schedule_qualification_v1",
+  "result": "PASS",
+  "saved_completed_update_index": 1,
+  "saved_total_update_count": 12,
+  "restored_next_update_index": 2,
+  "restored_linear_lr_schedule_position": 2,
+  "actor_initial_lr": 0.011,
+  "expected_next_actor_lr": 0.009166666666666667,
+  "formula": "initial_lr - initial_lr * next_update_index / total_update_count",
+  "post_controlled_update_completed_update_index": 2,
+  "schedule_restarted_from_zero": false
+}
