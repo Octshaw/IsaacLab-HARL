@@ -88,16 +88,54 @@ resume, variable-cardinality or completed paper-campaign claim is made.
 
 ## Remaining work / boundaries
 
-Phase-B local artifact cleanup: NOT EXECUTED.
-The preceding cleanup audit stopped because the four commits were pending.
-That prerequisite is now satisfied by this user-authorized local commit sequence.
-No cleanup report, delete allowlist or deletion approval has yet been produced.
+Phase-B approved local artifact cleanup: COMPLETE.
+Classification: PHASE-B-LOCAL-ARTIFACT-CLEANUP-EXECUTED.
+Phase B remains COMPLETE / GPT REVIEW PASS / CLOSED.
 
-Next: resume POST-PHASE-B LOCAL ARTIFACT CLEANUP AUDIT as planning only,
-rechecking Git state and including the newly noticed ZIP. Do not delete, move
-or compress files until the user separately approves a reviewed allowlist.
-Paper-1 experiment implementation/protocol follows as a separately authorized
-project phase; no experiments started here.
+The original two hash-bound delete manifests and original validator remain
+unchanged. The user's supplement permits exactly one ALREADY_ABSENT entry:
+202609/20260925/phase_b_git_closeout_artifacts.zip (36,178 manifest bytes).
+It was absent before execution; cause remains UNKNOWN. It was not recreated
+and is not counted as deleted or as space reclaimed by this task.
+
+Originally approved: 50,639 files / 12,122,958,520 logical bytes.
+Effective approved set: 50,638 files / 12,122,922,342 logical bytes.
+Actually deleted: 50,638 files / 12,122,922,342 logical bytes.
+Failed file deletions / remaining effective targets: 0 / 0. Added targets: 0.
+Physical free-space delta was not measured; logical bytes are not that delta.
+
+Original STOP-PRECHECK (missing ZIP, zero deletions) remains unchanged.
+The first single-absence wrapper also stopped before deletion (empty
+ARCHIVE_OPTIONAL aggregation under strict mode). Its zero-deletion records
+remain unchanged. A new wrapper corrected only empty-set summation and used
+new output names; the original/adapted validators and deletion checks did not
+change. Full precheck and bound Recheck then passed before actual deletion.
+
+Postchecks: all 50,638 effective targets absent; 6,326 non-target files retain
+their pre-delete content hashes and all 2,884 directories remain. Required646,
+compact211, local-useful7 and UNKNOWN3,602 remain. Final23 JSON and seven R14
+ledgers match original audit hashes; CKPT1 retains19 unchanged compact JSON.
+This handoff is the only existing document updated after those checks.
+
+Final historical smoke checkpoint tensors: DELETED AS APPROVED /
+EXACT OLD CHECKPOINT NO LONGER LOADABLE. Historical raw replay/detail links:
+INTENTIONALLY PARTIALLY UNAVAILABLE (audit: 14 reports / 294 detail links).
+No artifact backup, move, compression or directory deletion. Deleted untracked
+bytes cannot be restored through Git. UNKNOWN legacy data: RETAINED / NOT CLEANED.
+Retained core evidence: PRESERVED. Historical reports/STOP records unchanged.
+
+Tracked deletions: 0. HEAD/index/tag refs/root ignore/local exclude unchanged.
+Runtime, checkpoint load/save and Git add/commit/push/tag operations: 0.
+No production, test, harness or installed HARL source changed. Only cleanup
+adapters/new execution records/report/archive and this handoff were added/edited.
+The handoff was archived byte-exactly before this update (SHA256:
+40d8668cecc7c0ab131ab03abd1cf3ab6f16e57e2b8f916ee752a814c5435bbc).
+All new/modified files remain unstaged/uncommitted.
+
+Next: STOP. Approved cleanup scope is complete. Do not rerun pre-deletion
+existence validators on the now-deleted snapshot. Do not clean UNKNOWN,
+repair the lifecycle tag, stage/commit/push or start experiments.
+PAPER-1 EXPERIMENT IMPLEMENTATION AND PROTOCOL requires separate authorization.
 
 R6: HISTORICAL / NO RETRY. R7: NOT USED.
 R15: NOT AUTHORIZED / NOT NEEDED FOR PHASE-B CLOSURE.
@@ -107,6 +145,16 @@ Optional tag remains lifecycle-mrta-phase-b-complete; not created.
 
 ## Detailed reports / archives
 
+- [Approved cleanup completed: single-absence execution](202609/20260925/PHASE_B_LOCAL_ARTIFACT_CLEANUP_EXECUTION_SINGLE_ABSENCE_REPORT.md)
+- [Final cleanup execution result](202609/20260925/phase_b_local_artifact_cleanup_execution/execution_result_single_absence_final.json)
+- [Byte-exact handoff before completed-cleanup update](202609/20260925/TASK_PROGRESS_ARCHIVE_BEFORE_LOCAL_CLEANUP_SINGLE_ABSENCE_20260925.md)
+- [Cleanup execution: STOP-PRECHECK, zero deletions](202609/20260925/PHASE_B_LOCAL_ARTIFACT_CLEANUP_EXECUTION_REPORT.md)
+- [Execution authority, stop log and result](202609/20260925/phase_b_local_artifact_cleanup_execution/)
+- [Byte-exact pre-execution-update handoff](202609/20260925/TASK_PROGRESS_ARCHIVE_BEFORE_LOCAL_CLEANUP_EXECUTION_20260925.md)
+- [Local cleanup audit: partial legacy review, no deletion](202609/20260925/PHASE_B_LOCAL_ARTIFACT_CLEANUP_AUDIT.md)
+- [Future delete execution plan: approval required](202609/20260925/PHASE_B_LOCAL_ARTIFACT_DELETE_EXECUTION_PLAN.md)
+- [Exact cleanup manifests and read-only verification](202609/20260925/phase_b_local_artifact_cleanup_audit/)
+- [Byte-exact pre-cleanup-audit handoff](202609/20260925/TASK_PROGRESS_ARCHIVE_BEFORE_LOCAL_CLEANUP_AUDIT_20260925.md)
 - [Byte-exact pre-commit handoff](202609/20260925/TASK_PROGRESS_ARCHIVE_BEFORE_AUTHORIZED_PHASE_B_COMMITS_20260925.md)
 - [Engineering closeout, historical pre-commit audit](202609/20260925/PHASE_B_ENGINEERING_GIT_CLOSEOUT_REPORT.md)
 - [Change classification](202609/20260925/PHASE_B_GIT_CLOSEOUT_CHANGE_CLASSIFICATION.md)

@@ -1,0 +1,1752 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-25",
+  "classification": "PHASE-B-LOCAL-ARTIFACT-CLEANUP-AUDIT-PARTIAL-MANUAL-REVIEW-REQUIRED",
+  "phase_b": "COMPLETE / GPT REVIEW PASS / CLOSED",
+  "git_precondition": {
+    "satisfied": true,
+    "reason": "Four reviewed groups committed under explicit user authorization.",
+    "head": "5e62cd58d631946aa5d68a64c27c8132ae5aef84",
+    "commits": [
+      "c107a6c892eb90ff643d549d928c555ec9f9be5b",
+      "5e7367ce28f0dfc3d4de86fa90d751284f1159c3",
+      "947f9261864945ab120a7958f3cc08b38b37e44a",
+      "5e62cd58d631946aa5d68a64c27c8132ae5aef84"
+    ],
+    "index_sha256": "2712362dd719e06b45c376989caa51dfe38c8a8c919bfbd3cb3d31a04ace7e8e",
+    "local_exclude_sha256": "b597c89cf3526430bfab8212cf5be260c84fae225fc7323a5db29795db1bfaa5",
+    "optional_tag": "lifecycle-mrta-phase-b-complete points at older b71d85a3; optional, untouched, not closure authority."
+  },
+  "scope": {
+    "files": 55105,
+    "bytes": 12595559380,
+    "definition": "All pre-existing AgentRead files (including protected docs) in canonical and anomalous roots, plus exact project-local caches/legacy output roots from cache_temp_review. All other tracked/source/assets/Git metadata are globally protected and not reclaim candidates. New audit outputs and handoff backup excluded from snapshot/reclaim denominators.",
+    "agentread_files": 50815,
+    "agentread_bytes": 12126232065,
+    "other_candidate_files": 4290,
+    "other_candidate_bytes": 469327315
+  },
+  "totals": {
+    "DELETE_STRONG": {
+      "entries": 189,
+      "files": 693,
+      "bytes": 13827284
+    },
+    "DELETE_RECOMMENDED": {
+      "entries": 6472,
+      "files": 49946,
+      "bytes": 12109131236
+    },
+    "ARCHIVE_OPTIONAL": {
+      "entries": 0,
+      "files": 0,
+      "bytes": 0
+    },
+    "KEEP_LOCAL_USEFUL": {
+      "entries": 7,
+      "files": 7,
+      "bytes": 3343441
+    },
+    "KEEP_REQUIRED": {
+      "entries": 175,
+      "files": 646,
+      "bytes": 8033687
+    },
+    "KEEP_COMPACT_EVIDENCE": {
+      "entries": 209,
+      "files": 211,
+      "bytes": 1281434
+    },
+    "UNKNOWN_REVIEW_REQUIRED": {
+      "entries": 211,
+      "files": 3602,
+      "bytes": 459942298
+    }
+  },
+  "expected_reclaimed_files": 50639,
+  "expected_reclaimed_bytes": 12122958520,
+  "expected_remaining_bytes_after_recommended_delete": 472600860,
+  "reclaim_percent": 96.24787716256235,
+  "scope_metadata_digests": {
+    "agentread_snapshot": "581217a682a16ae7366af05ca98522820ece530f4ebbd352bc1da15608951693"
+  },
+  "phase_b_delete_subset_ready_for_user_review": true,
+  "manual_review_reason": "3,602 May-July legacy results/logs/output files are not demonstrably disposable Phase-B data; retained UNKNOWN and excluded from both delete allowlists.",
+  "top50_files": [
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_final_result.json",
+      "size_bytes": 82663470,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/b2_t4_re6_r12_normal_horizon_20260922_formal01_final_result.json",
+      "size_bytes": 82375124,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/b2_t4_re6_r9_normal_horizon_20260922_formal01_final_result.json",
+      "size_bytes": 82090666,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/re6_r1_worker_raw_result.json",
+      "size_bytes": 81658067,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/b2_t4_re6_r3_normal_horizon_20260920_formal01_final_result.json",
+      "size_bytes": 80000891,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/re5_worker_raw_result.json",
+      "size_bytes": 79776217,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/b2_t4_re6_r1_normal_horizon_20260920_formal01_final_result.json",
+      "size_bytes": 78259063,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/b2_t4_re5_normal_horizon_20260916_formal01_final_result.json",
+      "size_bytes": 76393052,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/runtime_layer_a_raw_final.json",
+      "size_bytes": 48712152,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9g8i1_fresh_100k_policy_noop_load_diagnosis/seed-00001-2026-07-20-17-40-33/trainData.zip",
+      "size_bytes": 14807839,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9e4a_budget_m15_slack5_d5_train_100k/seed-00001-2026-07-01-14-40-47/assignment_happo_n50_phase9e4a_budget_m15_slack5_d5_train_100.zip",
+      "size_bytes": 12819533,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9d1_short_debug_train_10k/seed-00001-2026-06-29-23-22-22/06292322.zip",
+      "size_bytes": 12775090,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/preflight/b2-t4-re6-r14-preflight-ab3f96420b5948f3af1cc2f1c5f1e351/stage_a_artifacts/repository_authority.json",
+      "size_bytes": 10489024,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/repository_authority.json",
+      "size_bytes": 10489024,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/repository_authority.json",
+      "size_bytes": 10460892,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3c_budget_aware_stuck_diagnostics/budget_aware_segment_summary.csv",
+      "size_bytes": 9616869,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3c_budget_aware_stuck_diagnostics_strict_budget/budget_aware_segment_summary.csv",
+      "size_bytes": 9553879,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/repository_authority.json",
+      "size_bytes": 8079600,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/repository_authority.json",
+      "size_bytes": 8061659,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/repository_authority.json",
+      "size_bytes": 8045145,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "results/assignment_evaluation/phase8_baseline_n50_e10_s300/diagnostics.json",
+      "size_bytes": 6807773,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/re6_r14_static_authority.json",
+      "size_bytes": 6574591,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_process_config_authority.json",
+      "size_bytes": 6570023,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/preflight/b2-t4-re6-r14-preflight-ab3f96420b5948f3af1cc2f1c5f1e351/stage_a_artifacts/b2-t4-re6-r14-preflight-70bd7bc477b942878804cec2c345186b/re6_r14_static_authority.json",
+      "size_bytes": 6554259,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/re6_r13_static_authority.json",
+      "size_bytes": 6524768,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/b2_t4_re6_r12_normal_horizon_20260922_formal01_process_config_authority.json",
+      "size_bytes": 6275429,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/re6_r12_static_authority.json",
+      "size_bytes": 6272513,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/b2-t4-re6-r11-20260922-formal01-c266e95ab2b34167ba37505dcc6908d1/re6_r11_static_authority.json",
+      "size_bytes": 6253722,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/b2-t4-re6-r10-20260922-formal01-11b4e53a29764470b1831a360468fd8e/re6_r10_static_authority.json",
+      "size_bytes": 6244560,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/re6_r9_static_authority.json",
+      "size_bytes": 6003458,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/b2_t4_re6_r9_normal_horizon_20260922_formal01_process_config_authority.json",
+      "size_bytes": 5996725,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/re6_r8_static_authority.json",
+      "size_bytes": 5989206,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_norm_r1_artifacts/repository_authority.json",
+      "size_bytes": 5811253,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/repository_authority.json",
+      "size_bytes": 5700911,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/repository_authority.json",
+      "size_bytes": 5689086,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_r1_artifacts/repository_authority.json",
+      "size_bytes": 5648770,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r6_artifacts/repository_authority.json",
+      "size_bytes": 5645987,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_artifacts/repository_authority.json",
+      "size_bytes": 5635830,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r5_artifacts/repository_authority.json",
+      "size_bytes": 5633377,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r4_artifacts/repository_authority.json",
+      "size_bytes": 5622563,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_r1_artifacts/repository_authority.json",
+      "size_bytes": 5616620,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_artifacts/repository_authority.json",
+      "size_bytes": 5610900,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "results/assignment_evaluation/phase9b1a_plateau_diagnostic_n50_e2_s300/diagnostics.json",
+      "size_bytes": 5347375,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/assignment_evaluation/phase7e_actual_base_motion_crossing_e1_s300/diagnostics.json",
+      "size_bytes": 5297549,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g4b_failed_pair_memory_d6_validation/lifecycle_all/phase9g1_lifecycle_reconstructed_rows.csv",
+      "size_bytes": 5059924,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/assignment_evaluation/phase8_baseline_n50_e10_s300/assignment_history.csv",
+      "size_bytes": 4516576,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_n24_uncovered_level2_diagnostics.json",
+      "size_bytes": 4333169,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "results/assignment_evaluation/phase7d2_conflict_aware_baseline_e1_s300/diagnostics.json",
+      "size_bytes": 4122902,
+      "classification": "UNKNOWN_REVIEW_REQUIRED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/re6_r3_static_authority.json",
+      "size_bytes": 4034268,
+      "classification": "DELETE_RECOMMENDED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/b2_t4_re6_r3_normal_horizon_20260920_formal01_process_config_authority.json",
+      "size_bytes": 4031620,
+      "classification": "DELETE_RECOMMENDED"
+    }
+  ],
+  "top50_directories": [
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead",
+      "file_count": 50812,
+      "size_bytes": 12126229635,
+      "categories": [
+        "KEEP_REQUIRED",
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "DELETE_STRONG",
+        "KEEP_LOCAL_USEFUL"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609",
+      "file_count": 50451,
+      "size_bytes": 12120697958,
+      "categories": [
+        "KEEP_REQUIRED",
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "DELETE_STRONG",
+        "KEEP_LOCAL_USEFUL"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922",
+      "file_count": 16681,
+      "size_bytes": 3973646063,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "DELETE_STRONG",
+        "KEEP_REQUIRED"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920",
+      "file_count": 15548,
+      "size_bytes": 3883530814,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "KEEP_REQUIRED"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916",
+      "file_count": 9052,
+      "size_bytes": 2177163192,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "DELETE_STRONG",
+        "KEEP_REQUIRED"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923",
+      "file_count": 8545,
+      "size_bytes": 2029652260,
+      "categories": [
+        "KEEP_REQUIRED",
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "DELETE_STRONG",
+        "KEEP_LOCAL_USEFUL"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts",
+      "file_count": 8290,
+      "size_bytes": 2025218270,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "DELETE_STRONG",
+        "KEEP_LOCAL_USEFUL",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts",
+      "file_count": 8046,
+      "size_bytes": 2000995537,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c",
+      "file_count": 8103,
+      "size_bytes": 1995448228,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "DELETE_STRONG",
+        "KEEP_LOCAL_USEFUL",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts",
+      "file_count": 8165,
+      "size_bytes": 1954738243,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts",
+      "file_count": 8099,
+      "size_bytes": 1951027075,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2",
+      "file_count": 8086,
+      "size_bytes": 1946023253,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1",
+      "file_count": 8065,
+      "size_bytes": 1945151082,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts",
+      "file_count": 8082,
+      "size_bytes": 1939038062,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts",
+      "file_count": 7331,
+      "size_bytes": 1938776606,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "KEEP_REQUIRED"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/pw_records",
+      "file_count": 7200,
+      "size_bytes": 1756233844,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/pw_records/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2",
+      "file_count": 7200,
+      "size_bytes": 1756233844,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/pw_records",
+      "file_count": 7200,
+      "size_bytes": 1756219444,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/pw_records/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1",
+      "file_count": 7200,
+      "size_bytes": 1756219444,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/pw_records/b2-t4-re6-r3-20260920-formal01-b4718cb4f54b4f589a418dad7f4c4411",
+      "file_count": 7200,
+      "size_bytes": 1756219444,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/pw_records",
+      "file_count": 7200,
+      "size_bytes": 1756219444,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/pw_records/b2-t4-re5-20260916-formal01-ab67c2b8ba0c40b8bcdef425687fb20a",
+      "file_count": 7200,
+      "size_bytes": 1756176244,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/pw_records",
+      "file_count": 7200,
+      "size_bytes": 1756176244,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/pw_records",
+      "file_count": 7200,
+      "size_bytes": 1755602164,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/pw_records/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c",
+      "file_count": 7200,
+      "size_bytes": 1755602164,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/pw_records",
+      "file_count": 7200,
+      "size_bytes": 1755587764,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/pw_records/b2-t4-re6-r1-20260916-formal01-81f98308e90d47208e4805993323d54f",
+      "file_count": 7200,
+      "size_bytes": 1755587764,
+      "categories": [
+        "DELETE_RECOMMENDED"
+      ],
+      "recommendation": "DELETE_EXACT_ALLOWLIST"
+    },
+    {
+      "relative_path": "results",
+      "file_count": 2336,
+      "size_bytes": 451613912,
+      "categories": [
+        "KEEP_REQUIRED",
+        "UNKNOWN_REVIEW_REQUIRED"
+      ],
+      "recommendation": "REVIEW_KEEP_FOR_NOW"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo",
+      "file_count": 1621,
+      "size_bytes": 298433899,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab",
+      "file_count": 1621,
+      "size_bytes": 298433899,
+      "categories": [
+        "UNKNOWN_REVIEW_REQUIRED"
+      ],
+      "recommendation": "REVIEW_KEEP_FOR_NOW"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0",
+      "file_count": 1621,
+      "size_bytes": 298433899,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts",
+      "file_count": 949,
+      "size_bytes": 175805855,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "DELETE_STRONG"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "results/assignment_diagnostics",
+      "file_count": 459,
+      "size_bytes": 110829012,
+      "categories": [
+        "UNKNOWN_REVIEW_REQUIRED",
+        "KEEP_REQUIRED"
+      ],
+      "recommendation": "REVIEW_KEEP_FOR_NOW"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/scan_happo",
+      "file_count": 1326,
+      "size_bytes": 49872744,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/assignment_evaluation",
+      "file_count": 245,
+      "size_bytes": 42243554,
+      "categories": [
+        "UNKNOWN_REVIEW_REQUIRED"
+      ],
+      "recommendation": "REVIEW_KEEP_FOR_NOW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921",
+      "file_count": 292,
+      "size_bytes": 40997625,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE",
+        "KEEP_REQUIRED"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9d1_short_debug_train_10k",
+      "file_count": 29,
+      "size_bytes": 40529422,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/scan_happo/seed-00001-2026-06-01-12-13-22",
+      "file_count": 1263,
+      "size_bytes": 40077901,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/scan_happo/seed-00001-2026-06-01-12-13-22/videos/train",
+      "file_count": 1249,
+      "size_bytes": 36335379,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/scan_happo/seed-00001-2026-06-01-12-13-22/videos",
+      "file_count": 1249,
+      "size_bytes": 36335379,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9g8i1_fresh_100k_policy_noop_load_diagnosis",
+      "file_count": 23,
+      "size_bytes": 32067019,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9g8i1_fresh_100k_policy_noop_load_diagnosis/seed-00001-2026-07-20-17-40-33",
+      "file_count": 23,
+      "size_bytes": 32067019,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9e4a_budget_m15_slack5_d5_train_100k",
+      "file_count": 15,
+      "size_bytes": 26933955,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9e4a_budget_m15_slack5_d5_train_100k/seed-00001-2026-07-01-14-40-47",
+      "file_count": 15,
+      "size_bytes": 26933955,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9d1_short_debug_train_10k/seed-00001-2026-06-29-23-22-22",
+      "file_count": 15,
+      "size_bytes": 26652256,
+      "categories": [],
+      "recommendation": "KEEP"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/preflight",
+      "file_count": 135,
+      "size_bytes": 18954877,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/preflight/b2-t4-re6-r14-preflight-ab3f96420b5948f3af1cc2f1c5f1e351",
+      "file_count": 134,
+      "size_bytes": 18954361,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/preflight/b2-t4-re6-r14-preflight-ab3f96420b5948f3af1cc2f1c5f1e351/stage_a_artifacts",
+      "file_count": 128,
+      "size_bytes": 18950823,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts",
+      "file_count": 143,
+      "size_bytes": 18905431,
+      "categories": [
+        "DELETE_RECOMMENDED",
+        "KEEP_COMPACT_EVIDENCE"
+      ],
+      "recommendation": "MIXED_KEEP_EXCEPT_EXACT_DELETE_ALLOWLIST"
+    },
+    {
+      "relative_path": "results/isaaclab/Isaac-Scan-Mobile-Manipulator-Direct-v0/happo/assignment_happo_n50_phase9g8g1r2_valuenorm_v2_controlled_smoke_fresh/seed-00001-2026-07-10-15-59-12",
+      "file_count": 22,
+      "size_bytes": 15720694,
+      "categories": [],
+      "recommendation": "KEEP"
+    }
+  ],
+  "directory_size_note": "Recursive directories overlap; rankings are not additive. Only disjoint manifest/category totals are additive.",
+  "thresholds": [
+    {
+      "strictly_greater_than_bytes": 100000,
+      "files": 34209,
+      "bytes": 12148992933
+    },
+    {
+      "strictly_greater_than_bytes": 1000000,
+      "files": 214,
+      "bytes": 1272304191
+    },
+    {
+      "strictly_greater_than_bytes": 10000000,
+      "files": 15,
+      "bytes": 763770104
+    },
+    {
+      "strictly_greater_than_bytes": 50000000,
+      "files": 8,
+      "bytes": 643216550
+    },
+    {
+      "strictly_greater_than_bytes": 100000000,
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "strictly_greater_than_bytes": 500000000,
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "strictly_greater_than_bytes": 1000000000,
+      "files": 0,
+      "bytes": 0
+    }
+  ],
+  "agentread_phases": [
+    {
+      "phase": "b2_t3_artifacts",
+      "files": 11,
+      "bytes": 105826,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 9,
+          "bytes": 100443
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 5383
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_artifacts",
+      "files": 5,
+      "bytes": 5320,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 4,
+          "bytes": 4409
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 1,
+          "bytes": 911
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt1_artifacts",
+      "files": 19,
+      "bytes": 14701,
+      "categories": [
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 19,
+          "bytes": 14701
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_artifacts",
+      "files": 35,
+      "bytes": 75188,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 30,
+          "bytes": 71152
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 5,
+          "bytes": 4036
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_r1_artifacts",
+      "files": 25,
+      "bytes": 901160,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 22,
+          "bytes": 898445
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 2715
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_r2_artifacts",
+      "files": 30,
+      "bytes": 906448,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 27,
+          "bytes": 903591
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 2857
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_r3_artifacts",
+      "files": 30,
+      "bytes": 31214,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 25,
+          "bytes": 27048
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 5,
+          "bytes": 4166
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_r4_artifacts",
+      "files": 70,
+      "bytes": 2275337,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 62,
+          "bytes": 2267122
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 8,
+          "bytes": 8215
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_r5_artifacts",
+      "files": 42,
+      "bytes": 109133,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 35,
+          "bytes": 98444
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 7,
+          "bytes": 10689
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_r6_artifacts",
+      "files": 11,
+      "bytes": 8733,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8,
+          "bytes": 4530
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 4203
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ckpt2_r6_hr1_artifacts",
+      "files": 19,
+      "bytes": 140010,
+      "categories": [
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 19,
+          "bytes": 140010
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_csr1_artifacts",
+      "files": 22,
+      "bytes": 68059,
+      "categories": [
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 22,
+          "bytes": 68059
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ep_artifacts",
+      "files": 13,
+      "bytes": 33690,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 12,
+          "bytes": 32761
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 1,
+          "bytes": 929
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ep_p_artifacts",
+      "files": 14,
+      "bytes": 44637,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 10,
+          "bytes": 16539
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 4,
+          "bytes": 28098
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ep_q_artifacts",
+      "files": 9,
+      "bytes": 100301,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 7,
+          "bytes": 97426
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 2875
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_laq_artifacts",
+      "files": 30,
+      "bytes": 5811265,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 27,
+          "bytes": 5808066
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 3199
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_laq_r1_artifacts",
+      "files": 38,
+      "bytes": 6142593,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 35,
+          "bytes": 6140023
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 2570
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_norm_r1_artifacts",
+      "files": 31,
+      "bytes": 5855412,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 29,
+          "bytes": 5852721
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 2691
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_nr_artifacts",
+      "files": 9,
+      "bytes": 6044,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8,
+          "bytes": 5176
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 1,
+          "bytes": 868
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ppq_artifacts",
+      "files": 26,
+      "bytes": 5317887,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 24,
+          "bytes": 5316049
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 1838
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ppq_v2_artifacts",
+      "files": 43,
+      "bytes": 43922,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 41,
+          "bytes": 43178
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 744
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_ppq_v2_r1_artifacts",
+      "files": 49,
+      "bytes": 52307,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 47,
+          "bytes": 50525
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 1782
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_pw_artifacts",
+      "files": 23,
+      "bytes": 56004,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 20,
+          "bytes": 51313
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 4691
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_racq_artifacts",
+      "files": 61,
+      "bytes": 5818984,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 59,
+          "bytes": 5817441
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 1543
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_racq_r1_artifacts",
+      "files": 48,
+      "bytes": 5792128,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 46,
+          "bytes": 5790670
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 1458
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re1_artifacts",
+      "files": 12,
+      "bytes": 1954879,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 9,
+          "bytes": 1949412
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 5467
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re2_artifacts",
+      "files": 32,
+      "bytes": 2260171,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 27,
+          "bytes": 2248264
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 5,
+          "bytes": 11907
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re3_artifacts",
+      "files": 23,
+      "bytes": 813547,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 17,
+          "bytes": 800142
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 6,
+          "bytes": 13405
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re4_artifacts",
+      "files": 949,
+      "bytes": 175805855,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 940,
+          "bytes": 175133773
+        },
+        {
+          "classification": "DELETE_STRONG",
+          "files": 1,
+          "bytes": 556512
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 8,
+          "bytes": 115570
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re5_artifacts",
+      "files": 8046,
+      "bytes": 2000995537,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8039,
+          "bytes": 2000864897
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 7,
+          "bytes": 130640
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_artifacts",
+      "files": 4,
+      "bytes": 3987,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 2,
+          "bytes": 1804
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 2183
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r1_artifacts",
+      "files": 7331,
+      "bytes": 1938776606,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 7323,
+          "bytes": 1938595898
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 7,
+          "bytes": 171148
+        },
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 1,
+          "bytes": 9560
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r10_artifacts",
+      "files": 77,
+      "bytes": 15294733,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 68,
+          "bytes": 15222215
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 9,
+          "bytes": 72518
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r11_artifacts",
+      "files": 90,
+      "bytes": 15146182,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 79,
+          "bytes": 15073828
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 11,
+          "bytes": 72354
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r12_artifacts",
+      "files": 8165,
+      "bytes": 1954738243,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8155,
+          "bytes": 1954665921
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 10,
+          "bytes": 72322
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r13_artifacts",
+      "files": 144,
+      "bytes": 19397891,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 132,
+          "bytes": 18832107
+        },
+        {
+          "classification": "DELETE_STRONG",
+          "files": 1,
+          "bytes": 492460
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 11,
+          "bytes": 73324
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r14_artifacts",
+      "files": 8290,
+      "bytes": 2025218270,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8252,
+          "bytes": 2018357848
+        },
+        {
+          "classification": "DELETE_STRONG",
+          "files": 8,
+          "bytes": 3371482
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 23,
+          "bytes": 145499
+        },
+        {
+          "classification": "KEEP_LOCAL_USEFUL",
+          "files": 7,
+          "bytes": 3343441
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r2_artifacts",
+      "files": 8,
+      "bytes": 7460,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 7,
+          "bytes": 6181
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 1,
+          "bytes": 1279
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r3_artifacts",
+      "files": 8082,
+      "bytes": 1939038062,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8075,
+          "bytes": 1938939909
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 7,
+          "bytes": 98153
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r4_artifacts",
+      "files": 10,
+      "bytes": 5843699,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8,
+          "bytes": 5842246
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 1453
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r5_artifacts",
+      "files": 12,
+      "bytes": 5651393,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 10,
+          "bytes": 5649100
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 2293
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r6_artifacts",
+      "files": 14,
+      "bytes": 5678328,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 11,
+          "bytes": 5676103
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 2225
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r7_artifacts",
+      "files": 6,
+      "bytes": 3381,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 3,
+          "bytes": 1352
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 2029
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r8_artifacts",
+      "files": 57,
+      "bytes": 12018636,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 47,
+          "bytes": 11943223
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 10,
+          "bytes": 75413
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_re6_r9_artifacts",
+      "files": 8099,
+      "bytes": 1951027075,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 8091,
+          "bytes": 1950928815
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 8,
+          "bytes": 98260
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_sr_artifacts",
+      "files": 10,
+      "bytes": 148601,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 7,
+          "bytes": 124120
+        },
+        {
+          "classification": "DELETE_STRONG",
+          "files": 1,
+          "bytes": 19126
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 2,
+          "bytes": 5355
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_w2e_artifacts",
+      "files": 18,
+      "bytes": 65394,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 17,
+          "bytes": 63212
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 1,
+          "bytes": 2182
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_w2i_artifacts",
+      "files": 15,
+      "bytes": 18068,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 14,
+          "bytes": 16877
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 1,
+          "bytes": 1191
+        }
+      ]
+    },
+    {
+      "phase": "b2_t4_zd_artifacts",
+      "files": 18,
+      "bytes": 151850,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 15,
+          "bytes": 143047
+        },
+        {
+          "classification": "KEEP_COMPACT_EVIDENCE",
+          "files": 3,
+          "bytes": 8803
+        }
+      ]
+    },
+    {
+      "phase": "phase_b_final_closure_artifacts",
+      "files": 34,
+      "bytes": 8751893,
+      "categories": [
+        {
+          "classification": "DELETE_RECOMMENDED",
+          "files": 11,
+          "bytes": 8653870
+        },
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 23,
+          "bytes": 98023
+        }
+      ]
+    },
+    {
+      "phase": "phase_b_final_closure_readiness_audit_artifacts",
+      "files": 8,
+      "bytes": 42639,
+      "categories": [
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 8,
+          "bytes": 42639
+        }
+      ]
+    },
+    {
+      "phase": "phase_b_git_closeout_artifacts",
+      "files": 7,
+      "bytes": 283147,
+      "categories": [
+        {
+          "classification": "DELETE_STRONG",
+          "files": 1,
+          "bytes": 36178
+        },
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 6,
+          "bytes": 246969
+        }
+      ]
+    },
+    {
+      "phase": "protected_documentation",
+      "files": 541,
+      "bytes": 7380235,
+      "categories": [
+        {
+          "classification": "KEEP_REQUIRED",
+          "files": 541,
+          "bytes": 7380235
+        }
+      ]
+    }
+  ],
+  "active_code_dependencies_affected": 0,
+  "actions": {
+    "files_deleted": 0,
+    "files_moved": 0,
+    "files_compressed": 0,
+    "runtime_executed": 0,
+    "git_mutations": 0
+  },
+  "approval": "NOT_GRANTED"
+}

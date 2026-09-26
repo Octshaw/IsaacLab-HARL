@@ -1,0 +1,15 @@
+{
+  "schema_version": "phase_b_cleanup_allowlist_v1",
+  "classification": "ARCHIVE_OPTIONAL",
+  "approval": "NOT_GRANTED",
+  "audit_date": "2026-09-25",
+  "repository": "E:/Project/IsaacLab_HARL",
+  "baseline_head": "5e62cd58d631946aa5d68a64c27c8132ae5aef84",
+  "scope_note": "Frozen audit snapshot only. No globs or runtime regeneration authorize deletion. Directory entries are fully homogeneous; mixed directories are expanded into exact files/subdirectories. Metadata digest is ordinal sorted path|size|LastWriteTimeUtc.Ticks, LF, UTF8, no trailing LF. All tracked/source/docs globally protected, even outside inventoried scope. Current TASK_PROGRESS may later receive the separately archived audit handoff update.",
+  "totals": {
+    "entries": 0,
+    "files": 0,
+    "bytes": 0
+  },
+  "entries": []
+}

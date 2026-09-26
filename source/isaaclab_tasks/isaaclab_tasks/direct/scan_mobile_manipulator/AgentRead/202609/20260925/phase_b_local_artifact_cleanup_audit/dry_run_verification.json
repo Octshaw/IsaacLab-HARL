@@ -1,0 +1,97 @@
+{
+  "schema": "phase_b_local_cleanup_dry_run_verification_v1",
+  "date": "2026-09-25",
+  "mode": "PLANNING_ONLY_NO_DELETION",
+  "classification": "DRY_RUN_VALIDATOR_PASS",
+  "validator": "verify_delete_allowlists.ps1",
+  "validator_sha256": "b1acbaf7fa51d9e56ac4cf8638515586fab302b18eee50cc952deb53259f3d7a",
+  "summary": {
+    "mode": "DRY_RUN_ONLY",
+    "approval": "NOT_GRANTED",
+    "repository": "E:\\Project\\IsaacLab_HARL",
+    "head": "5e62cd58d631946aa5d68a64c27c8132ae5aef84",
+    "manifest_sha256": {
+      "delete_strong_allowlist.json": "51f4861085f56fa5a41869f55dc1ed7f422444f62db7235f5a5dc492dfe3fdce",
+      "delete_recommended_allowlist.json": "a78979c4b005fbb2b0c468c7d92bab2c15bba841c38c0438bb04818563417009"
+    },
+    "manifest_entries": 6661,
+    "verified_exact_file_count": 50639,
+    "verified_exact_size_bytes": 12122958520,
+    "classification_totals": {
+      "DELETE_STRONG": {
+        "files": 693,
+        "bytes": 13827284
+      },
+      "DELETE_RECOMMENDED": {
+        "files": 49946,
+        "bytes": 12109131236
+      }
+    },
+    "tracked_files_affected": 0,
+    "active_code_dependencies_affected": 0,
+    "files_changed": 0,
+    "git_mutations": 0,
+    "membership_digest_format": "Ordinal-sorted repo-relative paths; path|size|LastWriteTimeUtc.Ticks; UTF-8 without BOM or final newline"
+  },
+  "checks": {
+    "powershell_ast_parse_errors": 0,
+    "ast_destructive_or_filesystem_writing_commands": [],
+    "missing_manifest_fail_closed": "PASS before manifests were produced",
+    "unsafe_path_rejections": [
+      "../escape",
+      "/absolute",
+      "C:/absolute",
+      "source/*",
+      "source/isaaclab_tasks/../bad",
+      "source/isaaclab_tasks/.git/index",
+      "source",
+      "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead",
+      "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/configs"
+    ],
+    "unsafe_path_rejection_result": "9/9 PASS",
+    "overlap_checks": {
+      "parent_before_child": "REJECTED",
+      "child_before_parent": "REJECTED",
+      "case_insensitive_alias": "REJECTED",
+      "safe_siblings": "ACCEPTED"
+    },
+    "overlap_algorithm": "Case-insensitive entry and ancestor-prefix HashSets, linear in total reviewed path components; no quadratic cross-entry scan.",
+    "config_cache_checks": {
+      "pure___pycache___directory_under_config": "ACCEPTED",
+      "direct_pyc_file_under_config___pycache__": "ACCEPTED",
+      "actual_config___init___py": "REJECTED",
+      "non_pyc_cache_members": "explicitly rejected by validator"
+    },
+    "membership_digest_order_and_no_final_newline": "PASS",
+    "single_file_array_handling": "PASS",
+    "empty_membership_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "full_default_json_dry_run": "PASS",
+    "pass_thru_return": "PASS",
+    "bound_recheck": "PASS",
+    "first_file_count": 50639,
+    "fresh_file_count": 50639,
+    "exact_file_lists_equal": true,
+    "first_pass_seconds": 56.9259582,
+    "two_pass_total_seconds": 138.2894401
+  },
+  "existing_file_integrity": {
+    "package_existing_files_rehashed": 37,
+    "changed_existing_files": [],
+    "index_sha256": "2712362dd719e06b45c376989caa51dfe38c8a8c919bfbd3cb3d31a04ace7e8e",
+    "local_exclude_sha256": "b597c89cf3526430bfab8212cf5be260c84fae225fc7323a5db29795db1bfaa5"
+  },
+  "safety_scope": [
+    "Validator reads exact reviewed manifests and paths only, never grants approval or changes artifact files.",
+    "Read-only Git uses --no-optional-locks and core.longpaths=true; all currently tracked members rejected.",
+    "Parent traversal, wildcard/absolute paths, Git metadata, broad source/AgentRead targets, source/document/config members and reparse ancestors/children rejected.",
+    "Config ancestors are allowed only for an exact __pycache__ directory or direct .pyc member, with all selected files required to be .pyc.",
+    "Directory membership is checked by count, bytes and exact path/size/mtime digest before returning any validated file list.",
+    "Recheck runs a fresh full pass and requires unchanged manifest and validator bytes.",
+    "Metadata verification is not an OS-level filesystem lock. Require quiescent artifact writers and an immediate recheck before any future separately authorized execution."
+  ],
+  "files_deleted": 0,
+  "files_moved": 0,
+  "runtime_executed": 0,
+  "git_mutations": 0,
+  "notes": "This evidence records metadata, text/JSON parsing and file hashing only. No Isaac, CUDA, learner, checkpoint load/save, archive extraction or deletion was run."
+}

@@ -1,0 +1,45 @@
+{
+  "task": "PHASE-B-LOCAL-ARTIFACT-CLEANUP-EXECUTION",
+  "authorization_source": "Explicit user attachment 13306daa-bfbc-4c6c-a80b-58396441f73c/Pasted text.txt",
+  "authorization_attachment_sha256": "2179d91e88b51986f8cad0f92c0ad42b0b6042a1b2b65a3c290804a985b577a9",
+  "authorized_files": 50639,
+  "authorized_logical_bytes": 12122958520,
+  "authorized_strong_sha256": "51f4861085f56fa5a41869f55dc1ed7f422444f62db7235f5a5dc492dfe3fdce",
+  "authorized_recommended_sha256": "a78979c4b005fbb2b0c468c7d92bab2c15bba841c38c0438bb04818563417009",
+  "authorized_validator_sha256": "b1acbaf7fa51d9e56ac4cf8638515586fab302b18eee50cc952deb53259f3d7a",
+  "noninteractive_gate": "Exact user-approved string; not claimed to have been typed interactively.",
+  "started_utc": "2026-09-25T11:53:59.4704385Z",
+  "wrapper_sha256": "611bc32e3d791a8fa2c7aa36731aafd22f882ea131e22294ef7704d1aec83270",
+  "runtime_allowed": false,
+  "git_mutations_allowed": false,
+  "backups_moves_compression_allowed": false,
+  "git_before": {
+    "branch": "main",
+    "head": "5e62cd58d631946aa5d68a64c27c8132ae5aef84",
+    "index_sha256": "2712362dd719e06b45c376989caa51dfe38c8a8c919bfbd3cb3d31a04ace7e8e",
+    "tag_refs": "990d8689e23cf4da24fd7eda36201584cbec877c refs/tags/lifecycle-mrta-phase-b-complete\n7413dbc93321d15de6849de638784c856c3b949b refs/tags/v1.0.0\n61285f03f341c1269967698ba1b1b7a687935d84 refs/tags/v1.0.1\nc50a7ee4e3fa591841e62a8db007e866634dbc76 refs/tags/v2.0.0\n",
+    "status": " M source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md\n?? source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/PHASE_B_LOCAL_ARTIFACT_CLEANUP_AUDIT.md\n?? source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/PHASE_B_LOCAL_ARTIFACT_DELETE_EXECUTION_PLAN.md\n?? source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/TASK_PROGRESS_ARCHIVE_BEFORE_LOCAL_CLEANUP_AUDIT_20260925.md\n?? source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/phase_b_local_artifact_cleanup_audit/\n?? source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/phase_b_local_artifact_cleanup_execution/\n",
+    "tracked_deletions": [],
+    "root_ignore_sha256": "88fc5dd45fa96ef5824cba80ab3a54225856e72a9ad2e55c9757edcd4ea89844",
+    "local_exclude_sha256": "b597c89cf3526430bfab8212cf5be260c84fae225fc7323a5db29795db1bfaa5"
+  },
+  "quiescence_initial": {
+    "checked_utc": "2026-09-25T11:54:00.0630666Z",
+    "known_writer_risks": 0,
+    "limitation": "Point-in-time known-process inspection plus member Recheck, not an OS-wide lock.",
+    "shells": [
+      {
+        "ProcessId": 23568,
+        "ParentProcessId": 32100,
+        "Name": "pwsh.exe",
+        "CommandLine": "C:\\Users\\33506\\AppData\\Local\\Microsoft\\WindowsApps\\Microsoft.PowerShell_8wekyb3d8bbwe\\pwsh.exe -noexit -command \"try { . \\\"d:\\MicrosoftVSCode\\560a9dba96\\resources\\app\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\\\" } catch {}\""
+      },
+      {
+        "ProcessId": 27352,
+        "ParentProcessId": 32100,
+        "Name": "pwsh.exe",
+        "CommandLine": "C:\\Users\\33506\\AppData\\Local\\Microsoft\\WindowsApps\\Microsoft.PowerShell_8wekyb3d8bbwe\\pwsh.exe -noexit -command \"try { . \\\"d:\\MicrosoftVSCode\\560a9dba96\\resources\\app\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\\\" } catch {}\""
+      }
+    ]
+  }
+}

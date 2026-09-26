@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-25",
+  "mode": "PLANNING_ONLY_NO_DELETION",
+  "json_parse": "PASS: all 14 JSON existing at check, including 7 category manifests",
+  "manifest_entries": 7263,
+  "manifest_file_count": 55105,
+  "manifest_size_bytes": 12595559380,
+  "cross_category_or_prefix_overlaps": [],
+  "category_arithmetic": "PASS: disjoint counts match AgentRead snapshot plus independent cache/legacy candidate snapshot",
+  "powershell_ast_parse_errors": 0,
+  "parsed_scripts": [
+    "inventory_readonly.ps1",
+    "verify_delete_allowlists.ps1"
+  ],
+  "future_plan_code_fences_parsed_not_executed": true,
+  "new_report_missing_relative_links": 0,
+  "agentread_before_handoff_update": {
+    "files": 50815,
+    "bytes": 12126232065,
+    "metadata_sha256_before": "581217a682a16ae7366af05ca98522820ece530f4ebbd352bc1da15608951693",
+    "metadata_sha256_after": "581217a682a16ae7366af05ca98522820ece530f4ebbd352bc1da15608951693",
+    "all_existing_paths_sizes_mtimes_unchanged": true
+  },
+  "handoff": {
+    "byte_exact_archive": "../TASK_PROGRESS_ARCHIVE_BEFORE_LOCAL_CLEANUP_AUDIT_20260925.md",
+    "archive_sha256": "8dc28b7dca33bd1e24805c5583188493d8c47981069a16dcbb2aac5287809008",
+    "updated_sha256": "79ca05456b9ffc668ee484a19977a52a491e96f160e16bdcc4170aa433ce1247",
+    "only_tracked_path_changed": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/TASK_PROGRESS.md"
+  },
+  "git": {
+    "head_unchanged": "5e62cd58d631946aa5d68a64c27c8132ae5aef84",
+    "index_sha256_unchanged": "2712362dd719e06b45c376989caa51dfe38c8a8c919bfbd3cb3d31a04ace7e8e",
+    "exclude_sha256_unchanged": "b597c89cf3526430bfab8212cf5be260c84fae225fc7323a5db29795db1bfaa5",
+    "cached_diff_empty": true,
+    "diff_check": "PASS"
+  },
+  "delete_scope_validation": "dry_run_verification.json includes actual full dry run and bound Recheck, 50,639 files, no tracked members",
+  "limitations": "Metadata does not attest all raw file contents. Selected 37 package/final evidence files separately rehashed unchanged; no concurrent artifact writers permitted for future execution. Existing historical docs untouched. New output bytes excluded from original reclaim denominator.",
+  "actions": {
+    "files_deleted": 0,
+    "files_moved": 0,
+    "files_compressed": 0,
+    "runtime": 0,
+    "git_mutations": 0
+  },
+  "approval": "NOT_GRANTED"
+}

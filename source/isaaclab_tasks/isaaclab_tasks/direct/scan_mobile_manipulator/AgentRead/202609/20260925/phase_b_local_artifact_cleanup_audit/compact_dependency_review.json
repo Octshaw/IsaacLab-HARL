@@ -1,0 +1,1481 @@
+{
+  "schema_version": "phase_b_cleanup_compact_dependency_review_v1",
+  "audit_date": "2026-09-25",
+  "mode": "PLANNING_ONLY_NO_DELETION",
+  "active_dependency_files": 0,
+  "dependency_scope": "Active Phase-B production/config and latest accepted final-closure harness; historical one-shot scripts counted separately, not promises of historical rerun reproducibility",
+  "production_reference_search": {
+    "root": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator",
+    "excluded": "**/AgentRead/**",
+    "file_globs": [
+      "*.py",
+      "*.yaml",
+      "*.toml"
+    ],
+    "pattern": "b2_t4_[a-z0-9_]+_artifacts|phase_b_final_closure_artifacts|AgentRead.+json",
+    "matching_files": 0
+  },
+  "historical_script_reference_search": {
+    "root": "scripts/environments",
+    "file_glob": "*.py",
+    "same_pattern": true,
+    "matching_files": 43,
+    "breakdown": "42 historical harness/helper files plus the already closed final one-shot harness"
+  },
+  "latest_harness_source_evidence": [
+    {
+      "path": "scripts/environments/test_assignment_phase_b_final_closure.py",
+      "lines": "1-6, 93-114",
+      "finding": "Source-only authority collection explicitly never enumerates historical artifact trees; inherits construction/config utilities from PD2, not old history gates."
+    },
+    {
+      "path": "scripts/environments/test_assignment_phase_b_final_closure.py",
+      "lines": "24-29, 143-147, 319-322, 505",
+      "finding": "Final OUT refers to its own closed smoke fixture. Full checkpoint replay after deleting tensors is not retained; no active production reader depends on this old fixture."
+    }
+  ],
+  "classification_guidance": {
+    "keep_override_priority": "All tracked files, all source/helper scripts, Markdown reports and current/historical authority remain protected regardless of this shortlist.",
+    "compact_receipt_selection": "Only top-level or direct formal01/process_a/process_b JSON files <=102400 bytes whose names denote final result, failure/STOP adjudication, supervisor result, quiescence, root-cause reproduction or qualification summary; nested fixture/preflight copies excluded.",
+    "historical_dependency_impact": "Original forensic scripts and original inventory locks may no longer replay after approved deletion. This is HISTORICAL_ONLY and not an active runtime breakage; do not edit frozen source/receipts to disguise it.",
+    "markdown_exception": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/transaction_table.md",
+    "markdown_exception_reason": "Diagnostic 160-row transaction table explicitly retains poisoned STOP nonclaim. Never delete parent tree wholesale.",
+    "r14_reason": "Keep one canonical copy of seven modest ledgers plus seven witnesses and compact source/config/runtime receipts; delete per-update progress/S10/pw records, bulk normalization/final/authority dumps and duplicate ledgers. This preserves direct normal-horizon evidence at approximately megabytes rather than gigabytes.",
+    "r14_final_result_distinction": "Retain 931-byte final_result.json with STOP classification; 82,663,470-byte prefixed *_final_result.json is redundant raw aggregate, not accepted compact final authority.",
+    "generic_regex_is_not_deletion_authority": "The explicit keep_paths below are a retention recommendation only; main audit must enumerate separate exact delete allowlists and protect any extra tracked files."
+  },
+  "r14_retained_claims": {
+    "source_hash_snapshot": "r14_static_authority_snapshot.json retains the exact environment, full transaction and real adapter source hashes cited by readiness.",
+    "config": "process_config_authority.json retains T/E/M/N=2/2/3/12, ValueNorm, CUDA, epochs/minibatches and actual 30-second/300-step horizon.",
+    "transaction_ledger_read_only_arithmetic": {
+      "transactions": 160,
+      "actor_optimizer_steps": 165,
+      "critic_optimizer_steps": 1600,
+      "valuenorm_updates": 1600,
+      "all_finite": true
+    },
+    "bridge_ledger_read_only_arithmetic": {
+      "bridges": 159,
+      "all_persistent_identity_exact_state_and_collection_immutability": true
+    },
+    "lifecycle_ledger_rows": 160,
+    "lifecycle_selection": "W2 selected env1/robot1/task10 claim physical step23 tx12, completion step30 tx15, reopen step31 tx16; full canonical lifecycle ledger retained for independent inspection.",
+    "terminal_and_post_reset": "W5 terminal transaction150 keys (0,0,298)/(1,0,298), W6 fresh learned transaction151.",
+    "historical_classification": "PHASE-B2-T4-RE6-R14-STOP-POISONED-RETAINED remains unchanged; retained subsystem observations do not authorize learner reuse."
+  },
+  "affected_report_links": [
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/PHASE_B_FINAL_CLOSURE_READINESS_AUDIT.md",
+      "kind": "CRITICAL_SUBSYSTEM_CLAIM_ROOT",
+      "action": "R14 directory root and compact direct evidence stay present; duplicate/raw members may disappear after future approval."
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/PHASE_B2_T4_RE6_R14_FORMAL_NAMESPACE_PURITY_NORMAL_HORIZON_INTEGRATION_REPORT.md",
+      "kind": "HISTORICAL_STOP_AND_ROOT_CAUSE",
+      "action": "Keep report and compact failure/final/quiescence receipts; full Layer-A dump reconstruction is intentionally not retained."
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/PHASE_B2_T4_RE6_R1_W2I_BOUND_NORMAL_HORIZON_LEARNED_TRAINING_INTEGRATION_QUALIFICATION_REPORT.md",
+      "kind": "HISTORICAL_NAVIGATION",
+      "action": "Keep transaction_table.md and STOP receipts; raw-ledger/detail links can become unavailable after separately approved deletion."
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/PHASE_B_FINAL_CLOSURE_REPORT.md",
+      "kind": "ACCEPTED_FINAL_CLOSURE",
+      "action": "All 23 compact JSON remain protected; checkpoint generation manifest link remains while nine tensor components may be removed later; manifest alone is no longer loadable checkpoint."
+    }
+  ],
+  "explicit_retention_count": 189,
+  "explicit_retention_bytes": 4545029,
+  "keep_paths": [
+    {
+      "relative_path": "source/isaac_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/final_result.json",
+      "size_bytes": 1182,
+      "sha256": "83fcb63fa885f8144603157beaa2523bc439308e31f2c51e8df3f16a61188da0",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R8-STOP-RUNNER-READINESS-LAYER-A-SYNTHETIC-SOURCE-SHAPE"
+    },
+    {
+      "relative_path": "source/isaac_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/formal_supervisor_result.json",
+      "size_bytes": 793,
+      "sha256": "ed3168c945b94ef65c3fc6b41b67e9d6ab71ff4db0e66275d1361a30a0f09093",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R8-STOP-RUNNER-READINESS-LAYER-A-SYNTHETIC-SOURCE-SHAPE"
+    },
+    {
+      "relative_path": "source/isaac_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/process_quiescence.json",
+      "size_bytes": 455,
+      "sha256": "c1e0a7a50c381e936899f608d3afbee6342cf40de0b08fed65b44d1e517116d4",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260912/b2_t4_nr_artifacts/final_result.json",
+      "size_bytes": 868,
+      "sha256": "465874824839ac2f46c8618dd5680c8232582a383f596b7ed57320e8f191047d",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-NR-NONTERMINAL-ROLLOUT-COMPLETENESS-CONTRACT-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260913/b2_t4_re1_artifacts/b2_t4_re1_failure_adjudication.json",
+      "size_bytes": 2415,
+      "sha256": "1cc0998de076d7cd3c2bdaac740d3ad252b4ebaf64fd8d83cc2c13b2da8360cd",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE1-STOP-TX001-EVIDENCE-LEDGER-SERIALIZATION-NOT-COMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260913/b2_t4_re1_artifacts/b2_t4_re1_final_result.json",
+      "size_bytes": 2222,
+      "sha256": "ed5558af4f401fe77dd27fb7c7538292cc36bcbb4f5c184186b506afcbda5247",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE1-STOP-TX1-BOUNDED-SMOKE-FAILURE-NOT-COMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260913/b2_t4_re1_artifacts/b2_t4_re1_preflight_summary.json",
+      "size_bytes": 830,
+      "sha256": "6f6afbd4a893d814d3cc2ae0617ac74463b1e52143a7611a4be2473085abd136",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260913/b2_t4_sr_artifacts/final_result.json",
+      "size_bytes": 4950,
+      "sha256": "5146e959a0cf82929958252748bf8d69b203752d65942bbccaa8a0a12c0154bb",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-SR-EVIDENCE-LEDGER-SERIALIZER-REPAIR-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260913/b2_t4_sr_artifacts/old_failure_reproduction.json",
+      "size_bytes": 405,
+      "sha256": "65c69a73d472e603a93d2c96b246aa9c903cf215108db80f614e0b96f806d857",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260914/b2_t4_re2_artifacts/b2_t4_re2_normal_horizon_20260914_formal01_final_result.json",
+      "size_bytes": 1685,
+      "sha256": "0f50df029eec40f5e4dcc69f3420078232b2882cf9a7061ece7efc0890529185",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE2-STOP-TX2-BOUNDED-SMOKE-FAILURE-NOT-COMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260914/b2_t4_re2_artifacts/re2_failure_adjudication.json",
+      "size_bytes": 1654,
+      "sha256": "2659989026f652458867fa61931a871da94e499792d3573fbfe7dc535da39160",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE2-STOP-TX2-BOUNDED-SMOKE-FAILURE-NOT-COMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260914/b2_t4_re2_artifacts/re2_preflight_summary.json",
+      "size_bytes": 3358,
+      "sha256": "50af30f0f2fe547fe8ce3e5d89fc673255fa833968bc8f6c6f891812671933e9",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260914/b2_t4_zd_artifacts/final_result.json",
+      "size_bytes": 3593,
+      "sha256": "df7de3a158f98a00851e1f03f2f51608045a8be78e8457903edaaa7753d15e8b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-ZD-CONTINUATION-ONLY-ZERO-DVM-REAL-ADAPTER-CONTRACT-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260915/b2_t4_ep_artifacts/final_result.json",
+      "size_bytes": 929,
+      "sha256": "2a1bc8f7b89bd76a0a5eac22fb1072495f756708c8c84a997271d4090e30fb52",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-EP-STOP-FORMAL-EVIDENCE-PERSISTENCE-ORDERING-NOT-QUALIFIED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260915/b2_t4_re3_artifacts/b2_t4_re3_formal_supervisor_result.json",
+      "size_bytes": 889,
+      "sha256": "6f7b0c6c8d7a7a5f36fb2e93daa646a64a6c0bab599d2c8986db46a3163ae7c4",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE3-STOP-PRE-ENVIRONMENT-ENTRY-POINT-RESOLUTION-NOT-COMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260915/b2_t4_re3_artifacts/b2_t4_re3_normal_horizon_20260915_formal01_final_result.json",
+      "size_bytes": 1546,
+      "sha256": "75ed7bb44ced4bf1e9f8bfdc704c8a101ce21ef1c97623f080ef7ef3311f2408",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE3-STOP-TX1-BOUNDED-SMOKE-FAILURE-NOT-COMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260915/b2_t4_re3_artifacts/re3_failure_adjudication.json",
+      "size_bytes": 2315,
+      "sha256": "47e52961c1ab852b29b312ccb442b70f52abdf22088d2cb0bd5c62c466dcb29c",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE3-STOP-PRE-ENVIRONMENT-ENTRY-POINT-RESOLUTION-NOT-COMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260915/b2_t4_re3_artifacts/re3_preflight_summary.json",
+      "size_bytes": 3445,
+      "sha256": "f62b2a4285a1309690594bd4fc4d5f3f00f71544b996b555acbc29005ee60a8f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_ep_p_artifacts/final_result.json",
+      "size_bytes": 1125,
+      "sha256": "8e0bad06a92defb3715d9ba36b6589958c4c2a2930cb71c0db2b13d4a9b6b583",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-EP-P-STOP-PROCESS-QUIESCENCE-NOT-ESTABLISHED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_ep_p_artifacts/formal_supervisor_result.json",
+      "size_bytes": 22496,
+      "sha256": "f8af60a6fe2887e8899b445b5725719f6fc723741d74a4ccc1a2429120b6fea5",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-EP-P-STOP-PROCESS-QUIESCENCE-NOT-ESTABLISHED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_ep_p_artifacts/process_quiescence.json",
+      "size_bytes": 377,
+      "sha256": "8ae58d1d0efeb74971af756a1a1433821bc5c781ae1c0a59e13db8c208d522fe",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_ep_p_artifacts/pure_failure_receipt_test.json",
+      "size_bytes": 4100,
+      "sha256": "bbda70e6b5543046b316fe885016bccb4777b8a1f5e875019d7ecd007f142478",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_ep_q_artifacts/final_result.json",
+      "size_bytes": 1521,
+      "sha256": "fac971d1104f059a0a06dc1dbeb82e09877899e9e4a595c0c3de890880f8d4b3",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-EP-Q-PROCESS-QUIESCENCE-CONTRACT-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_ep_q_artifacts/process_quiescence_contract_v2.json",
+      "size_bytes": 1354,
+      "sha256": "307750c616c64656e5809b740d5cf960ad49e5f7eb0679358b8dcd24d93a48ac",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_pw_artifacts/current_helper_cadence_reproduction.json",
+      "size_bytes": 634,
+      "sha256": "6e450c460b1d2fca2f34241e76f86a5a0a7571476bec963cf7484e1617911b4e",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_pw_artifacts/current_helper_reproduction.json",
+      "size_bytes": 645,
+      "sha256": "7dcf758ec64473b48c77c9a890b301d3cf32fa53e580ccb35e1d9d10e08f8bdd",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_pw_artifacts/final_result.json",
+      "size_bytes": 3412,
+      "sha256": "187f2bd8c8e667d6110de3311565f5340231ab36514e5e0a29a6bbdbd8d865e3",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-PW-WINDOWS-EVIDENCE-PERSISTENCE-ATOMIC-WRITE-ROBUSTNESS-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts/b2_t4_re4_normal_horizon_20260916_formal01_failure.json",
+      "size_bytes": 2415,
+      "sha256": "a661c3608d0587e7dffd35fac0a2ba76c93850fd9b0db5eb1e81cfdd56954364",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts/b2_t4_re4_normal_horizon_20260916_formal01_tx130_failure.json",
+      "size_bytes": 2415,
+      "sha256": "a661c3608d0587e7dffd35fac0a2ba76c93850fd9b0db5eb1e81cfdd56954364",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts/final_result.json",
+      "size_bytes": 7761,
+      "sha256": "22d1ba623b524f9e16203fc3699d7aa69bfd36466223a73d00155c77947e9ced",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE4-STOP-FORMAL-WORKER-FAILURE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts/formal_supervisor_result.json",
+      "size_bytes": 34439,
+      "sha256": "f6631654898a07fc60892506330a203b091e464c56e1ab97d45553ef5054e2f0",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE4-STOP-FORMAL-WORKER-FAILURE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts/process_quiescence.json",
+      "size_bytes": 723,
+      "sha256": "244484a3a075a9d0452421f003599b02588996beb97dfffab308fc02e590d1da",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re4_artifacts/re4_preflight_summary.json",
+      "size_bytes": 62607,
+      "sha256": "cc0ecf16e40b3f24c858137de04155cb188e8ccd956de1bd4419ad6246207612",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/final_result.json",
+      "size_bytes": 15958,
+      "sha256": "ba207d41ec4d0c00536601a1b51b7312d50c57172d037785d4b96b03d3a9975c",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE5-STOP-FORMAL-WORKER-FAILURE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/formal_supervisor_result.json",
+      "size_bytes": 42771,
+      "sha256": "6c8341e6961b56fa079ada1d4a2dc711f72cf6e9a16ed67d50a334e2dd48115a",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE5-STOP-FORMAL-WORKER-FAILURE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/process_quiescence.json",
+      "size_bytes": 723,
+      "sha256": "79458cc0b3e8ce6b51372f3a4eacff02dddee47a7e7f4fc2ac53276202572b35",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/re5_failure_adjudication.json",
+      "size_bytes": 1342,
+      "sha256": "34a3936c609b46b79cc65c1e8267859838c72a1244ce334d6f790a6b69467988",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260916/b2_t4_re5_artifacts/re5_preflight_summary.json",
+      "size_bytes": 64498,
+      "sha256": "fe6cf105ae2eead87f58dade8e9b2d92275c037e255c487227933fc9e7b988b3",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_ppq_artifacts/failure_receipt_matrix.json",
+      "size_bytes": 961,
+      "sha256": "89320f07c95fa995851f8eb57673d73aa94aaf87960f1f471552648ea0d79282",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_ppq_artifacts/final_result.json",
+      "size_bytes": 877,
+      "sha256": "1920495ebfe846e68877d77d2d0e9923c1523c5e2dba43f434ceb03f6e60460b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-PPQ-FORMAL-POSTPROCESS-SUCCESS-RECEIPT-PATH-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_ppq_v2_artifacts/final_result.json",
+      "size_bytes": 533,
+      "sha256": "238723c6eec570fe0f1b6b5391f5dfa96cc2f0ec083dcfdb703ef8fed8630e38",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-PPQ-V2-FRESH-RUN-SUCCESS-RECEIPT-CONTRACT-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_ppq_v2_artifacts/re6_r2_contract_gap_reproduction.json",
+      "size_bytes": 211,
+      "sha256": "1cbc8dd890ffcf4e33b8a04cfbc5bd3df63b9f2d36ee96f3adde08dd5210779b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_artifacts/final_result.json",
+      "size_bytes": 857,
+      "sha256": "17bb6a46f821297908dd0c111139c5edf60ad6f062b262046611f05eb413b83a",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-STOP-W2E-HELPER-IDENTITY-NOT-ESTABLISHED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_artifacts/re6_preflight_summary.json",
+      "size_bytes": 1326,
+      "sha256": "678706a0dc1e2b2399c155a01e417f141af961e575fb4e3dbf686282dec41566",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-STOP-W2E-HELPER-IDENTITY-NOT-ESTABLISHED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/final_result.json",
+      "size_bytes": 4604,
+      "sha256": "6724aa332c0dffbdaf268d6c6f76bf2a108074d0f5b90e8698d03cc2e9890364",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R1-STOP-FORMAL-WORKER-FAILURE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/formal_supervisor_result.json",
+      "size_bytes": 31427,
+      "sha256": "860ec3b90c6ea39940fab5d4c279b85ee73de3e54fd56984fb864cf66b43a4e1",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R1-STOP-FORMAL-WORKER-FAILURE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/preflight_summary.json",
+      "size_bytes": 64522,
+      "sha256": "ae052363d3de00c048413cc730ce4528a2e74244da03a40be9f8e0a7efa8b4ce",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/process_quiescence.json",
+      "size_bytes": 725,
+      "sha256": "b7e2d30a57e236b087775dac54033989b0ad6a6da5d605517eb4e0fb23f6567b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r1_artifacts/re6_r1_preflight_summary.json",
+      "size_bytes": 64522,
+      "sha256": "ae052363d3de00c048413cc730ce4528a2e74244da03a40be9f8e0a7efa8b4ce",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r2_artifacts/final_result.json",
+      "size_bytes": 1279,
+      "sha256": "1caee8e6cde98f497831bdf50fd4aa113d8596e16b43dde9db5408ffd5bfa580",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R2-STOP-PPQ-FRESH-SUCCESS-RECEIPT-CONTRACT-GAP"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/failure_receipt.json",
+      "size_bytes": 2149,
+      "sha256": "9f20fa1bdb14ef32f81007f7c45e29ddeb06d58d84c4c9c0ef7b66fe6477305a",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R3-STOP-INCOMPLETE-LAYER-A-WORKER-RECEIPT-AFTER-MUTATION"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/final_result.json",
+      "size_bytes": 337,
+      "sha256": "9d70e7883fecebc16bd1892a179b269de7dbeced9795787585d0cd726a105867",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R3-PPQ-V2-BOUND-NORMAL-HORIZON-LEARNED-TRAINING-INTEGRATION-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/formal_supervisor_result.json",
+      "size_bytes": 26069,
+      "sha256": "bf4284431c5d1b31ce489a525a0506e998f78944727708d3ab1009d3e53c1a58",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R3-PPQ-V2-BOUND-NORMAL-HORIZON-LEARNED-TRAINING-INTEGRATION-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/process_quiescence.json",
+      "size_bytes": 586,
+      "sha256": "f95eba54f960d69a1020c8e1bb725af25caa59d92669726643ea7b6518b95816",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_re6_r3_artifacts/re6_r3_preflight_summary.json",
+      "size_bytes": 63802,
+      "sha256": "520f2fb180d6829f6b6df94aac00807137d95d5e72215970f4aa8f11fc975511",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_w2e_artifacts/final_result.json",
+      "size_bytes": 2182,
+      "sha256": "135decb5e0e02cdb9fafd4b254f84d8352b2522c1a20ffb9f3bbe094798995b0",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-W2E-CLAIM-MULTI-UPDATE-COMPLETION-EVIDENCE-CONTRACT-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260920/b2_t4_w2i_artifacts/final_result.json",
+      "size_bytes": 1191,
+      "sha256": "a283e8bc3ee66263a099a9422b73d336016eed04685e5b6b1e72c7a3a8eca7e6",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-W2I-W2E-SELECTOR-SOURCE-IDENTITY-BINDING-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_artifacts/final_result_before_post_final_audit.json",
+      "size_bytes": 1229,
+      "sha256": "9fb1e41da16d1d39e194243d2f6cff2ca178adfd0dba84eec4514de74c479aa7",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-LAQ-LAYER-A-WORKER-RECEIPT-SUPERVISOR-PREDICATE-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_artifacts/final_result.json",
+      "size_bytes": 1639,
+      "sha256": "b3d53d3a78a95812539512ecdc3207786f11b866db29247e24c54ce071547a7f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-LAQ-STOP-RAW-RECEIPT-CROSSCHECK-INCOMPLETE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_artifacts/qualification_pre_final_result.json",
+      "size_bytes": 331,
+      "sha256": "6d43e50440d3ced000cb6a5cbb8c0051ef4fc65719c04336147fbebcbcae7336",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_r1_artifacts/filesystem_digest_gap_reproduction_and_repair.json",
+      "size_bytes": 365,
+      "sha256": "702c6038e5db51323b8fd6a60de406d3f241f1ba6ea8ddd1ebd4f1e4753897cf",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_r1_artifacts/final_result.json",
+      "size_bytes": 1654,
+      "sha256": "684f32fca2eec8dde7e69790513433bf82b09fca88c230e65e71c3f727dbf1b8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-LAQ-R1-RAW-RECEIPT-AUTHORITY-BINDING-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_laq_r1_artifacts/retained_structural_negative_summary.json",
+      "size_bytes": 551,
+      "sha256": "fa322a920d9cc56c04b7c481b0625d2d8c845ec1616c9dd91904bb3c78a44fde",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_ppq_v2_r1_artifacts/final_result.json",
+      "size_bytes": 1637,
+      "sha256": "ea3f299d4701bd3b51f65faca1828dcfc389c8a0b16856cd16c1aec84bbde50b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-PPQ-V2-R1-FORMAL-SOURCE-PHASE-BINDING-GENERALIZED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_ppq_v2_r1_artifacts/old_ppq_v2_r4_stop_reproduction.json",
+      "size_bytes": 145,
+      "sha256": "859099e09a64a30d6067086ac02bd2dfe07053c21a6f1012f822326deaa675b2",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_artifacts/final_result.json",
+      "size_bytes": 1323,
+      "sha256": "e05fad67f7f390bb75608689174847aaa2e27fda2b7eff1f19a20ddd100bb000",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RACQ-RUNTIME-AUTHORITY-LAYER-A-COMPOSITION-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_artifacts/old_filename_failure_reproduction.json",
+      "size_bytes": 220,
+      "sha256": "44ccb3234f5550d71ac0bd028022c146f852e8a7c3df0c55bec9f7a5fd157c2d",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_r1_artifacts/final_result.json",
+      "size_bytes": 1171,
+      "sha256": "7e41c9881552ee19d87147e933d57dcfabaeeb14eb0ada8b5604539c5b3046db",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RACQ-R1-LAYER-A-V3-LIVE-QUALIFICATION-MODE-DISPATCH-QUALIFIED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_racq_r1_artifacts/r6_mode_coupling_reproduction_and_repair.json",
+      "size_bytes": 287,
+      "sha256": "50e7945023b1ff6780ceca2154042da92ee0795b0f8b5cc479d24d547c067c7a",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r4_artifacts/final_result.json",
+      "size_bytes": 828,
+      "sha256": "9ec69c63980d2d1cb31ba391a13805b7a1fba4cbb91a1664d05fe02cf4aca4d0",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R4-STOP-PPQ-V2-SOURCE-PHASE-NOT-PERMITTED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r4_artifacts/pre_runtime_stop_receipt.json",
+      "size_bytes": 625,
+      "sha256": "01a9e62db6f38b3d16fc787332ee2b1d50d38d7019747cd2e4eb4f3cb8fd9a5d",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R4-STOP-PPQ-V2-SOURCE-PHASE-NOT-PERMITTED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r5_artifacts/final_result.json",
+      "size_bytes": 1415,
+      "sha256": "ff5e807945827ee91c263b4cc9491e3fa40c4363c214fc5053eced760939fb54",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R5-STOP-PHASE-AUTHORITY-INVALID"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r5_artifacts/pre_runtime_stop_receipt.json",
+      "size_bytes": 878,
+      "sha256": "d177dbef30e8e069f3b46ca6424c7f8bf87b44a0ab4a535fd5d07907baef8253",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R5-STOP-PHASE-AUTHORITY-INVALID"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r6_artifacts/failure_receipt.json",
+      "size_bytes": 925,
+      "sha256": "968f4e0526f351416ee4d9fb23584ce4b2cca9101803ede095d712a32435bd63",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R6-STOP-RUNTIME-AUTHORITY-INVALID"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r6_artifacts/final_result.json",
+      "size_bytes": 1108,
+      "sha256": "964c75d6fafe500bb23f3a2fbb68cde8d8c1c5da789e99d6495d14fd16f1a52d",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R6-STOP-RUNTIME-AUTHORITY-INVALID"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r6_artifacts/process_quiescence.json",
+      "size_bytes": 192,
+      "sha256": "c907cdb936ed62daa2c7478e0f384df2c6b5de7e51172e1b0a8a197dd2f4c450",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r7_artifacts/failure_receipt.json",
+      "size_bytes": 737,
+      "sha256": "d16f5fd1d71db7ad5499c1ee532dd7aef528c4cd58774479efd78df7f3baeee8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R7-STOP-FROZEN-NORMALIZER-SOURCE-PHASE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r7_artifacts/final_result.json",
+      "size_bytes": 527,
+      "sha256": "99282c5429dd629abe9a50f78e4dbb9090b17e4da8601330781a2921618af4c8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R7-STOP-FROZEN-NORMALIZER-SOURCE-PHASE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260921/b2_t4_re6_r7_artifacts/pre_runtime_normalizer_stop.json",
+      "size_bytes": 765,
+      "sha256": "1761454b455c0da94d18d5c8d9ae9a553698f36372965bab9810546b8eb82c05",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R7-STOP-FROZEN-NORMALIZER-SOURCE-PHASE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_norm_r1_artifacts/final_result.json",
+      "size_bytes": 2503,
+      "sha256": "925d12d5f0333ca17bfab5e27654c833093929898ef09b7a023ed3261b063fae",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-NORM-R1-RUN-PORTABLE-NORMALIZER-QUALIFIED-NO-REMAINING-GENERIC-ATTEMPT-COUPLING-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_norm_r1_artifacts/r7_normalizer_blocker_reproduction.json",
+      "size_bytes": 188,
+      "sha256": "9bb613c98c68356c4250e487563c630796c98fa0c8794d270b09bb56c9c1a6e3",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/b2-t4-re6-r10-20260922-formal01-11b4e53a29764470b1831a360468fd8e/failure_receipt.json",
+      "size_bytes": 874,
+      "sha256": "0c367831b55eebecb3a823f9cedf606ad92a789b9e5588514b5defa05fce3397",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/b2-t4-re6-r10-20260922-formal01-11b4e53a29764470b1831a360468fd8e/final_result.json",
+      "size_bytes": 659,
+      "sha256": "17ee00f6516782e9a99c7063427dc4ed24d68d2049b742af79e71d22c6d15eea",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R10-STOP-RUNNER-READINESS"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/b2-t4-re6-r10-20260922-formal01-11b4e53a29764470b1831a360468fd8e/formal_supervisor_result.json",
+      "size_bytes": 969,
+      "sha256": "6fc32ce03d08e4cac2fc3ccc7e2605ee3cbf5546a0f1dc923f192a6f8f6a0cbc",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R10-STOP-RUNNER-READINESS"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/b2-t4-re6-r10-20260922-formal01-11b4e53a29764470b1831a360468fd8e/process_quiescence.json",
+      "size_bytes": 283,
+      "sha256": "1600816f2c7e2ff32b688c9cc10665dc95416c33abd286e8c9320e1abd1d9629",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/b2-t4-re6-r10-20260922-formal01-11b4e53a29764470b1831a360468fd8e/re6_r10_preflight_summary.json",
+      "size_bytes": 64008,
+      "sha256": "11a1e14aba29ea1c7356d17e90961ca5cb39f70d25de38ca5e406ee2dd7e0237",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/r8_source_shape_reproduction_and_r10_repair.json",
+      "size_bytes": 263,
+      "sha256": "bb63d2ae4241c4a2ed71e8dec34563d767a05c1f7881b7ad9b5ba1f0527c331f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r10_artifacts/r9_pw_collision_reproduction_and_r10_ownership_repair.json",
+      "size_bytes": 252,
+      "sha256": "2cbebcd49f2d35b089ae3394854658b6df87c84f99c30206f56e5949e2835e0a",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/b2-t4-re6-r11-20260922-formal01-c266e95ab2b34167ba37505dcc6908d1/failure_receipt.json",
+      "size_bytes": 604,
+      "sha256": "559c5080871c5dc3a60de33fd7dc77ad08e94883c1319f1d588c6b8e6e5e8da2",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R11-STOP-LIVE-POSITIVE-CONSISTENCY"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/b2-t4-re6-r11-20260922-formal01-c266e95ab2b34167ba37505dcc6908d1/final_result.json",
+      "size_bytes": 472,
+      "sha256": "8d293c0e56912631ed64331bfc9c6c125da95175d0c6cd8e46860d5f7623e4c1",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R11-STOP-LIVE-POSITIVE-CONSISTENCY"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/b2-t4-re6-r11-20260922-formal01-c266e95ab2b34167ba37505dcc6908d1/formal_supervisor_result.json",
+      "size_bytes": 382,
+      "sha256": "1ab1afcf76c57d56e04f3b847e60a39498d45483dcc14a7fb7eddedf9ef984e8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R11-STOP-LIVE-POSITIVE-CONSISTENCY"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/b2-t4-re6-r11-20260922-formal01-c266e95ab2b34167ba37505dcc6908d1/process_quiescence.json",
+      "size_bytes": 152,
+      "sha256": "7b8d504ac392fc6e2d5dcf9bcba6505344deaba1cef72729135b522a64db98a8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/b2-t4-re6-r11-20260922-formal01-c266e95ab2b34167ba37505dcc6908d1/re6_r11_preflight_summary.json",
+      "size_bytes": 64008,
+      "sha256": "0cdb9a60cc1c927c95978251187130174a159e97dce156ca75a5e2d42847fa11",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/blocked_live_positive_stop.json",
+      "size_bytes": 688,
+      "sha256": "ef26164900f8251024406aebdb1449b51a37368916258cd4d360303e0271462f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R11-STOP-LIVE-POSITIVE-CONSISTENCY"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/r10_wrong_phase_negative_reproduction.json",
+      "size_bytes": 323,
+      "sha256": "22f0c1eb619ebd0075e8c57ff4408bde252cdf403e1a7e0aa49eb84528a5dc8b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/r8_source_shape_reproduction_and_r11_repair.json",
+      "size_bytes": 263,
+      "sha256": "1d12982d1a882f067fb09e135c4d41c84176c4561f1fb3ddd170aeeb487f4261",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r11_artifacts/r9_pw_collision_reproduction_and_r11_ownership_repair.json",
+      "size_bytes": 252,
+      "sha256": "9c3ce2a3d4da01d2328cc84905e03c40ba2d754ccbb23c1c7e6cc48ddd8757e0",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/failure_receipt.json",
+      "size_bytes": 688,
+      "sha256": "9ff774d5725e212a14dd0fd2b8bfb0fe0adf47dcf118e8b2e7c21762f63e3b74",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/final_result.json",
+      "size_bytes": 816,
+      "sha256": "5f97d454b01308c211737c8465f70efbd8911afc25268d2161afbbf8e52c763c",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R12-STOP-POISONED-RETAINED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/process_quiescence.json",
+      "size_bytes": 396,
+      "sha256": "28bdb43ab398c0457fe1c70cd93879bada1341ec1ee944e59e78767673049bc0",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/b2-t4-re6-r12-20260922-formal01-d032823b6e9747b9a41ca1808cbe35f2/re6_r12_preflight_summary.json",
+      "size_bytes": 64007,
+      "sha256": "77948690807ad9ed018233b775960fc7de52274d4ba91354289b2d6f4130d8ec",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/r10_wrong_phase_negative_reproduction.json",
+      "size_bytes": 325,
+      "sha256": "a39fedacc0ed427478bca12b82ed05bbfa2d3df5f2c711cea854614c8d7e5180",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/r11_norm_context_collision_reproduction_and_r12_repair.json",
+      "size_bytes": 365,
+      "sha256": "4eba7e96109f9ef9f52c589b16c2519e90ad14ef3801939886db162221d37794",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/r8_source_shape_reproduction_and_r12_repair.json",
+      "size_bytes": 263,
+      "sha256": "0a26d3b375520126eafff8147f7a86b8f90a345937deeee32c7700843434ca02",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r12_artifacts/r9_pw_collision_reproduction_and_r12_ownership_repair.json",
+      "size_bytes": 252,
+      "sha256": "37fc8891468d8a7cf947ea4200e342b5d531d4d1132fdf4415c2c373d6ec4673",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/failure_receipt.json",
+      "size_bytes": 1167,
+      "sha256": "a5fe29169dbaaf16acb00b8981b228fcece46023c7667612446f15671ae86a1b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R13-STOP-RUNTIME"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/final_result.json",
+      "size_bytes": 987,
+      "sha256": "bcc8662201018e10a4a911700c120ac177fa85eca2735a0fef8226d9866448f0",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R13-STOP-RUNTIME"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/process_quiescence.json",
+      "size_bytes": 470,
+      "sha256": "9203c4e86eeb2bd7dff9fbcf8d359e09347db590eec490a7d66f1b0c19967f67",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/re6_r13_preflight_summary.json",
+      "size_bytes": 64008,
+      "sha256": "0cc11d0d9f0d8e571ebee00d69fb4b21b27e0d4f7b03d44aa8b08551c632b67e",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/r10_wrong_phase_negative_reproduction.json",
+      "size_bytes": 325,
+      "sha256": "ab7721a17e39869f4b19fa77bedfd6590818a0e0d8b3244af19950b791a26559",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/r11_norm_context_collision_reproduction_and_r13_repair.json",
+      "size_bytes": 365,
+      "sha256": "8d223fea7def88f0e1a2ff6d0d24b7d40622c6fa9d09a14a3281a121c957d10b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/r12_w7_projection_failure_reproduction.json",
+      "size_bytes": 277,
+      "sha256": "3ec19c36fd60e028e188d05fb45e8f00a73da7c3f4bcef24cbe151202bd70d5f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/r8_source_shape_reproduction_and_r13_repair.json",
+      "size_bytes": 263,
+      "sha256": "fc4cbb87d1565ce6a84736391ae5d8e70cb87710db022442c87030d11282fb27",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/r9_pw_collision_reproduction_and_r13_ownership_repair.json",
+      "size_bytes": 252,
+      "sha256": "46ed0a38fcaacd0012c8f83187dc552f297b89a418e14b808bcad854059ba62c",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/failure_receipt.json",
+      "size_bytes": 1443,
+      "sha256": "0775b9fee38c822bb993c6b2aa59d95fa0790d980a6000fe9915b5126b458844",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/final_result.json",
+      "size_bytes": 1415,
+      "sha256": "0f0e07f6a8e94102b2640d5ad623434aac8b43a737e4bee13a900c1fcdf01ab8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R8-STOP-RUNNER-READINESS-LAYER-A-SYNTHETIC-SOURCE-SHAPE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/formal_supervisor_result.json",
+      "size_bytes": 760,
+      "sha256": "0cc650d1034afe0b5029d078fb7b2f28d2101790a7c5e4a75ac148381a1535a1",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R8-STOP-RUNNER-READINESS-LAYER-A-SYNTHETIC-SOURCE-SHAPE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/process_quiescence.json",
+      "size_bytes": 159,
+      "sha256": "2165ed303b673ac13dc6139ae330e6d417bb9493487f199691c377f52cdc3baa",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r8_artifacts/b2-t4-re6-r8-20260922-formal01-f5c47b1ad2ba42a1baaa552f64d3a675/re6_r8_preflight_summary.json",
+      "size_bytes": 63996,
+      "sha256": "a7d6d89e4b9c5ae84633d80c2c11715d60f078f9b370aaf02972d0db21485235",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/failure_receipt.json",
+      "size_bytes": 978,
+      "sha256": "7e4132a5e9f729fe75d9fc2d6b97f7e397e00e2d526e7138eb5d6d2ece34bea1",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/final_result.json",
+      "size_bytes": 361,
+      "sha256": "c2fd649373a144ce5bf2c8b0905e4e3528cdc66e93b06f02a9e56bdc0527c5df",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R9-STOP-POISONED-RETAINED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/formal_supervisor_result.json",
+      "size_bytes": 26969,
+      "sha256": "f3ddf25d3feb6a845304d640ef3b00da2b1847a4b3d91f8ae4bc3dc9fc0fdc33",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R9-STOP-POISONED-RETAINED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/process_quiescence.json",
+      "size_bytes": 483,
+      "sha256": "8515c1e1c21db5491b370812f6a08888de5628ac9d6a2489a2842832b66fe6ba",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/b2-t4-re6-r9-20260922-formal01-7ffc30b1ebf54620b17590f9afb39de1/re6_r9_preflight_summary.json",
+      "size_bytes": 63997,
+      "sha256": "67e201c9823f5c44ed8c0182116cc8d33665e8f799623afb9b5e554bddb694f9",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r9_artifacts/r8_source_shape_reproduction_and_r9_repair.json",
+      "size_bytes": 262,
+      "sha256": "623af5f87c0bf5c9df852189fc49c70554c6026c5be970466abb4e4148f0d7b9",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt1_artifacts/final_result.json",
+      "size_bytes": 1130,
+      "sha256": "d81920d725cfe6009ad50caaf22b95b95dda0e16299dd47a46fb5a828df3d41c",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT1-OPTIMIZATION-CONTINUATION-CHECKPOINT-IMPLEMENTATION-AND-PURE-QUALIFICATION-COMPLETE-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_artifacts/failure_receipt.json",
+      "size_bytes": 1984,
+      "sha256": "2f598fbfd3393956b8eda786b0fcd9821b9228047da489f83000dbe54399adc7",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_artifacts/final_result.json",
+      "size_bytes": 757,
+      "sha256": "fa9d3871866fba7110ef7363268e62c696e711242f47d75535c3e58642dd1f30",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_artifacts/process_a/failure_receipt.json",
+      "size_bytes": 539,
+      "sha256": "70582e014a1399a9b1d05fef2ca8ef53fb082353a1ede894c77b4efdcc11b6a2",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_artifacts/process_b/failure_receipt.json",
+      "size_bytes": 325,
+      "sha256": "4ce4cd5191f2d53281c715f66d97c2df7626440bf645714ae137dc02dbed6a95",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-STOP-CHECKPOINT-LOAD"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_artifacts/process_quiescence.json",
+      "size_bytes": 431,
+      "sha256": "20771947d8395e37059c820bc853bde484841ccb5dc1b75786a055cdf8bad3a7",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r1_artifacts/ckpt2_lr_boundary_failure_reproduction_and_repair.json",
+      "size_bytes": 757,
+      "sha256": "d740b6d424bab3e84f8fb1e6dc92cd890ff2290d3d2afc9ff352f2e64bd9aa2f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r1_artifacts/failure_receipt.json",
+      "size_bytes": 822,
+      "sha256": "9fc21750c8e766fc9f5e212398c9ebff32af7b282984d835d80eb0c0ad9d9ba3",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R1-STOP-PROCESS-A-SEMANTIC-GATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r1_artifacts/process_a/failure_receipt.json",
+      "size_bytes": 1136,
+      "sha256": "30ce49860c14a9f7d8035442d081b5fa43e27557b36eb4548763329144c0cbf7",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R1-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r2_artifacts/ckpt2_r1_ledger_schema_failure_reproduction.json",
+      "size_bytes": 416,
+      "sha256": "5771d13238283e65a944e87d80cbef444a1f82aa53b2b89996995f376ac68f0b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r2_artifacts/failure_receipt.json",
+      "size_bytes": 822,
+      "sha256": "02ff5ec71577107aa5858e458bbaac0effdc3f28094855ded2320c1fa45c6b15",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R2-STOP-PROCESS-A-SEMANTIC-GATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r2_artifacts/process_a/failure_receipt.json",
+      "size_bytes": 1619,
+      "sha256": "45d5a123e05f39d8dd07cacbdb5e5591ceb4debdacbccd01e50b20fac1a4cfdb",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R2-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r3_artifacts/ckpt2_r2_identity_binding_failure_reproduction.json",
+      "size_bytes": 351,
+      "sha256": "61b7e1b2a119a3f3a63942b0a4853b2040e37ec5d90a9f56a99bce5892fcfbec",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r3_artifacts/failure_receipt.json",
+      "size_bytes": 822,
+      "sha256": "13dbddb92e82d72653d8992585ec6fde8112c8afe2541e114720c852bfd9031a",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R3-STOP-PROCESS-A-SEMANTIC-GATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r3_artifacts/final_result.json",
+      "size_bytes": 1481,
+      "sha256": "b357ea3dc1f1e96f4c8b2f1a77bb39cd4c8a62c504b5fc334cbf17fad3117e3a",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R3-STOP-PROCESS-A-ENVIRONMENT-CREATION"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r3_artifacts/process_a/failure_receipt.json",
+      "size_bytes": 1297,
+      "sha256": "4367f6ba63ddfc1d5a4b680c9cb31d9a87a1991aafa69209723dabf40790bb34",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R3-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r3_artifacts/process_quiescence.json",
+      "size_bytes": 215,
+      "sha256": "23d8a1b3623a531eb742eab512029c598f0a317fd0bb2d130932f9b1c62248a2",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/ckpt2_r2_identity_binding_failure_reproduction.json",
+      "size_bytes": 351,
+      "sha256": "61b7e1b2a119a3f3a63942b0a4853b2040e37ec5d90a9f56a99bce5892fcfbec",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/failure_receipt.json",
+      "size_bytes": 2857,
+      "sha256": "51dc2cf0ed9357d935f22de18879cf6bc43b442771e709543f7459069e442331",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R4-STOP-TRANSACTION-LEDGER"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/final_result.json",
+      "size_bytes": 1252,
+      "sha256": "9e2e3af6d8198a3c1916d9ae84bcd0450d52f4ce7593cd8ecda0777b050c7050",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R4-STOP-TRANSACTION-LEDGER"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/process_a/failure_receipt.json",
+      "size_bytes": 1891,
+      "sha256": "2c2e0e6da9e8b1a594092f4c4ffd6421947aafca83ce7c0ee8f290f4ab997442",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R4-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/process_quiescence.json",
+      "size_bytes": 539,
+      "sha256": "b549b24654e8294aa1ca70a9a7b76b9850d6002e0504a6bdd6e0f15353e9f338",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/r3_import_namespace_failure_reproduction.json",
+      "size_bytes": 245,
+      "sha256": "a15dcf2d93eb2058d40a82c987c7c244be9a4e9e2eb502401669c4f041c2a159",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/r3_package_import_side_effect_reproduction.json",
+      "size_bytes": 354,
+      "sha256": "f1dd09472be53bc75e9bd45d0abf7184de145cf2400949edebffb95dad0d7004",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_ckpt2_r4_artifacts/transaction_ledger_failure_adjudication.json",
+      "size_bytes": 726,
+      "sha256": "f7a6def1144cbaddda13fece2f6aa1503b10582a4f1ee4d3f66e69694369ce9b",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_csr1_artifacts/closure_complexity_reduction_summary.json",
+      "size_bytes": 578,
+      "sha256": "f6c3622e75ef6cdc6fec4dad59614dd2835308473c675b8b87130dccbe375a5f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_csr1_artifacts/final_result.json",
+      "size_bytes": 1251,
+      "sha256": "3b834329dc725a5f883379d512c4726a6c584568f53cbf24a517fe942401dfc8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CSR1-CLOSURE-SCOPE-REDUCTION-COMPLETE-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/bridge_ledger.jsonl",
+      "size_bytes": 49659,
+      "sha256": "c938e4fcbe07a6237ca1bad26520e0ac0b9a6974c0b11787eb3eca9fe8a9d0dd",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/env_close_result.json",
+      "size_bytes": 35,
+      "sha256": "e041ae1127801058e8ca2a79a49ce25be2279176d09fe174c305f27546a04b60",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/failure_receipt.json",
+      "size_bytes": 999,
+      "sha256": "97fe20880078e51a485a82b803314c9b3115067910a068c6cb0924619284d350",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/final_result.json",
+      "size_bytes": 931,
+      "sha256": "70c00a011551f82ddeed74354bc89c304da575ade73a570d6d47f4cf3b68a941",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R14-STOP-POISONED-RETAINED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/formal_supervisor_result.json",
+      "size_bytes": 26965,
+      "sha256": "f025d3fd1b8947af1908e58c6626363a2c2fe4169787b7c0d5e6e73652c8fa65",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-RE6-R14-STOP-POISONED-RETAINED"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/formal_worker_receipt.json",
+      "size_bytes": 5868,
+      "sha256": "30d7ffe42ee84dc971a6928a08713d079d640c3de33747f0b22f5fbdaefad4bf",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/lifecycle_task_progress.jsonl",
+      "size_bytes": 2860731,
+      "sha256": "925124a2b25f2e846124367308a23070675867c5733bf799a0c984694d1f71c1",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/nonterminal_bootstrap.jsonl",
+      "size_bytes": 88373,
+      "sha256": "8d98c5925434e52582e8f6076362422f29c113628bf0b7628256a485d77e467d",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/process_config_authority.json",
+      "size_bytes": 648,
+      "sha256": "c796e2e5bd892c50db14b55bb252fc7d466e1617e9d50cb57659b300664eea0b",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/process_quiescence.json",
+      "size_bytes": 483,
+      "sha256": "8515c1e1c21db5491b370812f6a08888de5628ac9d6a2489a2842832b66fe6ba",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/r14_static_authority_snapshot.json",
+      "size_bytes": 1385,
+      "sha256": "a57b4f8f38af19bfa75b28bd91cdbecd9774a9f7bad2c1148e256929f9c569e5",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/re6_r14_preflight_summary.json",
+      "size_bytes": 64007,
+      "sha256": "1f120c16f8c15413c37a27d1cf55484c8f55958f0aaca888a1f9c1368c6fa78d",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/runtime_p2_immutability.jsonl",
+      "size_bytes": 85012,
+      "sha256": "3db19df4a6db577ba842e2436eecad2556678094a6122a59dd830bad002a1157",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/terminal_reconciliation.jsonl",
+      "size_bytes": 61850,
+      "sha256": "66458be31eabf2fb76152c53009792600f68f156495cbf046a7e1f7ecfb8799d",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/transaction_ledger.jsonl",
+      "size_bytes": 72908,
+      "sha256": "cd2ecbd837dcb45aa11708bc6d157d17de529cdcd0e12cc57bbed65d0d05dca3",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W1_cross_update_ownership.json",
+      "size_bytes": 3002,
+      "sha256": "7a86657a2d847c1e4ad6aaf3261f5913c23196626116091f6d7406db6d3945ed",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W2_multi_update_completion_v2.json",
+      "size_bytes": 28041,
+      "sha256": "879f54da6950b9d5b741630c0d4d7e25a89fb3c910d7a67c25aac615dcdc66a3",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W3_real_zero_dvm_actor.json",
+      "size_bytes": 274,
+      "sha256": "a6dbd63680f354016468e2c791a1f7ff9d381ecd353c2a3564b1702781d79dec",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W4_real_nonterminal_bootstrap.json",
+      "size_bytes": 550,
+      "sha256": "af73a6d87dcaf5aad003f8ac56394e36287c2dd619d1d81770da8949387dd133",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W5_normal_horizon_terminal_autoreset.json",
+      "size_bytes": 424,
+      "sha256": "55a215bb13514ca71a847a597293dbc5c57b86392a2a75e3d48e249e14add9c9",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W6_post_autoreset_training.json",
+      "size_bytes": 185,
+      "sha256": "6dac55046be0abd71d8342d418b004714f4630284677ae29e8ba7085cb165a90",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W7_runtime_p2_immutability.json",
+      "size_bytes": 62,
+      "sha256": "ba00558ed665c7183eb1b8be245446bd87e135d08485a4ac020d2800fa6b0ade",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/zero_dvm_actor_ledger.jsonl",
+      "size_bytes": 124908,
+      "sha256": "9509bb04e6dbe1d9a16043b03e284a0456c3636cedd575e1daea0f7336b7199e",
+      "reason": "R14 normal-horizon claim support: canonical single-copy raw ledger, W1-W7 witness or compact runtime authority",
+      "classification": "KEEP_COMPACT_EVIDENCE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/r12_w7_projection_failure_reproduction.json",
+      "size_bytes": 277,
+      "sha256": "3ec19c36fd60e028e188d05fb45e8f00a73da7c3f4bcef24cbe151202bd70d5f",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/r13_source_phase_authority_collision_reproduction.json",
+      "size_bytes": 666,
+      "sha256": "c01d398c94b6c72e0f8ebd35ac215a7f5a769f8df8714d791eb46d509f98c717",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/failure_receipt.json",
+      "size_bytes": 822,
+      "sha256": "0adb1b716d607ae755c8bb71ae433371fc504338657318ddfbd3d2c761acbd91",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R5-STOP-PROCESS-A-SEMANTIC-GATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/final_stop_adjudication.json",
+      "size_bytes": 1808,
+      "sha256": "67d1459e41f83f630429d4597819691387a31e23de370ff4f02b5b484000ba31",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R5-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/core_failure.json",
+      "size_bytes": 1944,
+      "sha256": "d0988fe99517145cdd88542d7fb58f4bee0e2f71574abf2c24715188413da3aa",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/core_tx1_failure.json",
+      "size_bytes": 1944,
+      "sha256": "d0988fe99517145cdd88542d7fb58f4bee0e2f71574abf2c24715188413da3aa",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_a/failure_receipt.json",
+      "size_bytes": 3431,
+      "sha256": "aca17ce11cc5d040e0618326b928a789579cfb134bc04b54288097ea713c1a62",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R5-STOP-PROCESS-A-UPDATE"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/process_quiescence.json",
+      "size_bytes": 365,
+      "sha256": "1f775dbeb6d220704ebbfeedb5cb7a49c449164c5aa754aace97260ab81810ab",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r5_artifacts/r4_fixed_actor_count_predicate_failure_reproduction.json",
+      "size_bytes": 375,
+      "sha256": "d8cb646de9da5eb6c2fdb1ab558ead114d0b9b0cbcbf4b2f0554934bf05bc7a8",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r6_artifacts/failure_receipt.json",
+      "size_bytes": 2844,
+      "sha256": "ebea2a61097d10168e1d02283bf4e55ff92ebb75ced1d05dae65401779f1db72",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R6-STOP-PRE-RUNTIME-RECEIPT-BINDING"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r6_artifacts/final_stop_adjudication.json",
+      "size_bytes": 958,
+      "sha256": "7903b2b779dda7bf6aaea34bdf31c9803f1ab392d631abd148ba7759c4d4828d",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R6-STOP-PRE-RUNTIME-HISTORICAL-R5-DRIFT"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r6_artifacts/process_quiescence.json",
+      "size_bytes": 401,
+      "sha256": "c70ca5b0a5d26784c06e3f437a31cc1e46fac1481165e32215ea985bd5951ef4",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r6_hr1_artifacts/final_result.json",
+      "size_bytes": 1324,
+      "sha256": "3dc12c011726c21ea7ba1fc927660c76e713abc480fd5fc83ddc97cacd5e3f67",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": "PHASE-B2-T4-CKPT2-R6-HR1-INVENTORY-ALGORITHM-DRIFT-RECONCILED-AWAITING-GPT-REVIEW"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/b2_t4_ckpt2_r6_hr1_artifacts/r5_current_inventory_reproduction.json",
+      "size_bytes": 868,
+      "sha256": "49f996c2602521afa8c6cfdba559cc26b85c03ac0b1f3d76a58f2cfe869caef2",
+      "reason": "Compact historical qualification, STOP/root-cause or quiescence receipt; retain verdict without raw repeated diagnostics",
+      "classification": ""
+    }
+  ],
+  "byte_identical_duplicate_pairs": [
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/transaction_ledger.jsonl",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_transaction_ledger.jsonl",
+      "size_bytes": 72908,
+      "sha256": "cd2ecbd837dcb45aa11708bc6d157d17de529cdcd0e12cc57bbed65d0d05dca3",
+      "byte_identical": true
+    },
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/bridge_ledger.jsonl",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_bridge_ledger.jsonl",
+      "size_bytes": 49659,
+      "sha256": "c938e4fcbe07a6237ca1bad26520e0ac0b9a6974c0b11787eb3eca9fe8a9d0dd",
+      "byte_identical": true
+    },
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/lifecycle_task_progress.jsonl",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_lifecycle_task_progress_ledger.jsonl",
+      "size_bytes": 2860731,
+      "sha256": "925124a2b25f2e846124367308a23070675867c5733bf799a0c984694d1f71c1",
+      "byte_identical": true
+    },
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/runtime_p2_immutability.jsonl",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_learner_runtime_immutability_ledger.jsonl",
+      "size_bytes": 85012,
+      "sha256": "3db19df4a6db577ba842e2436eecad2556678094a6122a59dd830bad002a1157",
+      "byte_identical": true
+    },
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/nonterminal_bootstrap.jsonl",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_nonterminal_bootstrap_ledger.jsonl",
+      "size_bytes": 88373,
+      "sha256": "8d98c5925434e52582e8f6076362422f29c113628bf0b7628256a485d77e467d",
+      "byte_identical": true
+    },
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/terminal_reconciliation.jsonl",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_terminal_reconciliation_ledger.jsonl",
+      "size_bytes": 61850,
+      "sha256": "66458be31eabf2fb76152c53009792600f68f156495cbf046a7e1f7ecfb8799d",
+      "byte_identical": true
+    },
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/zero_dvm_actor_ledger.jsonl",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/b2_t4_re6_r14_normal_horizon_20260922_formal01_zero_dvm_actor_ledger.jsonl",
+      "size_bytes": 124908,
+      "sha256": "9509bb04e6dbe1d9a16043b03e284a0456c3636cedd575e1daea0f7336b7199e",
+      "byte_identical": true
+    },
+    {
+      "keep": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/W2_multi_update_completion_v2.json",
+      "delete_recommended": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260923/b2_t4_re6_r14_artifacts/b2-t4-re6-r14-20260923-formal01-d21c8c835a4944af8395b7a03dee5b6c/w2e_candidate_inventory.json",
+      "size_bytes": 28041,
+      "sha256": "879f54da6950b9d5b741630c0d4d7e25a89fb3c910d7a67c25aac615dcdc66a3",
+      "byte_identical": true
+    }
+  ],
+  "actions": {
+    "deleted_files": 0,
+    "moved_files": 0,
+    "runtime_runs": 0,
+    "checkpoint_loads": 0,
+    "git_mutations": 0
+  },
+  "limitations": "Textual reference search plus source-path inspection is not a proof about all arbitrary future scripts; no new experiment route exists or is authorized. Audit does not guarantee original raw forensic reruns."
+}

@@ -1,0 +1,1807 @@
+{
+  "schema": "phase_b_local_cleanup_package_checkpoint_review_v1",
+  "date": "2026-09-25",
+  "mode": "PLANNING_ONLY_NO_DELETION",
+  "scope": "Three Phase-B ZIPs; final-closure nine tensor payloads, two logs, and protection of 23 committed JSON records.",
+  "summary": {
+    "zip_count": 3,
+    "zip_bytes": 547764,
+    "zip_entries": 158,
+    "all_zip_entries_sha256_identical_to_original": true,
+    "only_copy_entries": 0,
+    "tensor_count": 9,
+    "tensor_bytes": 8601860,
+    "log_count": 2,
+    "log_bytes": 52010,
+    "keep_required_compact_json_count": 23,
+    "keep_required_compact_json_bytes": 98023,
+    "active_code_dependencies_affected": 0,
+    "files_deleted": 0,
+    "files_moved": 0,
+    "runtime_executed": 0,
+    "git_mutations": 0
+  },
+  "method": [
+    "Read ZIP entries using .NET ZipArchive.OpenRead without extraction; hash streams and neighboring originals with SHA-256.",
+    "Read final logs as text and checkpoint manifest/progression as JSON. Do not deserialize/load tensor payloads.",
+    "Compare all checkpoint manifest artifact hashes (nine tensors plus progression and semantic config) to disk; all eleven match.",
+    "Search current scripts/source/.vscode/.github Python/YAML/TOML/PowerShell/shell/batch files for explicit final artifact or ZIP paths.",
+    "Read existing final closure report, TASK_PROGRESS, and final closure orchestrator; read-only Git lists 23 protected compact JSON records."
+  ],
+  "source_dependency_review": {
+    "matches": [
+      {
+        "path": "scripts/environments/test_assignment_phase_b_final_closure.py",
+        "line": 26,
+        "kind": "HISTORICAL_ONLY",
+        "details": "Historical closed qualification orchestrator owns its exact output root. It forbids overwrite/retry when process_a/process_b already exist (lines145,494), writes A checkpoint (416), and historically loads it for fresh B (320,505). No ongoing paper/production consumer is identified."
+      }
+    ],
+    "logs": "Orchestrator writes stdout/stderr at lines474-475; supervision reads compact JSON, not log text. No active input dependency.",
+    "other_active_code_matches": 0,
+    "unresolved_issue_evidence": "None identified. Current handoff states Phase-B implementation/runtime blockers NONE; paper experiments have not begun."
+  },
+  "checkpoint_effect_of_future_delete": "The exact archived A checkpoint will no longer be loadable or independently tensor-replayed after deletion. Retained digests/manifests/equality/continuity substantiate the accepted historical result; source/config and harness remain. A new smoke reproduction requires separate authorization and a fresh output path, not reuse of this closed attempt.",
+  "log_review": {
+    "lines_per_log": 88,
+    "warning_lines_per_log": 11,
+    "traceback_or_error_lines": 0,
+    "semantic_gate_marker_lines": 0,
+    "content": "Torch/CUDA startup labels, Isaac startup/environment information, hardware inventory, known startup warnings, scenario/robot/capability/reset diagnostics. Success, shutdown, optimizer and ValueNorm continuity conclusions are in retained JSON, not these log lines.",
+    "unique_runtime_gate_evidence": false
+  },
+  "report_group_references": [
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/PHASE_B_FINAL_CLOSURE_REPORT.md",
+      "lines": [
+        43,
+        45,
+        57,
+        61,
+        91,
+        112
+      ],
+      "type": "Historical fixture/evidence-set narrative; all direct Markdown links are to retained compact JSON. Deleting tensors/logs removes archival replay, not the accepted compact evidence."
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/PHASE_B_GIT_CLOSEOUT_CHANGE_CLASSIFICATION.md",
+      "lines": [
+        109
+      ],
+      "type": "Historical ignore-rule example for tensor payloads; not a live consumer."
+    },
+    {
+      "path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE_B_GPT_REVIEW_CLOSURE_20260924.md",
+      "lines": [
+        56
+      ],
+      "type": "Directory navigation remains resolvable, since compact JSON stays."
+    }
+  ],
+  "zip_files": [
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260913/b2_t4_sr_artifacts.zip",
+      "size_bytes": 19126,
+      "sha256": "27bbc0bfcc70bb0b1a1066f0da1f308aaaceee7c98aefe34247a0bd06a9a281c",
+      "entries": [
+        {
+          "entry": "b2_t4_sr_artifacts/final_result.json",
+          "size_bytes": 4950,
+          "sha256": "5146e959a0cf82929958252748bf8d69b203752d65942bbccaa8a0a12c0154bb",
+          "original_exists": true,
+          "original_sha256": "5146e959a0cf82929958252748bf8d69b203752d65942bbccaa8a0a12c0154bb",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/ledger_roundtrip.json",
+          "size_bytes": 55417,
+          "sha256": "2f1f6b875b75f7dc4008bffda78bfe85bc872cdaa006b6c564560f7f474fec6b",
+          "original_exists": true,
+          "original_sha256": "2f1f6b875b75f7dc4008bffda78bfe85bc872cdaa006b6c564560f7f474fec6b",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/old_failure_reproduction.json",
+          "size_bytes": 405,
+          "sha256": "65c69a73d472e603a93d2c96b246aa9c903cf215108db80f614e0b96f806d857",
+          "original_exists": true,
+          "original_sha256": "65c69a73d472e603a93d2c96b246aa9c903cf215108db80f614e0b96f806d857",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/production_source_identity_check.json",
+          "size_bytes": 587,
+          "sha256": "edc4911f46a8666aa9d340a1834f760e3c139cbd48c7f2e43ce90d821b4044e6",
+          "original_exists": true,
+          "original_sha256": "edc4911f46a8666aa9d340a1834f760e3c139cbd48c7f2e43ce90d821b4044e6",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/re1_tx001_serializer_replay.json",
+          "size_bytes": 682,
+          "sha256": "683b2a9e99053eeae3892602dd5ad273a52092b30198c22d7a9c018b1420491c",
+          "original_exists": true,
+          "original_sha256": "683b2a9e99053eeae3892602dd5ad273a52092b30198c22d7a9c018b1420491c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/serializer_contract.json",
+          "size_bytes": 2973,
+          "sha256": "64d1ae4ff2ebe82f5e1727330c71248edc8c1d2d00ebecd4406d8b7951f6fb3f",
+          "original_exists": true,
+          "original_sha256": "64d1ae4ff2ebe82f5e1727330c71248edc8c1d2d00ebecd4406d8b7951f6fb3f",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/serializer_negative_matrix.json",
+          "size_bytes": 4542,
+          "sha256": "ab3001b9d7e64fc6da58015f1186acbacf90037b40e3aa42457715181cefca35",
+          "original_exists": true,
+          "original_sha256": "ab3001b9d7e64fc6da58015f1186acbacf90037b40e3aa42457715181cefca35",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/serializer_positive_matrix.json",
+          "size_bytes": 4386,
+          "sha256": "856a58cb252549a722c59e2af695ebddb1e9dcbb8607045b15e718500f1a84b1",
+          "original_exists": true,
+          "original_sha256": "856a58cb252549a722c59e2af695ebddb1e9dcbb8607045b15e718500f1a84b1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_sr_artifacts/tx001_post_s10_bookkeeping_replay.json",
+          "size_bytes": 55533,
+          "sha256": "65cf6938cfb39a354b3d3581b63a66b44cf42ad8b82b353a8953122d023354fd",
+          "original_exists": true,
+          "original_sha256": "65cf6938cfb39a354b3d3581b63a66b44cf42ad8b82b353a8953122d023354fd",
+          "equal": true
+        }
+      ],
+      "all_equal": true,
+      "type": "file",
+      "phase_source": "B2-T4-SR",
+      "classification": "DELETE_STRONG",
+      "reason": "Every ZIP entry exists at the neighboring original path and is SHA-256 identical; this container has no only-surviving-copy evidence. Historical conclusions/STOP receipts are retained separately under the main audit.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming the ZIP filename; excludes new cleanup outputs.",
+      "code_dependency": "NONE",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260913/b2_t4_sr_artifacts/"
+      ],
+      "entry_count": 9,
+      "uncompressed_size_bytes": 129475,
+      "only_copy_entry_count": 0
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts.zip",
+      "size_bytes": 492460,
+      "sha256": "25fc42300d335644c9152488b677ae7118e3ed8f0a3e20591aa8bf90bad44235",
+      "entries": [
+        {
+          "entry": "b2_t4_re6_r13_artifacts/artifact_collision_preservation.json",
+          "size_bytes": 232,
+          "sha256": "e902d66b70fd6354aca71667dfe0c04e7269d0791d5cc6ca399e81a2e95e9f8e",
+          "original_exists": true,
+          "original_sha256": "e902d66b70fd6354aca71667dfe0c04e7269d0791d5cc6ca399e81a2e95e9f8e",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/artifact_lifecycle_collision_matrix.json",
+          "size_bytes": 2236,
+          "sha256": "18522c255b2722a63b612f78a41ac7eeb8917e61e4015b90dd60c00acab7c0e6",
+          "original_exists": true,
+          "original_sha256": "18522c255b2722a63b612f78a41ac7eeb8917e61e4015b90dd60c00acab7c0e6",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/artifact_lifecycle_ownership_matrix.json",
+          "size_bytes": 19655,
+          "sha256": "1e6037d530067d1142b4248b9fd56cff3c20d6c06794aaf2b1a59414f9940aea",
+          "original_exists": true,
+          "original_sha256": "1e6037d530067d1142b4248b9fd56cff3c20d6c06794aaf2b1a59414f9940aea",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/artifact_lifecycle_preservation.json",
+          "size_bytes": 233,
+          "sha256": "5cf2d6f1770d141094565faeab789be14706944f46dc509bd39c0d935b483ee1",
+          "original_exists": true,
+          "original_sha256": "5cf2d6f1770d141094565faeab789be14706944f46dc509bd39c0d935b483ee1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/artifact_ownership_preservation.json",
+          "size_bytes": 265,
+          "sha256": "dafbfd2925fe3345a52d7a4ec01359a08fc31e37033132b6324691d55cd0cca1",
+          "original_exists": true,
+          "original_sha256": "dafbfd2925fe3345a52d7a4ec01359a08fc31e37033132b6324691d55cd0cca1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/failure_receipt.json",
+          "size_bytes": 1167,
+          "sha256": "a5fe29169dbaaf16acb00b8981b228fcece46023c7667612446f15671ae86a1b",
+          "original_exists": true,
+          "original_sha256": "a5fe29169dbaaf16acb00b8981b228fcece46023c7667612446f15671ae86a1b",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/filesystem_precondition.json",
+          "size_bytes": 1160,
+          "sha256": "711aa20abb6e3aeb80fe75a02139756070cde211460c3d6c3cd30b9bdd5744db",
+          "original_exists": true,
+          "original_sha256": "711aa20abb6e3aeb80fe75a02139756070cde211460c3d6c3cd30b9bdd5744db",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/final_result.json",
+          "size_bytes": 987,
+          "sha256": "bcc8662201018e10a4a911700c120ac177fa85eca2735a0fef8226d9866448f0",
+          "original_exists": true,
+          "original_sha256": "bcc8662201018e10a4a911700c120ac177fa85eca2735a0fef8226d9866448f0",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/post_run_supervisor_exception_adjudication.json",
+          "size_bytes": 610,
+          "sha256": "a2db8f202b5167942684dab4aeca7f984142dba20f2e65036852057860ee8ca3",
+          "original_exists": true,
+          "original_sha256": "a2db8f202b5167942684dab4aeca7f984142dba20f2e65036852057860ee8ca3",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/ppq_source_phase_authority/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7.source_phase_run_binding.json",
+          "size_bytes": 559,
+          "sha256": "0bc1761c6376d29f90e8807ccc383de3584f25a157145f948a4847d1f24533a4",
+          "original_exists": true,
+          "original_sha256": "0bc1761c6376d29f90e8807ccc383de3584f25a157145f948a4847d1f24533a4",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/ppq_source_phase_authority/offline-b2-t4-re6-r13-formal-source-phase.source_phase_authority.json",
+          "size_bytes": 609,
+          "sha256": "ac42294ee777ae9b721ff28e3c5530dc81ef2b6bc20f154a004d8efca4f1fec9",
+          "original_exists": true,
+          "original_sha256": "ac42294ee777ae9b721ff28e3c5530dc81ef2b6bc20f154a004d8efca4f1fec9",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/final_result.json",
+          "size_bytes": 4805,
+          "sha256": "4365c1644e57de4e00a2dc95b61c4779f16a5d0aeafab387d684f96130d3bea3",
+          "original_exists": true,
+          "original_sha256": "4365c1644e57de4e00a2dc95b61c4779f16a5d0aeafab387d684f96130d3bea3",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/ledger_roundtrip.json",
+          "size_bytes": 55417,
+          "sha256": "2f1f6b875b75f7dc4008bffda78bfe85bc872cdaa006b6c564560f7f474fec6b",
+          "original_exists": true,
+          "original_sha256": "2f1f6b875b75f7dc4008bffda78bfe85bc872cdaa006b6c564560f7f474fec6b",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/old_failure_reproduction.json",
+          "size_bytes": 405,
+          "sha256": "65c69a73d472e603a93d2c96b246aa9c903cf215108db80f614e0b96f806d857",
+          "original_exists": true,
+          "original_sha256": "65c69a73d472e603a93d2c96b246aa9c903cf215108db80f614e0b96f806d857",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/production_source_identity_check.json",
+          "size_bytes": 587,
+          "sha256": "85fcb431561572e6b1ada2041951288791476b2bed2b38b814d8b99aba0e006a",
+          "original_exists": true,
+          "original_sha256": "85fcb431561572e6b1ada2041951288791476b2bed2b38b814d8b99aba0e006a",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/re1_tx001_serializer_replay.json",
+          "size_bytes": 682,
+          "sha256": "683b2a9e99053eeae3892602dd5ad273a52092b30198c22d7a9c018b1420491c",
+          "original_exists": true,
+          "original_sha256": "683b2a9e99053eeae3892602dd5ad273a52092b30198c22d7a9c018b1420491c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/serializer_negative_matrix.json",
+          "size_bytes": 4542,
+          "sha256": "ab3001b9d7e64fc6da58015f1186acbacf90037b40e3aa42457715181cefca35",
+          "original_exists": true,
+          "original_sha256": "ab3001b9d7e64fc6da58015f1186acbacf90037b40e3aa42457715181cefca35",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/serializer_positive_matrix.json",
+          "size_bytes": 4386,
+          "sha256": "856a58cb252549a722c59e2af695ebddb1e9dcbb8607045b15e718500f1a84b1",
+          "original_exists": true,
+          "original_sha256": "856a58cb252549a722c59e2af695ebddb1e9dcbb8607045b15e718500f1a84b1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/sr/tx001_post_s10_bookkeeping_replay.json",
+          "size_bytes": 55533,
+          "sha256": "65cf6938cfb39a354b3d3581b63a66b44cf42ad8b82b353a8953122d023354fd",
+          "original_exists": true,
+          "original_sha256": "65cf6938cfb39a354b3d3581b63a66b44cf42ad8b82b353a8953122d023354fd",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/zd/actor_negative_cases.json",
+          "size_bytes": 5350,
+          "sha256": "b9a555a5fffac7acaf62dd308568f4c88bef0d5d17b0b42c78196fa223aac7f2",
+          "original_exists": true,
+          "original_sha256": "b9a555a5fffac7acaf62dd308568f4c88bef0d5d17b0b42c78196fa223aac7f2",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/zd/actor_population_matrix.json",
+          "size_bytes": 1123,
+          "sha256": "d04694302eeaeea877d2f9fc3299541b5e9ad96df02a7b49351f53c209aa1672",
+          "original_exists": true,
+          "original_sha256": "d04694302eeaeea877d2f9fc3299541b5e9ad96df02a7b49351f53c209aa1672",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/zd/actor_rich_regression.json",
+          "size_bytes": 845,
+          "sha256": "17b8be848e5d562bf159a81a9e2f9e28b97d5db1c42504961e09ee2e6b2c9799",
+          "original_exists": true,
+          "original_sha256": "17b8be848e5d562bf159a81a9e2f9e28b97d5db1c42504961e09ee2e6b2c9799",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/zd/all_zero_dvm_full_transaction.json",
+          "size_bytes": 2483,
+          "sha256": "8f5008ce5be2f992bede758d911f6c444b471a93d56a97855ec12b6efc6e6e51",
+          "original_exists": true,
+          "original_sha256": "8f5008ce5be2f992bede758d911f6c444b471a93d56a97855ec12b6efc6e6e51",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/zd/partial_zero_dvm_full_transaction.json",
+          "size_bytes": 1071,
+          "sha256": "b9d4155ee574734dd8346577526bbd8d85d6f901da487ef9efc3392236049b1c",
+          "original_exists": true,
+          "original_sha256": "b9d4155ee574734dd8346577526bbd8d85d6f901da487ef9efc3392236049b1c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/zd/production_source_identity.json",
+          "size_bytes": 867,
+          "sha256": "f3f65190359f77eb00a0c05bb37e960c7ee35eebb51374ebb05e09323dfe7739",
+          "original_exists": true,
+          "original_sha256": "f3f65190359f77eb00a0c05bb37e960c7ee35eebb51374ebb05e09323dfe7739",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight/zd/re2_tx002_zero_dvm_replay.json",
+          "size_bytes": 4163,
+          "sha256": "d77799b8001ed0813b38d35e25aae0031d180474ddf21bf35bc06ccac84b4362",
+          "original_exists": true,
+          "original_sha256": "d77799b8001ed0813b38d35e25aae0031d180474ddf21bf35bc06ccac84b4362",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/preflight_receipt_layer_b.json",
+          "size_bytes": 22121,
+          "sha256": "dd22d837a6a8fb200427094d1701aec3557c5c8cf94d879464c5078694f4be77",
+          "original_exists": true,
+          "original_sha256": "dd22d837a6a8fb200427094d1701aec3557c5c8cf94d879464c5078694f4be77",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/process_quiescence.json",
+          "size_bytes": 470,
+          "sha256": "9203c4e86eeb2bd7dff9fbcf8d359e09347db590eec490a7d66f1b0c19967f67",
+          "original_exists": true,
+          "original_sha256": "9203c4e86eeb2bd7dff9fbcf8d359e09347db590eec490a7d66f1b0c19967f67",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/re6_r13_preflight_summary.json",
+          "size_bytes": 64008,
+          "sha256": "0cc11d0d9f0d8e571ebee00d69fb4b21b27e0d4f7b03d44aa8b08551c632b67e",
+          "original_exists": true,
+          "original_sha256": "0cc11d0d9f0d8e571ebee00d69fb4b21b27e0d4f7b03d44aa8b08551c632b67e",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/re6_r13_progress_persistence_binding.json",
+          "size_bytes": 647,
+          "sha256": "39945f65009da96f5637e5412da3e0756bffabd28c3213e54ae83bebd148f51c",
+          "original_exists": true,
+          "original_sha256": "39945f65009da96f5637e5412da3e0756bffabd28c3213e54ae83bebd148f51c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/re6_r13_static_authority.json",
+          "size_bytes": 6524768,
+          "sha256": "97b61108cc9b9e94f0aaa1d17ecca315ff0242040c46141bd7ab9043c825b6c1",
+          "original_exists": true,
+          "original_sha256": "97b61108cc9b9e94f0aaa1d17ecca315ff0242040c46141bd7ab9043c825b6c1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/success_gate_77.json",
+          "size_bytes": 206,
+          "sha256": "ce596ef530e4f65d92bfda42d85a4b3477ddfb3b9568e01d4b4b84503dae15a5",
+          "original_exists": true,
+          "original_sha256": "ce596ef530e4f65d92bfda42d85a4b3477ddfb3b9568e01d4b4b84503dae15a5",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/worker_pid_handshake.json",
+          "size_bytes": 150,
+          "sha256": "6d4f79d33e09839f52aadff62a7440e93119f24f1fddcbc8445de9f64b4e5832",
+          "original_exists": true,
+          "original_sha256": "6d4f79d33e09839f52aadff62a7440e93119f24f1fddcbc8445de9f64b4e5832",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/canonical_live_path_reservation.json",
+          "size_bytes": 5340,
+          "sha256": "2f0471f444f483f164e714ec99a12aed15e10cecb6154d71cd5fba1fd255e833",
+          "original_exists": true,
+          "original_sha256": "2f0471f444f483f164e714ec99a12aed15e10cecb6154d71cd5fba1fd255e833",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/canonical_pw_consumer_contract.json",
+          "size_bytes": 479,
+          "sha256": "3aec3ff4304ff503ab25978bcb87a7bc237e851392bb485d2022554c54209b41",
+          "original_exists": true,
+          "original_sha256": "3aec3ff4304ff503ab25978bcb87a7bc237e851392bb485d2022554c54209b41",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/canonical_pw_immutability_precheck.json",
+          "size_bytes": 1126,
+          "sha256": "3406eeb821b687204cfa10d82f877a23abab465e6d43bfe02713bb9a1ccd0fe0",
+          "original_exists": true,
+          "original_sha256": "3406eeb821b687204cfa10d82f877a23abab465e6d43bfe02713bb9a1ccd0fe0",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/canonical_pw_missing_negative.json",
+          "size_bytes": 5700,
+          "sha256": "f8d8da2095c3c5cf42ef6797ad8e6930ad4cfadfa28d209f48b3e9d7066889c9",
+          "original_exists": true,
+          "original_sha256": "f8d8da2095c3c5cf42ef6797ad8e6930ad4cfadfa28d209f48b3e9d7066889c9",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/canonical_pw_wrong_digest_negative.json",
+          "size_bytes": 313,
+          "sha256": "b38dec656a978767ef1efaf811fdfd5d61d380b6764fb2eb0b73b96ff3b5d2e2",
+          "original_exists": true,
+          "original_sha256": "b38dec656a978767ef1efaf811fdfd5d61d380b6764fb2eb0b73b96ff3b5d2e2",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/canonical_pw_wrong_run_negative.json",
+          "size_bytes": 1470,
+          "sha256": "e19e0f07e5665f4c300666b1f12dd9d54da3ac26ad79c18a840e3a4ca07e3c74",
+          "original_exists": true,
+          "original_sha256": "e19e0f07e5665f4c300666b1f12dd9d54da3ac26ad79c18a840e3a4ca07e3c74",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/filesystem_precondition.json",
+          "size_bytes": 206,
+          "sha256": "41ffe3ff5f427c8f9ca6140d46b13b15ce5f4cab0c25b67249e473bc3ef10d8b",
+          "original_exists": true,
+          "original_sha256": "41ffe3ff5f427c8f9ca6140d46b13b15ce5f4cab0c25b67249e473bc3ef10d8b",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/final_pre_process_live_path_audit.json",
+          "size_bytes": 270,
+          "sha256": "17efefa63277b20b10fbfbd3ba6a1bc781548a2ec699fe75ae2451a51c38b091",
+          "original_exists": true,
+          "original_sha256": "17efefa63277b20b10fbfbd3ba6a1bc781548a2ec699fe75ae2451a51c38b091",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/final_pre_process_readiness.json",
+          "size_bytes": 404,
+          "sha256": "c700f362f58decf9f7f837fe08f26f7e2162ce6739f5eb346779f54ebf622cf0",
+          "original_exists": true,
+          "original_sha256": "c700f362f58decf9f7f837fe08f26f7e2162ce6739f5eb346779f54ebf622cf0",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/historical_r10_preservation.json",
+          "size_bytes": 773,
+          "sha256": "83fa9da45cdaf2bee971c2eb17a62288d24ef2423e07c7549f813a382210251d",
+          "original_exists": true,
+          "original_sha256": "83fa9da45cdaf2bee971c2eb17a62288d24ef2423e07c7549f813a382210251d",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/historical_r11_preservation.json",
+          "size_bytes": 800,
+          "sha256": "79e418759f184aca2daf77b465aa225fd9156c34edc2c3c3cd6a4bf4292b069e",
+          "original_exists": true,
+          "original_sha256": "79e418759f184aca2daf77b465aa225fd9156c34edc2c3c3cd6a4bf4292b069e",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/historical_r12_preservation.json",
+          "size_bytes": 863,
+          "sha256": "7261fca335e69ac0be6646c516f0e9d7165964b3e80183fe071d0e63a54ba7c4",
+          "original_exists": true,
+          "original_sha256": "7261fca335e69ac0be6646c516f0e9d7165964b3e80183fe071d0e63a54ba7c4",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/historical_r8_preservation.json",
+          "size_bytes": 389,
+          "sha256": "87125e06c1dcee50f3a475e869507c8dadc95cc4cc5b2c04b8e04ca8a5fffaee",
+          "original_exists": true,
+          "original_sha256": "87125e06c1dcee50f3a475e869507c8dadc95cc4cc5b2c04b8e04ca8a5fffaee",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/historical_r9_preservation.json",
+          "size_bytes": 594,
+          "sha256": "e4d716a6d5b8aa5dc083ae9aa5706fd82954cb7ebc4302ac9af80f67b36886c6",
+          "original_exists": true,
+          "original_sha256": "e4d716a6d5b8aa5dc083ae9aa5706fd82954cb7ebc4302ac9af80f67b36886c6",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/inherited_stage_a_negative_control_inventory.json",
+          "size_bytes": 39027,
+          "sha256": "518db4ca5badaaf31e2d9532903c991cad843c28174f7f7bcf78fc19502dae03",
+          "original_exists": true,
+          "original_sha256": "518db4ca5badaaf31e2d9532903c991cad843c28174f7f7bcf78fc19502dae03",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/layer_a_required_source_path_inventory.json",
+          "size_bytes": 54255,
+          "sha256": "f90f02fb82466261fcf6021770388194e50eb1ba294d52b57161a343f30dd947",
+          "original_exists": true,
+          "original_sha256": "f90f02fb82466261fcf6021770388194e50eb1ba294d52b57161a343f30dd947",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/layer_a_runtime_source_lineage.json",
+          "size_bytes": 60575,
+          "sha256": "e02879aacad2bd2001ac0fe4ac2c3deac189106842835ef05f09c0a0b7c5a52f",
+          "original_exists": true,
+          "original_sha256": "e02879aacad2bd2001ac0fe4ac2c3deac189106842835ef05f09c0a0b7c5a52f",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/layer_a_synthetic_missing_field_matrix.json",
+          "size_bytes": 27513,
+          "sha256": "49ed47a41ac666c8c8b4385d956a19a96b1883dfb8afb7a548aabecd2993ccff",
+          "original_exists": true,
+          "original_sha256": "49ed47a41ac666c8c8b4385d956a19a96b1883dfb8afb7a548aabecd2993ccff",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/layer_a_synthetic_source_shape_contract.json",
+          "size_bytes": 54993,
+          "sha256": "dd7ca5a9f81a4807dde7e4630820a73c629becf84978006a89be54d4a897bfa0",
+          "original_exists": true,
+          "original_sha256": "dd7ca5a9f81a4807dde7e4630820a73c629becf84978006a89be54d4a897bfa0",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/layer_a_synthetic_source_shape_parity.json",
+          "size_bytes": 186,
+          "sha256": "8ba11e5c9955a6546f50b40dc33fa15902866ff2220abfd5fe7ffea777b583d4",
+          "original_exists": true,
+          "original_sha256": "8ba11e5c9955a6546f50b40dc33fa15902866ff2220abfd5fe7ffea777b583d4",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/layer_a_synthetic_type_shape_negatives.json",
+          "size_bytes": 711,
+          "sha256": "a729ab37e538d8f7f55053bf1e497aad24c45060c90c5567cea76ef60ea41100",
+          "original_exists": true,
+          "original_sha256": "a729ab37e538d8f7f55053bf1e497aad24c45060c90c5567cea76ef60ea41100",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/live_r13_runtime_authority.json",
+          "size_bytes": 190,
+          "sha256": "ccf6ac471cc1fccf0c43a9bf274561c4153afaff4ce648ac91226ecfc8b9dc64",
+          "original_exists": true,
+          "original_sha256": "ccf6ac471cc1fccf0c43a9bf274561c4153afaff4ce648ac91226ecfc8b9dc64",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/live_r13_runtime_authority_validation.json",
+          "size_bytes": 298,
+          "sha256": "c7d6f09a8b2a3d6d4d26a05ecac6a8b39e3a27cad7592773089e8fe58e3297c8",
+          "original_exists": true,
+          "original_sha256": "c7d6f09a8b2a3d6d4d26a05ecac6a8b39e3a27cad7592773089e8fe58e3297c8",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/ownership_fixtures/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/pw_campaign_reconciliation.json",
+          "size_bytes": 331,
+          "sha256": "9ffc53f4fc8ceffc322910c794f717b5bb92379780fc9868a56bbf3c51dcad56",
+          "original_exists": true,
+          "original_sha256": "9ffc53f4fc8ceffc322910c794f717b5bb92379780fc9868a56bbf3c51dcad56",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/ownership_fixtures/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7/pw_transaction_reconciliation.jsonl",
+          "size_bytes": 75892,
+          "sha256": "baf27c69faae115de92bf262c8d69ac1c607720801ca4adb23003a07efaadc66",
+          "original_exists": true,
+          "original_sha256": "baf27c69faae115de92bf262c8d69ac1c607720801ca4adb23003a07efaadc66",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/ownership_fixtures/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7-digest/pw_campaign_reconciliation.json",
+          "size_bytes": 338,
+          "sha256": "37e66bda18ce106463d88e60a2a83033e4b08a12117834eeeffc15f3eb91a164",
+          "original_exists": true,
+          "original_sha256": "37e66bda18ce106463d88e60a2a83033e4b08a12117834eeeffc15f3eb91a164",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/ownership_fixtures/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7-digest/pw_transaction_reconciliation.jsonl",
+          "size_bytes": 77013,
+          "sha256": "789ee63bedd496b18e6688b361d883f3a446dea3f7beb5c1b348bfcfc12b614c",
+          "original_exists": true,
+          "original_sha256": "789ee63bedd496b18e6688b361d883f3a446dea3f7beb5c1b348bfcfc12b614c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/ownership_fixtures/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7-wrong-run/pw_campaign_reconciliation.json",
+          "size_bytes": 278,
+          "sha256": "2c0423a8e3fef8fc26b681d429304f9e8871409ca15b53c24c0c627117015268",
+          "original_exists": true,
+          "original_sha256": "2c0423a8e3fef8fc26b681d429304f9e8871409ca15b53c24c0c627117015268",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/ownership_fixtures/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7-wrong-run/pw_transaction_reconciliation.jsonl",
+          "size_bytes": 67412,
+          "sha256": "ebd0bc4490cec8915b3201a45b2dbac592bdf58cc1ea80d55f79846f2e263c63",
+          "original_exists": true,
+          "original_sha256": "ebd0bc4490cec8915b3201a45b2dbac592bdf58cc1ea80d55f79846f2e263c63",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/phase_transformation_contract.json",
+          "size_bytes": 430,
+          "sha256": "0817fbc26bc095f3fc84457bcf277142babffb149d464328f1763a57cf446857",
+          "original_exists": true,
+          "original_sha256": "0817fbc26bc095f3fc84457bcf277142babffb149d464328f1763a57cf446857",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/phase_transformation_matrix.json",
+          "size_bytes": 1002,
+          "sha256": "a05bf83e2d24db34584047a983f814de6dddeb654ef5e876f62bcdbcafe1058c",
+          "original_exists": true,
+          "original_sha256": "a05bf83e2d24db34584047a983f814de6dddeb654ef5e876f62bcdbcafe1058c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/post_runtime_artifact_collision_matrix.json",
+          "size_bytes": 109438,
+          "sha256": "a049565171121d027879aef79f6a474175e5989bd7c22d64206d839a285ce12c",
+          "original_exists": true,
+          "original_sha256": "a049565171121d027879aef79f6a474175e5989bd7c22d64206d839a285ce12c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/post_runtime_artifact_ownership_inventory.json",
+          "size_bytes": 38440,
+          "sha256": "e79cc5fc6c87b71a501ab87a30163e2eb54a6a385509bf402810dfd1fd643a68",
+          "original_exists": true,
+          "original_sha256": "e79cc5fc6c87b71a501ab87a30163e2eb54a6a385509bf402810dfd1fd643a68",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/candidate_success_receipt_v2_1.json",
+          "size_bytes": 2992,
+          "sha256": "7b3e9f99b465cbc2080e934004761442d59625498113c0d75a0fdbf8403514bc",
+          "original_exists": true,
+          "original_sha256": "7b3e9f99b465cbc2080e934004761442d59625498113c0d75a0fdbf8403514bc",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/ppq_v2_r1_receipt_readback_validation.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/pw_campaign_reconciliation.json",
+          "size_bytes": 161,
+          "sha256": "32feae82067a8b0c5deecfb9a58f0b324231c52a07846a3e0980a81d7963dff0",
+          "original_exists": true,
+          "original_sha256": "32feae82067a8b0c5deecfb9a58f0b324231c52a07846a3e0980a81d7963dff0",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/runtime_layer_a_raw_final.json",
+          "size_bytes": 40883,
+          "sha256": "bd890f5429a8d320793558466c1bc8287b752547ec8dcc98107e7acae82f4a27",
+          "original_exists": true,
+          "original_sha256": "bd890f5429a8d320793558466c1bc8287b752547ec8dcc98107e7acae82f4a27",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/runtime_layer_a_worker_handoff_input.json",
+          "size_bytes": 555,
+          "sha256": "6e83ff8e6ac0a2c057add03148a9f14a1f85686604fb27a681822f76e0f3eeb8",
+          "original_exists": true,
+          "original_sha256": "6e83ff8e6ac0a2c057add03148a9f14a1f85686604fb27a681822f76e0f3eeb8",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/runtime_normalization_result.json",
+          "size_bytes": 298596,
+          "sha256": "1819a4f34b93eb1e81233e3b7728b09d1d883e2cd59ba4e53c6420a9003686ec",
+          "original_exists": true,
+          "original_sha256": "1819a4f34b93eb1e81233e3b7728b09d1d883e2cd59ba4e53c6420a9003686ec",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/terminal_reconciliation.jsonl",
+          "size_bytes": 44230,
+          "sha256": "535571f7801146be958af45eb28df8d634440c61350b8cbb95f9b61dd907e346",
+          "original_exists": true,
+          "original_sha256": "535571f7801146be958af45eb28df8d634440c61350b8cbb95f9b61dd907e346",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/transaction_ledger.jsonl",
+          "size_bytes": 55572,
+          "sha256": "3000c4368bd86b38a10092a16881c8b76b43805b8f0c332e2e9e01297a7d5ae9",
+          "original_exists": true,
+          "original_sha256": "3000c4368bd86b38a10092a16881c8b76b43805b8f0c332e2e9e01297a7d5ae9",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/W1_cross_update_ownership.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/W2_multi_update_completion_v2.json",
+          "size_bytes": 1149,
+          "sha256": "630d4900ee59bfb5414023c43db3c0d0c75aab9fe886ba4d9b8259de4ed180aa",
+          "original_exists": true,
+          "original_sha256": "630d4900ee59bfb5414023c43db3c0d0c75aab9fe886ba4d9b8259de4ed180aa",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/W3_real_zero_dvm_actor.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/W4_real_nonterminal_bootstrap.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/W5_normal_horizon_terminal_autoreset.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/W6_post_autoreset_training.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/W7_runtime_p2_immutability.json",
+          "size_bytes": 62,
+          "sha256": "ba00558ed665c7183eb1b8be245446bd87e135d08485a4ac020d2800fa6b0ade",
+          "original_exists": true,
+          "original_sha256": "ba00558ed665c7183eb1b8be245446bd87e135d08485a4ac020d2800fa6b0ade",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/canonical_layer_a_projection_fixture/zero_dvm_actor_ledger.jsonl",
+          "size_bytes": 2240,
+          "sha256": "2732448a7da866fab26531ad1bc5ca308a6e2f13b897e8607de8548b08433158",
+          "original_exists": true,
+          "original_sha256": "2732448a7da866fab26531ad1bc5ca308a6e2f13b897e8607de8548b08433158",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/collision_fixture/r11_normalization_context.json",
+          "size_bytes": 532,
+          "sha256": "f360deea8bf4c0f41edc00dc3785c580179033a27cb1436d04f5c07741e91b1d",
+          "original_exists": true,
+          "original_sha256": "f360deea8bf4c0f41edc00dc3785c580179033a27cb1436d04f5c07741e91b1d",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/collision_fixture/r13_repaired/r13_normalization_context.json",
+          "size_bytes": 532,
+          "sha256": "f360deea8bf4c0f41edc00dc3785c580179033a27cb1436d04f5c07741e91b1d",
+          "original_exists": true,
+          "original_sha256": "f360deea8bf4c0f41edc00dc3785c580179033a27cb1436d04f5c07741e91b1d",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/collision_fixture/r13_repaired/templates/r13_normalization_context_template.json",
+          "size_bytes": 532,
+          "sha256": "f360deea8bf4c0f41edc00dc3785c580179033a27cb1436d04f5c07741e91b1d",
+          "original_exists": true,
+          "original_sha256": "f360deea8bf4c0f41edc00dc3785c580179033a27cb1436d04f5c07741e91b1d",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/candidate_success_receipt_v2_1.json",
+          "size_bytes": 2992,
+          "sha256": "7b3e9f99b465cbc2080e934004761442d59625498113c0d75a0fdbf8403514bc",
+          "original_exists": true,
+          "original_sha256": "7b3e9f99b465cbc2080e934004761442d59625498113c0d75a0fdbf8403514bc",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/ppq_v2_r1_receipt_readback_validation.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/pw_campaign_reconciliation.json",
+          "size_bytes": 161,
+          "sha256": "32feae82067a8b0c5deecfb9a58f0b324231c52a07846a3e0980a81d7963dff0",
+          "original_exists": true,
+          "original_sha256": "32feae82067a8b0c5deecfb9a58f0b324231c52a07846a3e0980a81d7963dff0",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/runtime_layer_a_raw_final.json",
+          "size_bytes": 40883,
+          "sha256": "bd890f5429a8d320793558466c1bc8287b752547ec8dcc98107e7acae82f4a27",
+          "original_exists": true,
+          "original_sha256": "bd890f5429a8d320793558466c1bc8287b752547ec8dcc98107e7acae82f4a27",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/runtime_layer_a_worker_handoff_input.json",
+          "size_bytes": 555,
+          "sha256": "b0b3d489ad12c3710ac7078976ce1db946ed0d8d93349ea920d2b893e24d1cc0",
+          "original_exists": true,
+          "original_sha256": "b0b3d489ad12c3710ac7078976ce1db946ed0d8d93349ea920d2b893e24d1cc0",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/runtime_normalization_result.json",
+          "size_bytes": 298596,
+          "sha256": "1819a4f34b93eb1e81233e3b7728b09d1d883e2cd59ba4e53c6420a9003686ec",
+          "original_exists": true,
+          "original_sha256": "1819a4f34b93eb1e81233e3b7728b09d1d883e2cd59ba4e53c6420a9003686ec",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/terminal_reconciliation.jsonl",
+          "size_bytes": 44230,
+          "sha256": "535571f7801146be958af45eb28df8d634440c61350b8cbb95f9b61dd907e346",
+          "original_exists": true,
+          "original_sha256": "535571f7801146be958af45eb28df8d634440c61350b8cbb95f9b61dd907e346",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/transaction_ledger.jsonl",
+          "size_bytes": 55572,
+          "sha256": "3000c4368bd86b38a10092a16881c8b76b43805b8f0c332e2e9e01297a7d5ae9",
+          "original_exists": true,
+          "original_sha256": "3000c4368bd86b38a10092a16881c8b76b43805b8f0c332e2e9e01297a7d5ae9",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/W1_cross_update_ownership.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/W2_multi_update_completion_v2.json",
+          "size_bytes": 1149,
+          "sha256": "630d4900ee59bfb5414023c43db3c0d0c75aab9fe886ba4d9b8259de4ed180aa",
+          "original_exists": true,
+          "original_sha256": "630d4900ee59bfb5414023c43db3c0d0c75aab9fe886ba4d9b8259de4ed180aa",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/W3_real_zero_dvm_actor.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/W4_real_nonterminal_bootstrap.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/W5_normal_horizon_terminal_autoreset.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/W6_post_autoreset_training.json",
+          "size_bytes": 13,
+          "sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "original_exists": true,
+          "original_sha256": "ad00b72af52a8d00e632f51a6de4ddacc1b8f02624dbca54c45edb029417d9d1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/W7_runtime_p2_immutability.json",
+          "size_bytes": 62,
+          "sha256": "ba00558ed665c7183eb1b8be245446bd87e135d08485a4ac020d2800fa6b0ade",
+          "original_exists": true,
+          "original_sha256": "ba00558ed665c7183eb1b8be245446bd87e135d08485a4ac020d2800fa6b0ade",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/stage_a_projection_fixture/zero_dvm_actor_ledger.jsonl",
+          "size_bytes": 2240,
+          "sha256": "2732448a7da866fab26531ad1bc5ca308a6e2f13b897e8607de8548b08433158",
+          "original_exists": true,
+          "original_sha256": "2732448a7da866fab26531ad1bc5ca308a6e2f13b897e8607de8548b08433158",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/preflight/templates/r13_normalization_context_template.json",
+          "size_bytes": 612,
+          "sha256": "8235e3954431059207168988f576d34b7bc6cc43537424ece16f9eda7b286502",
+          "original_exists": true,
+          "original_sha256": "8235e3954431059207168988f576d34b7bc6cc43537424ece16f9eda7b286502",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/pre_authority_readiness.json",
+          "size_bytes": 539,
+          "sha256": "c777ed1ac2a7ab28095e2e0db3aa487eff3edb86bddc90a93499d19c13f61492",
+          "original_exists": true,
+          "original_sha256": "c777ed1ac2a7ab28095e2e0db3aa487eff3edb86bddc90a93499d19c13f61492",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/pre_runtime_repair_log.json",
+          "size_bytes": 137,
+          "sha256": "c856d796e040f182475f62d7781fa86ceb4c66bfb04af5f39e9b0df1f431e6cd",
+          "original_exists": true,
+          "original_sha256": "c856d796e040f182475f62d7781fa86ceb4c66bfb04af5f39e9b0df1f431e6cd",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/process_config_authority.json",
+          "size_bytes": 593,
+          "sha256": "622da042d5b23a290a63199f79b3a9671d0d71dd0e5e89c687ad0f857757a88e",
+          "original_exists": true,
+          "original_sha256": "622da042d5b23a290a63199f79b3a9671d0d71dd0e5e89c687ad0f857757a88e",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/process_free_complete_synthetic_pipeline.json",
+          "size_bytes": 420,
+          "sha256": "26c6fb8aaebb32b781ecd961493629ea3937a4950b172b66f1a01c1a0761d3a1",
+          "original_exists": true,
+          "original_sha256": "26c6fb8aaebb32b781ecd961493629ea3937a4950b172b66f1a01c1a0761d3a1",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r10_wrong_phase_negative_reproduction.json",
+          "size_bytes": 325,
+          "sha256": "ab7721a17e39869f4b19fa77bedfd6590818a0e0d8b3244af19950b791a26559",
+          "original_exists": true,
+          "original_sha256": "ab7721a17e39869f4b19fa77bedfd6590818a0e0d8b3244af19950b791a26559",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r11_norm_context_collision_reproduction_and_r13_repair.json",
+          "size_bytes": 365,
+          "sha256": "8d223fea7def88f0e1a2ff6d0d24b7d40622c6fa9d09a14a3281a121c957d10b",
+          "original_exists": true,
+          "original_sha256": "8d223fea7def88f0e1a2ff6d0d24b7d40622c6fa9d09a14a3281a121c957d10b",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r12_w7_projection_failure_reproduction.json",
+          "size_bytes": 277,
+          "sha256": "3ec19c36fd60e028e188d05fb45e8f00a73da7c3f4bcef24cbe151202bd70d5f",
+          "original_exists": true,
+          "original_sha256": "3ec19c36fd60e028e188d05fb45e8f00a73da7c3f4bcef24cbe151202bd70d5f",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r13_layer_a_validation_context.json",
+          "size_bytes": 274,
+          "sha256": "d203801707f8b2c9ee74d30c50d121ac2da6b14fa6593e551abd2099f0260ff2",
+          "original_exists": true,
+          "original_sha256": "d203801707f8b2c9ee74d30c50d121ac2da6b14fa6593e551abd2099f0260ff2",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r13_run_identity.json",
+          "size_bytes": 257,
+          "sha256": "32953b9580ab870c9b50ca104e2cb09836840502542401e43b70b65d02400ff2",
+          "original_exists": true,
+          "original_sha256": "32953b9580ab870c9b50ca104e2cb09836840502542401e43b70b65d02400ff2",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r8_source_shape_reproduction_and_r13_repair.json",
+          "size_bytes": 263,
+          "sha256": "fc4cbb87d1565ce6a84736391ae5d8e70cb87710db022442c87030d11282fb27",
+          "original_exists": true,
+          "original_sha256": "fc4cbb87d1565ce6a84736391ae5d8e70cb87710db022442c87030d11282fb27",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r9_inherited_repair_detail.json",
+          "size_bytes": 5111,
+          "sha256": "ae4ca7483a21533f701a82bd42bd16300a541d0ba9875f470567c9750316f292",
+          "original_exists": true,
+          "original_sha256": "ae4ca7483a21533f701a82bd42bd16300a541d0ba9875f470567c9750316f292",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r9_pre_runtime_repair_preservation.json",
+          "size_bytes": 211,
+          "sha256": "67e827c656a6c3dd771382c48d2d191103cc4f21e4b4c7299e450fe7398a82b5",
+          "original_exists": true,
+          "original_sha256": "67e827c656a6c3dd771382c48d2d191103cc4f21e4b4c7299e450fe7398a82b5",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/r9_pw_collision_reproduction_and_r13_ownership_repair.json",
+          "size_bytes": 252,
+          "sha256": "46ed0a38fcaacd0012c8f83187dc552f297b89a418e14b808bcad854059ba62c",
+          "original_exists": true,
+          "original_sha256": "46ed0a38fcaacd0012c8f83187dc552f297b89a418e14b808bcad854059ba62c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/repository_authority.json",
+          "size_bytes": 10460892,
+          "sha256": "5e31b8bdfee7a355da3e783a1966df875ec2586982733bb7b2ff647bfcdd59e6",
+          "original_exists": true,
+          "original_sha256": "5e31b8bdfee7a355da3e783a1966df875ec2586982733bb7b2ff647bfcdd59e6",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/reviewed_identity_gate.json",
+          "size_bytes": 6179,
+          "sha256": "e304fd11ba2a09ad03d275f19827103eb79521e382084c13d5288e9f4965c298",
+          "original_exists": true,
+          "original_sha256": "e304fd11ba2a09ad03d275f19827103eb79521e382084c13d5288e9f4965c298",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/runtime_authority/b2_t4_re6_r13.json",
+          "size_bytes": 1059,
+          "sha256": "78cce430c7d39d48d655690d6593c2da47d1fda6d66b5bda567b01583c8b27a2",
+          "original_exists": true,
+          "original_sha256": "78cce430c7d39d48d655690d6593c2da47d1fda6d66b5bda567b01583c8b27a2",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/runtime_layer_a_projection_builder_inventory.json",
+          "size_bytes": 1497,
+          "sha256": "0391c0be3a227f3f818e1ee5ce50b47fc5bb0c5201916f5e8732c16ac7360c78",
+          "original_exists": true,
+          "original_sha256": "0391c0be3a227f3f818e1ee5ce50b47fc5bb0c5201916f5e8732c16ac7360c78",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/runtime_layer_a_projection_parity.json",
+          "size_bytes": 164,
+          "sha256": "f27afe9bd13522d1a1ed4d1d16cbe43070d03c4c2c6d2af2eca1fced720c506c",
+          "original_exists": true,
+          "original_sha256": "f27afe9bd13522d1a1ed4d1d16cbe43070d03c4c2c6d2af2eca1fced720c506c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/runtime_layer_a_projection_value_crosscheck.json",
+          "size_bytes": 15427,
+          "sha256": "52431fc6a486a9227a5a932182c0cb661d3e3f6af18d5ea7ee2cd3375c5d4e59",
+          "original_exists": true,
+          "original_sha256": "52431fc6a486a9227a5a932182c0cb661d3e3f6af18d5ea7ee2cd3375c5d4e59",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/run_binding/b2_t4_re6_r13/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7.json",
+          "size_bytes": 669,
+          "sha256": "b636fd3850394e9fc58cf520d78169e3a2e2561992366753610ec877957fc2db",
+          "original_exists": true,
+          "original_sha256": "b636fd3850394e9fc58cf520d78169e3a2e2561992366753610ec877957fc2db",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/shared_builder_required_source_negative_matrix.json",
+          "size_bytes": 22190,
+          "sha256": "b84133da5e7d36958b0d0c50d9b0905bfafd186890239ea5ff599105cb49ad48",
+          "original_exists": true,
+          "original_sha256": "b84133da5e7d36958b0d0c50d9b0905bfafd186890239ea5ff599105cb49ad48",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/shared_builder_semantic_negative_matrix.json",
+          "size_bytes": 756,
+          "sha256": "210c3cf8a4e91bee460dc22f78f0bbe752c55acba5558f60bd15d3c32d08e1be",
+          "original_exists": true,
+          "original_sha256": "210c3cf8a4e91bee460dc22f78f0bbe752c55acba5558f60bd15d3c32d08e1be",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/source_shape_preservation.json",
+          "size_bytes": 167,
+          "sha256": "2275cdf52b1b2cdf28db544f87e05c8bba708fa0775e825d14b1ec08dbd3412c",
+          "original_exists": true,
+          "original_sha256": "2275cdf52b1b2cdf28db544f87e05c8bba708fa0775e825d14b1ec08dbd3412c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/source_shape_readiness_detail.json",
+          "size_bytes": 599,
+          "sha256": "a53176f27a96898b2f28a216953a6d537f1b2df79dcdc83ab2f39884b61993cd",
+          "original_exists": true,
+          "original_sha256": "a53176f27a96898b2f28a216953a6d537f1b2df79dcdc83ab2f39884b61993cd",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_canonical_path_reservation.json",
+          "size_bytes": 5340,
+          "sha256": "2f0471f444f483f164e714ec99a12aed15e10cecb6154d71cd5fba1fd255e833",
+          "original_exists": true,
+          "original_sha256": "2f0471f444f483f164e714ec99a12aed15e10cecb6154d71cd5fba1fd255e833",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_failure_path_supervisor_negative.json",
+          "size_bytes": 210,
+          "sha256": "78100454734f312e69c14d4863c98b6445866268380cb9fbe186a7de02a41529",
+          "original_exists": true,
+          "original_sha256": "78100454734f312e69c14d4863c98b6445866268380cb9fbe186a7de02a41529",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_final_freeze.json",
+          "size_bytes": 447,
+          "sha256": "75478bfac9ab448361747d7d40503dc8abfa69531ed0280b63974f2f4e5f34a9",
+          "original_exists": true,
+          "original_sha256": "75478bfac9ab448361747d7d40503dc8abfa69531ed0280b63974f2f4e5f34a9",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_final_readiness.json",
+          "size_bytes": 63918,
+          "sha256": "4cf527393ed2a36c469ae7a1f851e01aa8c0600a617114e7206358810f447cea",
+          "original_exists": true,
+          "original_sha256": "4cf527393ed2a36c469ae7a1f851e01aa8c0600a617114e7206358810f447cea",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_layer_a_negative_matrix.json",
+          "size_bytes": 1057,
+          "sha256": "c0b94da87400e5b200c819d40a1a6fdccf77a71ffda3fc519dee75e4fa2c93c8",
+          "original_exists": true,
+          "original_sha256": "c0b94da87400e5b200c819d40a1a6fdccf77a71ffda3fc519dee75e4fa2c93c8",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_layer_a_positive.json",
+          "size_bytes": 151,
+          "sha256": "3a453cb54a63d7ec9e75742c5f77429096806894f47d033ca2e0af22d269d804",
+          "original_exists": true,
+          "original_sha256": "3a453cb54a63d7ec9e75742c5f77429096806894f47d033ca2e0af22d269d804",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_negative_control_inventory.json",
+          "size_bytes": 153,
+          "sha256": "318536ae2e3bbc42734b79b0b5cd736f6481db4bd0136baba089ee0e354ada66",
+          "original_exists": true,
+          "original_sha256": "318536ae2e3bbc42734b79b0b5cd736f6481db4bd0136baba089ee0e354ada66",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_negative_control_preservation.json",
+          "size_bytes": 441,
+          "sha256": "c55bb7d5b171097279cb491b4f2bcc390f683296555f779c3fb69b661d6f5a7b",
+          "original_exists": true,
+          "original_sha256": "c55bb7d5b171097279cb491b4f2bcc390f683296555f779c3fb69b661d6f5a7b",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_norm_negative_matrix.json",
+          "size_bytes": 2547,
+          "sha256": "513f9610f84e5a3a0c9d8b05589f1de28711955241dabe67b74ec8974d21488d",
+          "original_exists": true,
+          "original_sha256": "513f9610f84e5a3a0c9d8b05589f1de28711955241dabe67b74ec8974d21488d",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_ppq_fixture/ppq_source_phase_authority/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7.source_phase_run_binding.json",
+          "size_bytes": 559,
+          "sha256": "0bc1761c6376d29f90e8807ccc383de3584f25a157145f948a4847d1f24533a4",
+          "original_exists": true,
+          "original_sha256": "0bc1761c6376d29f90e8807ccc383de3584f25a157145f948a4847d1f24533a4",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_ppq_fixture/ppq_source_phase_authority/offline-b2-t4-re6-r13-formal-source-phase.source_phase_authority.json",
+          "size_bytes": 609,
+          "sha256": "ac42294ee777ae9b721ff28e3c5530dc81ef2b6bc20f154a004d8efca4f1fec9",
+          "original_exists": true,
+          "original_sha256": "ac42294ee777ae9b721ff28e3c5530dc81ef2b6bc20f154a004d8efca4f1fec9",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_ppq_fixture/racq/runtime_authority/b2_t4_re6_r13.json",
+          "size_bytes": 1079,
+          "sha256": "050e2d7a67032770386a2966d0c480a03372290a523af4b1131600a121362ab5",
+          "original_exists": true,
+          "original_sha256": "050e2d7a67032770386a2966d0c480a03372290a523af4b1131600a121362ab5",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_ppq_fixture/racq/run_binding/b2_t4_re6_r13/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7.json",
+          "size_bytes": 669,
+          "sha256": "b049ab72f0681df3a85105b138cc0c9aa06867994b124006ede92f19b0c83ba8",
+          "original_exists": true,
+          "original_sha256": "b049ab72f0681df3a85105b138cc0c9aa06867994b124006ede92f19b0c83ba8",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_ppq_negative_matrix.json",
+          "size_bytes": 693,
+          "sha256": "aae826eb2c1ba58c95c4cd14d74a95d81a7aa7ef41fa0a5babc95aeedb544c8c",
+          "original_exists": true,
+          "original_sha256": "aae826eb2c1ba58c95c4cd14d74a95d81a7aa7ef41fa0a5babc95aeedb544c8c",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_repair_log.json",
+          "size_bytes": 3132,
+          "sha256": "03f865b1dbb49a5a783ba5a3ac0746ea3eb8bf5423efd86d149d94f02dad6738",
+          "original_exists": true,
+          "original_sha256": "03f865b1dbb49a5a783ba5a3ac0746ea3eb8bf5423efd86d149d94f02dad6738",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_source_shape_fixture/ppq_source_phase_authority/b2-t4-re6-r13-20260922-formal01-339ec669e33b4f40be9dfea9347a0ed7.source_phase_run_binding.json",
+          "size_bytes": 559,
+          "sha256": "0bc1761c6376d29f90e8807ccc383de3584f25a157145f948a4847d1f24533a4",
+          "original_exists": true,
+          "original_sha256": "0bc1761c6376d29f90e8807ccc383de3584f25a157145f948a4847d1f24533a4",
+          "equal": true
+        },
+        {
+          "entry": "b2_t4_re6_r13_artifacts/stage_a_source_shape_fixture/ppq_source_phase_authority/offline-b2-t4-re6-r13-formal-source-phase.source_phase_authority.json",
+          "size_bytes": 609,
+          "sha256": "ac42294ee777ae9b721ff28e3c5530dc81ef2b6bc20f154a004d8efca4f1fec9",
+          "original_exists": true,
+          "original_sha256": "ac42294ee777ae9b721ff28e3c5530dc81ef2b6bc20f154a004d8efca4f1fec9",
+          "equal": true
+        }
+      ],
+      "all_equal": true,
+      "type": "file",
+      "phase_source": "B2-T4-RE6-R13",
+      "classification": "DELETE_STRONG",
+      "reason": "Every ZIP entry exists at the neighboring original path and is SHA-256 identical; this container has no only-surviving-copy evidence. Historical conclusions/STOP receipts are retained separately under the main audit.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming the ZIP filename; excludes new cleanup outputs.",
+      "code_dependency": "NONE",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260922/b2_t4_re6_r13_artifacts/"
+      ],
+      "entry_count": 143,
+      "uncompressed_size_bytes": 18905431,
+      "only_copy_entry_count": 0
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/phase_b_git_closeout_artifacts.zip",
+      "size_bytes": 36178,
+      "sha256": "d942714e720deb60c28078831cb460002dbf6682868bb782148dac9458bd99f3",
+      "entries": [
+        {
+          "entry": "phase_b_git_closeout_artifacts/phase_b_artifact_retention.json",
+          "size_bytes": 23663,
+          "sha256": "7b0349347b2c831f245ff99dc5b93d95351d42e02636ee32b5f27dec360e4d9d",
+          "original_exists": true,
+          "original_sha256": "7b0349347b2c831f245ff99dc5b93d95351d42e02636ee32b5f27dec360e4d9d",
+          "equal": true
+        },
+        {
+          "entry": "phase_b_git_closeout_artifacts/phase_b_change_classification.json",
+          "size_bytes": 84468,
+          "sha256": "c8eeb4bca7c13eebea9ab091f79e821fd65756e3e6acb55c8b3c94a929c1fece",
+          "original_exists": true,
+          "original_sha256": "c8eeb4bca7c13eebea9ab091f79e821fd65756e3e6acb55c8b3c94a929c1fece",
+          "equal": true
+        },
+        {
+          "entry": "phase_b_git_closeout_artifacts/phase_b_git_authority.json",
+          "size_bytes": 7039,
+          "sha256": "4b418dadb97f4587d9b3e2fe2cf468e2b2f1c4bc0063a09621eefd5a4e37600d",
+          "original_exists": true,
+          "original_sha256": "4b418dadb97f4587d9b3e2fe2cf468e2b2f1c4bc0063a09621eefd5a4e37600d",
+          "equal": true
+        },
+        {
+          "entry": "phase_b_git_closeout_artifacts/phase_b_large_file_audit.json",
+          "size_bytes": 25390,
+          "sha256": "3d23c551ad5ec4c0250a63f94e9739c789c756cfedd507b5ea63eda24ea12c28",
+          "original_exists": true,
+          "original_sha256": "3d23c551ad5ec4c0250a63f94e9739c789c756cfedd507b5ea63eda24ea12c28",
+          "equal": true
+        },
+        {
+          "entry": "phase_b_git_closeout_artifacts/phase_b_manual_commit_paths.json",
+          "size_bytes": 105211,
+          "sha256": "6302da9fd4f8368f908636da15836d58fb8b4285ef1743fa5fc835cd9a2d51ad",
+          "original_exists": true,
+          "original_sha256": "6302da9fd4f8368f908636da15836d58fb8b4285ef1743fa5fc835cd9a2d51ad",
+          "equal": true
+        },
+        {
+          "entry": "phase_b_git_closeout_artifacts/staged_359_path_audit.json",
+          "size_bytes": 1198,
+          "sha256": "d661736139aacbb5d574406e418252736fabc50cc2dfe3423ce3e414ff8cce46",
+          "original_exists": true,
+          "original_sha256": "d661736139aacbb5d574406e418252736fabc50cc2dfe3423ce3e414ff8cce46",
+          "equal": true
+        }
+      ],
+      "all_equal": true,
+      "type": "file",
+      "phase_source": "Phase-B engineering closeout",
+      "classification": "DELETE_STRONG",
+      "reason": "Every ZIP entry exists at the neighboring original path and is SHA-256 identical; this container has no only-surviving-copy evidence. Historical conclusions/STOP receipts are retained separately under the main audit.",
+      "report_reference_count": 1,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming the ZIP filename; excludes new cleanup outputs.",
+      "code_dependency": "NONE",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260925/phase_b_git_closeout_artifacts/"
+      ],
+      "entry_count": 6,
+      "uncompressed_size_bytes": 246969,
+      "only_copy_entry_count": 0
+    }
+  ],
+  "payload_files": [
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a.log",
+      "size_bytes": 26008,
+      "sha256": "03c39c671998761554753e695eacec3979ec03c8eeb06d70a0fa79a1c072048d",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "Startup/configuration/reset diagnostics only; no unique semantic closure gate evidence or unresolved traceback. Compact shutdown, success, identity, equality, update and continuity JSON carry accepted facts.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/shutdown.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/shutdown.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b.log",
+      "size_bytes": 26002,
+      "sha256": "1886715cdff55bb2e238dcef32b8a49a12b6b2a74d61cdc54cf7e17a0c8314df",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "Startup/configuration/reset diagnostics only; no unique semantic closure gate evidence or unresolved traceback. Compact shutdown, success, identity, equality, update and continuity JSON carry accepted facts.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/shutdown.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/shutdown.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actors/000_weights.pt",
+      "size_bytes": 719730,
+      "sha256": "e057bfcb0989cef23ea8f5a58d292e81f10407686d571ffa511dc88f599cf934",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actors/001_weights.pt",
+      "size_bytes": 719730,
+      "sha256": "de561838d868eeed0ee28d4fbcb7e2c2369c38c33258395f71418a41d12e0c56",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actors/002_weights.pt",
+      "size_bytes": 719730,
+      "sha256": "273d794833e128420bbc7375c2aab6f9601ae68652efdc49e4d5d8b824bae8e0",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actor_optimizers/000_adam.pt",
+      "size_bytes": 1441834,
+      "sha256": "4cd8aff4071957e2858a709412ef904b16d1f88f0fa027b4985db72e76d005ac",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actor_optimizers/001_adam.pt",
+      "size_bytes": 1441834,
+      "sha256": "de3d1773e57c74abc827c30fba8ff9efbf76208b26a17b9fc7dd83240f941409",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/actor_optimizers/002_adam.pt",
+      "size_bytes": 1441834,
+      "sha256": "a2ad60e540aa9d6bfdef27bb017dbe11c8bbefaa78d68ea0c739f2166ef4f0af",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/critic/adam.pt",
+      "size_bytes": 1411114,
+      "sha256": "40ad320f23b198fe1070c7f3cbe9431c17a1e4798ef447c1dc205af7633d7d7e",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/critic/weights.pt",
+      "size_bytes": 704370,
+      "sha256": "b17d20f781a4547d53879a40ce076e4b236f7f3bc1d81b7c868c3f12e3423853",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/value_normalizer/state.pt",
+      "size_bytes": 1684,
+      "sha256": "0d0ea68f9cfc0ba0b09a3ae90d919266f40d07f414337360a494a17ff29b9fad",
+      "type": "file",
+      "phase_source": "Phase-B final closure",
+      "classification": "DELETE_RECOMMENDED",
+      "reason": "One-update-of-12 optimization-continuation smoke fixture, not a paper-trained policy; no unresolved issue or future production/paper use identified. Preserve committed manifest/digests, state equality, continuity and accepted report.",
+      "report_reference_count": 0,
+      "report_reference_count_definition": "Distinct existing Markdown documents directly naming this file; generic checkpoint/process-log group mentions are separately recorded.",
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json"
+      ]
+    }
+  ],
+  "checkpoint_manifest_hash_validation": [
+    {
+      "path": "actors/000_weights.pt",
+      "manifest_sha256": "e057bfcb0989cef23ea8f5a58d292e81f10407686d571ffa511dc88f599cf934",
+      "actual_sha256": "e057bfcb0989cef23ea8f5a58d292e81f10407686d571ffa511dc88f599cf934",
+      "equal": true
+    },
+    {
+      "path": "actors/001_weights.pt",
+      "manifest_sha256": "de561838d868eeed0ee28d4fbcb7e2c2369c38c33258395f71418a41d12e0c56",
+      "actual_sha256": "de561838d868eeed0ee28d4fbcb7e2c2369c38c33258395f71418a41d12e0c56",
+      "equal": true
+    },
+    {
+      "path": "actors/002_weights.pt",
+      "manifest_sha256": "273d794833e128420bbc7375c2aab6f9601ae68652efdc49e4d5d8b824bae8e0",
+      "actual_sha256": "273d794833e128420bbc7375c2aab6f9601ae68652efdc49e4d5d8b824bae8e0",
+      "equal": true
+    },
+    {
+      "path": "actor_optimizers/000_adam.pt",
+      "manifest_sha256": "4cd8aff4071957e2858a709412ef904b16d1f88f0fa027b4985db72e76d005ac",
+      "actual_sha256": "4cd8aff4071957e2858a709412ef904b16d1f88f0fa027b4985db72e76d005ac",
+      "equal": true
+    },
+    {
+      "path": "actor_optimizers/001_adam.pt",
+      "manifest_sha256": "de3d1773e57c74abc827c30fba8ff9efbf76208b26a17b9fc7dd83240f941409",
+      "actual_sha256": "de3d1773e57c74abc827c30fba8ff9efbf76208b26a17b9fc7dd83240f941409",
+      "equal": true
+    },
+    {
+      "path": "actor_optimizers/002_adam.pt",
+      "manifest_sha256": "a2ad60e540aa9d6bfdef27bb017dbe11c8bbefaa78d68ea0c739f2166ef4f0af",
+      "actual_sha256": "a2ad60e540aa9d6bfdef27bb017dbe11c8bbefaa78d68ea0c739f2166ef4f0af",
+      "equal": true
+    },
+    {
+      "path": "critic/weights.pt",
+      "manifest_sha256": "b17d20f781a4547d53879a40ce076e4b236f7f3bc1d81b7c868c3f12e3423853",
+      "actual_sha256": "b17d20f781a4547d53879a40ce076e4b236f7f3bc1d81b7c868c3f12e3423853",
+      "equal": true
+    },
+    {
+      "path": "critic/adam.pt",
+      "manifest_sha256": "40ad320f23b198fe1070c7f3cbe9431c17a1e4798ef447c1dc205af7633d7d7e",
+      "actual_sha256": "40ad320f23b198fe1070c7f3cbe9431c17a1e4798ef447c1dc205af7633d7d7e",
+      "equal": true
+    },
+    {
+      "path": "value_normalizer/state.pt",
+      "manifest_sha256": "0d0ea68f9cfc0ba0b09a3ae90d919266f40d07f414337360a494a17ff29b9fad",
+      "actual_sha256": "0d0ea68f9cfc0ba0b09a3ae90d919266f40d07f414337360a494a17ff29b9fad",
+      "equal": true
+    },
+    {
+      "path": "progression.json",
+      "manifest_sha256": "d1342b14c7f8bb5241741d7e0c29f6ed0a44c24f574c6455389bf83ebd4fff89",
+      "actual_sha256": "d1342b14c7f8bb5241741d7e0c29f6ed0a44c24f574c6455389bf83ebd4fff89",
+      "equal": true
+    },
+    {
+      "path": "semantic_config.json",
+      "manifest_sha256": "dcb3c283ffb746cd803544194fa8b91b7e0f280d1fe4b497fb54b39936a84e37",
+      "actual_sha256": "dcb3c283ffb746cd803544194fa8b91b7e0f280d1fe4b497fb54b39936a84e37",
+      "equal": true
+    }
+  ],
+  "keep_required_compact_json": [
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/a_to_b_gate.json",
+      "size_bytes": 184,
+      "sha256": "17060e3d368a6c7624e9b6b7daa85eaee618e77455675d2799f29117b19ed387"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/cross_process_state_equality.json",
+      "size_bytes": 5556,
+      "sha256": "4d332a0ecb01f7d19208a8383cf0ee35d7a791b81e3145014ff5ecbf69511e4a"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/effective_config.json",
+      "size_bytes": 3592,
+      "sha256": "23959e49bc46d9196148fa0d8a3468e3c95b5ec0fa80cbbd00bf135bd9e30224"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_closure_harness_freeze.json",
+      "size_bytes": 714,
+      "sha256": "6055e107be0ba6dfd611b6dc29ec5ce351f7d7f30d0411c530da48784f5b0810"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/final_result.json",
+      "size_bytes": 1083,
+      "sha256": "78c0c47b51c9ba1edab6125c168becab4fae57efa93c616d688dabdb5958f2db"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/repository_source_authority.json",
+      "size_bytes": 9546,
+      "sha256": "2b7113acbea7aac45cb054c4d347968ee8fc1f366bd7583df8ee4ba561eeccc0"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/latest.json",
+      "size_bytes": 208,
+      "sha256": "9aa91a566cad5d3ca7516117bc6e2bbb5813058f0dd46ada1382be4d274640a3"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/checkpoint_manifest.json",
+      "size_bytes": 2405,
+      "sha256": "118faf9bd94164835fe2479d8b59dc14009bbfcb8a5e6371482943771c6c706c"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/progression.json",
+      "size_bytes": 107,
+      "sha256": "d1342b14c7f8bb5241741d7e0c29f6ed0a44c24f574c6455389bf83ebd4fff89"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/checkpoint/generation_00000000/semantic_config.json",
+      "size_bytes": 3049,
+      "sha256": "dcb3c283ffb746cd803544194fa8b91b7e0f280d1fe4b497fb54b39936a84e37"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/a_save_state.json",
+      "size_bytes": 5572,
+      "sha256": "f3ad30b040ea4f9b207f3022d665640a9fb3f0d21438d086d7934f9c9ec5ae32"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/checkpoint_save_result.json",
+      "size_bytes": 3918,
+      "sha256": "9684ef2a2dc5edc6a03f7857bae9c2f9fc3873df199fb2c14eb526e2bbb1da49"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/pre_mutation_plan.json",
+      "size_bytes": 2289,
+      "sha256": "a69c01f8e2c891ed66837315686c812f23cc069f12283fe7edc967f5e5123546"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/runtime_identity.json",
+      "size_bytes": 649,
+      "sha256": "ed4829c8cdca543ae055beead09e983b906eb726950881cf99d708dbbcdeb36e"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/shutdown.json",
+      "size_bytes": 207,
+      "sha256": "d771d1d276c4dc42c9a976fc10f5e2fe30591a04acf0412f7f3f105a22e7791d"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/success_receipt.json",
+      "size_bytes": 330,
+      "sha256": "0019dbaf923837b1a542eeca1f33bfb1b0085ea15fc199ac9cdee70fa287ceae"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_a/update_result.json",
+      "size_bytes": 19552,
+      "sha256": "22851133028aa3cc6a8969c5f46a58b9fea21ff599c0af740f6ed2bf8f195d7a"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/continuity_result.json",
+      "size_bytes": 10214,
+      "sha256": "5b7a67c02139585b0625719899eb9358e532cad142aaf70a9eb5125b8773a2af"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/load_result.json",
+      "size_bytes": 5572,
+      "sha256": "ef65ee9aa5c13ad9e2ed06bd42c0e77aada3b99119976c69149be7bf39202622"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/pre_mutation_plan.json",
+      "size_bytes": 2291,
+      "sha256": "9d90c87e735098db8c947ebe4e7eaaaed191ba7f76a6d793f63b1e323b4d3914"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/runtime_identity.json",
+      "size_bytes": 649,
+      "sha256": "ea8501cce4585af4974e25bc319444128baed8119d0ff0dd1473b17d685a8795"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/shutdown.json",
+      "size_bytes": 207,
+      "sha256": "ae68146915969a87722a550b4fbb21149bbe491ff5f26018fcf83e515e81d6e3"
+    },
+    {
+      "relative_path": "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260924/phase_b_final_closure_artifacts/process_b/update_result.json",
+      "size_bytes": 20129,
+      "sha256": "b232a257e2c9ee2d67c78ece4b126d43c6b75bdadd56e49e99a7dbb71e388b74"
+    }
+  ],
+  "cautions": [
+    "ZIP original trees are independently classified by the main audit; this audit does not authorize deleting originals merely because a ZIP exists.",
+    "Do not delete the final checkpoint parent directory: it mixes nine removable payloads and four required JSON metadata files.",
+    "No historical report or source was edited; stale historical statements are provenance, not rewritten here."
+  ]
+}

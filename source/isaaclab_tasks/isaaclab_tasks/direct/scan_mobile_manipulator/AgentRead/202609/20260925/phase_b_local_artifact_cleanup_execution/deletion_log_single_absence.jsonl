@@ -1,0 +1,1 @@
+{"event":"stop","failure":{"stage":"PRECHECK","path":null,"message":"在此对象上找不到属性“Sum”。请验证该属性是否存在。","detail":"在此对象上找不到属性“Sum”。请验证该属性是否存在。","utc":"2026-09-25T12:18:29.8551477Z"},"deleted_files":0,"deleted_logical_bytes":0}

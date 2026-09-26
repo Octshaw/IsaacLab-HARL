@@ -1,0 +1,3587 @@
+{
+  "schema_version": "phase_b_cleanup_allowlist_v1",
+  "classification": "UNKNOWN_REVIEW_REQUIRED",
+  "approval": "NOT_GRANTED",
+  "audit_date": "2026-09-25",
+  "repository": "E:/Project/IsaacLab_HARL",
+  "baseline_head": "5e62cd58d631946aa5d68a64c27c8132ae5aef84",
+  "scope_note": "Frozen audit snapshot only. No globs or runtime regeneration authorize deletion. Directory entries are fully homogeneous; mixed directories are expanded into exact files/subdirectories. Metadata digest is ordinal sorted path|size|LastWriteTimeUtc.Ticks, LF, UTF8, no trailing LF. All tracked/source/docs globally protected, even outside inventoried scope. Current TASK_PROGRESS may later receive the separately archived audit handoff update.",
+  "totals": {
+    "entries": 211,
+    "files": 3602,
+    "bytes": 459942298
+  },
+  "entries": [
+    {
+      "relative_path": "logs",
+      "type": "directory",
+      "file_count": 3,
+      "size_bytes": 2595,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 63,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260604/RL_ASSIGNMENT_PIPELINE_DIAGNOSTIC_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260604/RL_ASSIGNMENT_PIPELINE_READONLY_DIAGNOSTIC_TASK.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "7b2c2a1e40ad6ca166580f2e391654222f8e7968a790e65cc3191cae75422852",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "outputs",
+      "type": "directory",
+      "file_count": 1232,
+      "size_bytes": 4206776,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 99,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/AGENTS.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260604/RL_ASSIGNMENT_PIPELINE_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f2593bcc4b48cb155891a382fb2a54b1f906a0606973ba273705759f8caeb005",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_bbox_gui_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304171,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c1695ee803b3da274c1de03016c7a9268da5f5dab9e21162be382b9ecc69f64c",
+      "last_write_time_utc_ticks": "639177858002459215",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_bbox_phase7a2_prerun_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 302251,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B1_MESH_FOOTPRINT_DIAGNOSTICS_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "fd00400c64bbcd4f76d2a7e49ca3412bdd160f38d0589bbbd84b9102f0b36f28",
+      "last_write_time_utc_ticks": "639177842104764057",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_bbox_phase7a2_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 302251,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/ALGORITHM_SCENARIO_DECOUPLING_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7A3_HYBRID_COMPONENT_MESH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "a1501fe372693294e36043f5c29523112208bb59a7d77af4ab7beb836b9d47b7",
+      "last_write_time_utc_ticks": "639177822712085006",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_bbox_phase7a3_prerun_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 302251,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B2_OBSTACLE_CANDIDATE_COMPARISON_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ab98e8479a3778817a6f9b6e574fd6fa6a9a1461c14ad1c42597ffdda7a08bff",
+      "last_write_time_utc_ticks": "639177861363901933",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_bbox_phase7a3_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 302251,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/HYBRID_ALGORITHM_COMPONENT_MESH_SCENARIO_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B1_MESH_FOOTPRINT_DIAGNOSTICS_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "cd06bda47ad3b73e2f491b6096d66ad6401b32aaea45d70c986fc788f047331f",
+      "last_write_time_utc_ticks": "639177842950154298",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_bbox_phase7b1_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 302661,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/MESH_FOOTPRINT_OBSTACLE_DIAGNOSTICS_MVP_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B2_OBSTACLE_CANDIDATE_COMPARISON_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "bec108f614d9568e4fcbdc17d520550633952d21c5e34ef9d3d31df360a877ef",
+      "last_write_time_utc_ticks": "639177865376434613",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_component_mesh_phase7a3_prerun_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304169,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B2_OBSTACLE_CANDIDATE_COMPARISON_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "105b24559ad35a30165117467a04cfebca59796d82db98cb5b63a24e3008e238",
+      "last_write_time_utc_ticks": "639177860229318067",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/algorithm_proxy_component_mesh_phase7a3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304167,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/HYBRID_ALGORITHM_COMPONENT_MESH_SCENARIO_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B1_MESH_FOOTPRINT_DIAGNOSTICS_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5aab5a4dd6bfe7b7b4b2515ba5ab6835bf79258c32baa1e7fc7114fc21ab6499",
+      "last_write_time_utc_ticks": "639177842633492936",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/component_mesh_jittered_n50_generation.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 3987,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "871552c3b96c26cb0f7c8b140b856e9b41023128f18385e17e37f8450652d75f",
+      "last_write_time_utc_ticks": "639178839603320275",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/fixed12_after_scenario_config_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 70740,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b60205d069560d1ad9812ee41da192ced75975accad9c160bd93dd3426f7d129",
+      "last_write_time_utc_ticks": "639166737883237911",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/fixed12_proxy_visual_flag_regression.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 70740,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c93869a0281257e3796d6ba024faa7a9cce3bfc33664ce4bdee650d2064aad7b",
+      "last_write_time_utc_ticks": "639165699813664318",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/fixed12_regression_after_generated_csv.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 70740,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "fa7a48935ef7b9e2373da499edfe5af6896e637a11278d812e457127c5267548",
+      "last_write_time_utc_ticks": "639165683744533006",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/gui_pause_patch_headless_skip_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 310424,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/GUI_INSPECTION_PAUSE_PATCH_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_GUI_SAFE_PAUSE_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "690776f3d4437be098504ee29b78bccdaa244b4467d25b10c9c90e3e8be0788e",
+      "last_write_time_utc_ticks": "639178031907130126",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/gui_pause_patch_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 317517,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/GUI_INSPECTION_PAUSE_PATCH_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_GUI_SAFE_PAUSE_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "76d3421b9c6c43baa21cfb85c06a969a3b6454dc2ceac4fb1c48b5822c58ad3d",
+      "last_write_time_utc_ticks": "639178037909168240",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/gui_pause_patch_normal_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 310425,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/GUI_INSPECTION_PAUSE_PATCH_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_GUI_SAFE_PAUSE_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9155dafdbe2466d09637f0a6e455ecb91772b0d371fde1b97ccb88751259365f",
+      "last_write_time_utc_ticks": "639178031751446397",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/gui_safe_pause_headless_skip.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 310507,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/GUI_SAFE_INSPECTION_PAUSE_PATCH_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B_CHECKPOINT_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "1bd836453dd8620aff829d4ec886e53b8c3b4af8337b94b925cc7067a21254f1",
+      "last_write_time_utc_ticks": "639178179147737283",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/gui_safe_pause_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 317605,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/GUI_SAFE_INSPECTION_PAUSE_PATCH_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B_CHECKPOINT_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "39a20aa4f2cf4a603119403355bacdb9f2840440a4ed732b549634821db1114e",
+      "last_write_time_utc_ticks": "639178200402724835",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/gui_safe_pause_normal_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 310503,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/GUI_SAFE_INSPECTION_PAUSE_PATCH_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B_CHECKPOINT_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ed7fdb2f6cc2ab191fd3a83cc574174796d9a6654895e655f9ed2503d8e96722",
+      "last_write_time_utc_ticks": "639178178989245409",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/jittered_n50_ground_grid_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 316721,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "a74c17ec9553e24d4f9f70327f42273aae76283e9f3dd01bd4a47d33770ce4eb",
+      "last_write_time_utc_ticks": "639178855101422034",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/jittered_n50_gui_camera_sync_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 316549,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "1bad37d2dd977fa41513422cb4601ce71afe036e9e685dc3999d17c3bd0cc849",
+      "last_write_time_utc_ticks": "639178844953208586",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/jittered_n50_proxy_nearest_aligned_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 317495,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "085f5a1fa229c482b6a4d1a8877c194c70bf4d506d51eda17fe2e706613289c7",
+      "last_write_time_utc_ticks": "639178832688683722",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/jittered_n50_side_balanced_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 316417,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "0308746a89dbd60b718324d9dc958c257d33068ef80cdcf4acc371713ffabbe1",
+      "last_write_time_utc_ticks": "639178839887266684",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/mesh_footprint_obstacle_phase7b1_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 308631,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/MESH_FOOTPRINT_OBSTACLE_DIAGNOSTICS_MVP_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B2_OBSTACLE_CANDIDATE_COMPARISON_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "40c379e82016fc9d0df70d4366b1d9ae8a6a0e2490b92fbe6d66987f701adb75",
+      "last_write_time_utc_ticks": "639177864975558297",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/mesh_footprint_obstacle_phase7b2_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 308631,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/OBSTACLE_AWARE_CANDIDATE_COMPARISON_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B25_OBSTACLE_DEBUG_LINES_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "bad08c0bacfc92ea689de5cc9e8378326fa4b80f7edd984ef7aa6f444fc206c1",
+      "last_write_time_utc_ticks": "639177983749221786",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/obstacle_debug_line_visibility_patch_bbox_regression.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304341,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_GUI_PAUSE_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "6cb0db0d1e263973dda581d83c2f912c34efcd0417df1dbc2acf4e97208c9be0",
+      "last_write_time_utc_ticks": "639178021429519887",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/obstacle_debug_line_visibility_patch_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 317423,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/OBSTACLE_DEBUG_LINE_VISIBILITY_PATCH_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_GUI_PAUSE_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "60d471b9392d52ae1a0b60ce1ecf56e4eb3e8a6e8b009560bcf7266a7c12a579",
+      "last_write_time_utc_ticks": "639178020837787240",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/obstacle_debug_lines_gui_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 317451,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "8216c547ae6c6a8db5cb570cc9df1db6df09302bf8310679ac2cbea19c8ce993",
+      "last_write_time_utc_ticks": "639178027600444066",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/obstacle_debug_lines_phase7b25_bbox_regression.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 303873,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/OBSTACLE_DIAGNOSTIC_GUI_LINE_VISUALIZATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B25_VISIBILITY_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "7c106ca237fc02d6e8ab4636293293b279d02f0a3283b8183bc97e613bd1c0e4",
+      "last_write_time_utc_ticks": "639178002487618691",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/obstacle_debug_lines_phase7b25_disabled_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 309843,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/OBSTACLE_DIAGNOSTIC_GUI_LINE_VISUALIZATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B25_VISIBILITY_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "72a4c8f2c71b410aecbfc6618ade27b8ba70ec7f62dfbfd5c719771c51529921",
+      "last_write_time_utc_ticks": "639178002311081333",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase7a_prechange_scene_visual_auto_bottom_align_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 298896,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "eab29f8524d09d9922349eff2ce1250f3e38b12b6655293e10f93361b091ade7",
+      "last_write_time_utc_ticks": "639177796903762643",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9a_rl_readiness_n50_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 319832,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260628/PHASE9A_RL_DYNAMIC_POLICY_READINESS_CHECK_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9B3_REWRITE_20260629.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "338dc55c0ae710d093db94dc154c7468865df0e1d8e75ef2086bdf4b3efff769",
+      "last_write_time_utc_ticks": "639182173099670260",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9b2_observation_update_smoke_n50_m3.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 326717,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9B2_OBSERVATION_UPDATE_SMOKE_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9B3_REWRITE_20260629.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "a65d40cc6b41ccd6520f7688d8f96b1a725c09138633194cdf5766b1e9f58d8c",
+      "last_write_time_utc_ticks": "639182970138725273",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9b3_reward_smoke_n50_m3.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 369499,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9B3_REWARD_SMOKE_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5f0b27489ce34b29a5b6662e7201729885a1b83abcc1a0b2d1e4331a007e1b5d",
+      "last_write_time_utc_ticks": "639183132800399525",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9c1_fresh_policy_tensor_flow_smoke_n50_m3.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2792,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9C0_TRAINING_CONFIG_READINESS_REVIEW.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9C1_FRESH_POLICY_TENSOR_FLOW_SMOKE_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "625fb79a285717293c24f78c30983b3781ace3aa49bda17b8331e9a7dff5b5f9",
+      "last_write_time_utc_ticks": "639183197673376742",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9c1_fresh_policy_tensor_flow_smoke_n50_m3_after_9c2.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2792,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9C2_TRAINING_ENTRY_READINESS_FIXES_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "82bff676193fdd2c96874ec8908581e9b39d2780d307c28aea393df97e0b7999",
+      "last_write_time_utc_ticks": "639183205679114043",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9c2_training_entry_readiness_n50_m3.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2386,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9C2_TRAINING_ENTRY_READINESS_FIXES_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "3d47d47296e1b6d56a073676464514a97aac00d9b462876ea482dae9ffcae59a",
+      "last_write_time_utc_ticks": "639183206780422316",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d0_tiny_train_smoke_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 43982,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9D0_TINY_TRAINING_SMOKE_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "a1d83d53ec1cbf0d376c7075e11dd7f4712b2f01468bdbf9f11a7d1a8340fb18",
+      "last_write_time_utc_ticks": "639183219538003086",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d0_tiny_train_smoke_cuda_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 43513,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9D0_TINY_TRAINING_SMOKE_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9ee59f0b6213543113a963bed0d6135605ed1aacf53214ce08ad0cb607963836",
+      "last_write_time_utc_ticks": "639183223414171967",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d1a_assignment_history_episode_reset_smoke_n50_m3.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 16038,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9D1A_ASSIGNMENT_HISTORY_RESET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "798222ee15c7df183343b6549dba0a4616adacb0634c449a9610dea2b7a4d91b",
+      "last_write_time_utc_ticks": "639183425108080535",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d1a_assignment_history_episode_reset_smoke_n50_m3_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 37169,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260629/PHASE9D1A_ASSIGNMENT_HISTORY_RESET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "66a15aa4906a41ac25305e75adca2bae14940a8cec1ffdcd5a0eb907c030e598",
+      "last_write_time_utc_ticks": "639183425108090557",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d1a_reset_recheck_1k2_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 44738,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "69b19bc0dd2f6164c5c5f8972519af7d65fa9fffd288582392935e428059d8a4",
+      "last_write_time_utc_ticks": "639183427913371323",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d2_debug_train_300k_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 4089,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "53a0133e28901c845d63f95c79b065de3b50d7fb81424efc8e4b5c463856f142",
+      "last_write_time_utc_ticks": "639183442960413843",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d2a_logger_reward_whitelist_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 981,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9D2A_LOGGER_REWARD_WHITELIST_CLEANUP_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "498681e0970280e64b5a9d23bc5ecc406cefad45b5d522959cbef58091ead980",
+      "last_write_time_utc_ticks": "639184042348120121",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d2a_logger_whitelist_recheck_1k2_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 44558,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9D2A_LOGGER_REWARD_WHITELIST_CLEANUP_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f7d04fb62937608622c85be0643779071a514c018b70b3b33d6725c385871e9b",
+      "last_write_time_utc_ticks": "639184044462631967",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d2b_rl_playback_diagnostics_smoke",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 212001,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9D2B_RL_PLAYBACK_DIAGNOSTICS_SETUP_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9D3_100K_TRAINING_AND_PLAYBACK_DIAGNOSTIC_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "58704f7acece9255994207ec9b929901b57eddc8dbb2b8828cb507ffff4fd483",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d3_debug_train_100k_after_logger_fix_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 124198,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9D3_100K_TRAINING_AND_PLAYBACK_DIAGNOSTIC_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "e849c3e734fd01b21553ccbe58069919cbba8124b17ea6e6dddb63271d1e6754",
+      "last_write_time_utc_ticks": "639184147826011827",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d3_rl_playback_diagnostics_100k_best_model",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1013730,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9D3_100K_TRAINING_AND_PLAYBACK_DIAGNOSTIC_ANALYSIS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "241ab9bf7df8f264c500587e557c70a280528f48469c93b5ba876cbc6db78689",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9d3_rl_playback_diagnostics_100k_models",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1017790,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9D3_100K_TRAINING_AND_PLAYBACK_DIAGNOSTIC_ANALYSIS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f1f5c9086fbd5cef5ef707086afbaa4e8f4dfa1ae01f1109b1be6c0ee8cc6890",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e1_assignment_cooldown_mask_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 489,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E1_COOLDOWN_MASK_IMPLEMENTATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E2_REPORT_20260630.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "42ec53228fd6f4e1d4c0a02bfa028af1b02c854c20d3ff3fea782fc7dfd37b66",
+      "last_write_time_utc_ticks": "639184285291880080",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e1_cooldown_disabled_recheck_1k2_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 47823,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E1_COOLDOWN_MASK_IMPLEMENTATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E2_REPORT_20260630.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "fd821f185c94246ceab848555db55cf95b86a610f0c3356b37f62bcda586ef2b",
+      "last_write_time_utc_ticks": "639184287896157566",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e1_cooldown_enabled_recheck_1k2_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 48459,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E1_COOLDOWN_MASK_IMPLEMENTATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E2_REPORT_20260630.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f82ac85820f8345a9fd068cb5679b7b9e8b3377206938534cf9a7962a3807251",
+      "last_write_time_utc_ticks": "639184289405675724",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k.exitcode",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 3,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "86a9bd06f56dc509a83adec463b96552c5e07e0d2600688e92434114c9514308",
+      "last_write_time_utc_ticks": "639184339586546871",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k.pid",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 7,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ef2a312ddd34d952941b923d1f71c3f62fa38870100ffb5da0875208b9f79e3d",
+      "last_write_time_utc_ticks": "639184298831391636",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_best_model_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1051052,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E3A_CROSS_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5cd3038b74ab65c1e8944ef786a122c1a2907fba7c1eefd379b874bc75892cc2",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_best_model_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39464,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "cca136d94e344a39374154f3d65c4255aa753797de3adb99fdcb83ca67022359",
+      "last_write_time_utc_ticks": "639184348648446979",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 1423876,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E3A_CROSS_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "d9084c674edeeb7b2f4e4e161ed2b70054370f6c8ccf11d4a727949242e241fd",
+      "last_write_time_utc_ticks": "639184339572310296",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_models_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1048826,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E3A_CROSS_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "cde27061eab996e2a02633053d5fb3f499ae866959272ca7ea8239d71207e5f2",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_models_playback_attempt1_viewport_crash_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 12231,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "0c88611a70d4b931e361eae0bccb5a5fa14af8e74ed73cb010a4e69c76fe8d70",
+      "last_write_time_utc_ticks": "639184341682661590",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_models_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39335,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9bf150d22e433e4f45e0e52ca4157dc9acf1c09a8f047e0e2e6d93b9956a8c9a",
+      "last_write_time_utc_ticks": "639184346012118219",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_playback_comparison_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 7576,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "e5210321124812dd8bbfbd157a95d5b94b2f5dd96821b6e2cf0f686550e8e54d",
+      "last_write_time_utc_ticks": "639184349395984944",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e2_cooldown_enabled_100k_scalar_sanity.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 5849,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260630/PHASE9E2_COOLDOWN_100K_TRAINING_AND_PLAYBACK_ANALYSIS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "0e11d48dd47e658fb6023eb7d46597ff30e9fc204a7250ffd1ceb1d293154b2f",
+      "last_write_time_utc_ticks": "639184341130616278",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_best_model_without_cooldown_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1119342,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E3B_COOLDOWN_ABLATION_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c39c20934a4720f40a2d601be227b433687cca4f02bbcd56ecfad57558bbbde0",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_best_model_without_cooldown_playback.exitcode",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 3,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "40e7e4ce65cacaf983e5bfbbe1b4f00d691cc5acee8630127681421eb9c6c8ee",
+      "last_write_time_utc_ticks": "639184645681418445",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_best_model_without_cooldown_playback.pid",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 7,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "adbf5f796c017e8e3353660b3597be43ab33f56105e865e038d86da96598869c",
+      "last_write_time_utc_ticks": "639184644272814657",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_best_model_without_cooldown_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79354,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "98586ddc8b0ac3b3ff9c62b8c445bd02ae1168c7a9e3aa26c04ee8bcc7a35360",
+      "last_write_time_utc_ticks": "639184645666703573",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_models_without_cooldown_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1120898,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E3B_COOLDOWN_ABLATION_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "cb1d03a1478ba55dcfdc16b3dc16a833889a44cebbff6d9d4a4902ce190850c3",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_models_without_cooldown_playback.exitcode",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 3,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b9867a3f2488c6f67457bae6b4c0acf2c3a9f560bd7b644c30d275a1ed6edc58",
+      "last_write_time_utc_ticks": "639184643260637188",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_models_without_cooldown_playback.pid",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 7,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "758cc822db14722f6bdb847e0cd122e7b65b622cefa0be95a5f59ba56604bcda",
+      "last_write_time_utc_ticks": "639184639549472842",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cooldown_models_without_cooldown_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79096,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "6cf8ba45c53091d1c89eaa9ac02a734c36654476e890385e37cd2e8536064db2",
+      "last_write_time_utc_ticks": "639184643244307829",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cross_playback_comparison_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 15214,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "6561cc00e526113d53e14ff9b64f7c383f7e909399d85dd83a46c3b9d6b1c071",
+      "last_write_time_utc_ticks": "639184648342649032",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_cross_playback_trace_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 4809,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "8a4624c734e607415d46385b19b88f133c3a13577b322f609faafd38b4cdf92e",
+      "last_write_time_utc_ticks": "639184648342649032",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_best_model_with_cooldown_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1148283,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ebe0a9014c0c0bf99e082313f8ed1ee6ee7ab07c8b377c441ac9b7bec40023f2",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_best_model_with_cooldown_playback.exitcode",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 3,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b672903754debd68f20027512abffcfb18e0f99b4f09bd91341c26de175b919c",
+      "last_write_time_utc_ticks": "639184638567439851",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_best_model_with_cooldown_playback.pid",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 7,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "d0e9bf8235be29614994c81c4ae7b4c381e3f5c48c7a516f6a7e874d8a12d251",
+      "last_write_time_utc_ticks": "639184637116629127",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_best_model_with_cooldown_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79686,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "8450c01ba56fc84b83ad39488ab25f427cbc797c936d1e8cd196352e699055ad",
+      "last_write_time_utc_ticks": "639184638550632323",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_models_with_cooldown_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1189457,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ad417b37a5afef0285351c19bf0b3dca8dbdfa652c930a1e057ed2c69ee4ed80",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_models_with_cooldown_playback.exitcode",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 3,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "930b6def06503dbaef9e23d762a04ef32158d5d5c91b0ca1e27355fd831fda49",
+      "last_write_time_utc_ticks": "639184636728727747",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_models_with_cooldown_playback.pid",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 7,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "23ac96ceb0986ed0eae346ab1e69b8a163951a8e0574ce5d775f713e291567f0",
+      "last_write_time_utc_ticks": "639184635233671764",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3a_no_cooldown_models_with_cooldown_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79438,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3A_CROSS_PLAYBACK_COOLDOWN_ATTRIBUTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5768e5873f6cb86871319b834be65f527d80722259acd8315ef454a45ca15d2a",
+      "last_write_time_utc_ticks": "639184636714083125",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_cooldown_ablation_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 11072,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "af008bc0488074300a7cf9b42f988a1fbab3f9fcd5ec36861ed3d174bb204c86",
+      "last_write_time_utc_ticks": "639184684543901349",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_cooldown_ablation_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 63041,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "094f4d6d2c8fa7c33037aef1c7a2ce6d5ab8e629a824c9615e22f558fa389a8e",
+      "last_write_time_utc_ticks": "639184684543891305",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_playback_queue.exitcode",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 3,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "0c72c71a8d708dac218d7bf08da48a76609b2b74346337d5cd9ee40912235fb2",
+      "last_write_time_utc_ticks": "639184682963130395",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_playback_queue.pid",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 6,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5c437a0f629626aedfe8ae4a90df383434fe7c4caeb6a6e831b3b34e457f3ee3",
+      "last_write_time_utc_ticks": "639184661407936939",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_playback_queue_current.txt",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 30,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "76c4c5186affa9ed935fa1a125a263c9f1c95d124a3340136fb0498364ff8ac7",
+      "last_write_time_utc_ticks": "639184682963130395",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_playback_queue_status.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 4932,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E3C_BUDGET_AWARE_STUCK_DIAGNOSTICS_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "02080c1de6e0f6e700fb10cb37766861fcf7d1492a9c888a9096c944504d8abf",
+      "last_write_time_utc_ticks": "639184682963130395",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_short_d3_s50_best_model_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1177297,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "18604674d97bdfd83824d8dfd02d435f69b0dfe20bd6433db355e0c15a9c1fe0",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_short_d3_s50_best_model_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79662,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "8aee8c778d247f269c031f30aaf570afab94cc763676832f360b5a597763bfd8",
+      "last_write_time_utc_ticks": "639184677857491838",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_short_d3_s50_models_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1175359,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "fc6a93e7c8e20fa88b298e5746bdc6fa4f623adf65d94f335f04197aee74476d",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_short_d3_s50_models_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79404,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "4af82744d3a477e086c4a1eb73d20a6c99aa74a273449eaa508373520c0bbe17",
+      "last_write_time_utc_ticks": "639184675055122815",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_strict_attempt20_d5_s50_best_model_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1174657,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f59ebbc6db40fe00b08a3af7ab7f25ce00543371c97d7a482f197bcba00bf3b8",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_strict_attempt20_d5_s50_best_model_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79794,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "af3a8e3534ab86e182e323d611dfd8c7e5ba1036b0486b7e3e3f97ff376d075c",
+      "last_write_time_utc_ticks": "639184682948145806",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_strict_attempt20_d5_s50_models_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1177349,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "84867d04397be5a837242ea3cef632f0248c1cfa8f8391bf1e173ca6e4138458",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_strict_attempt20_d5_s50_models_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79538,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "d5db0198d4fc07b4353a1df2a5ef1b7ca1ffbdb4319b5e1f55bb5225f3772e14",
+      "last_write_time_utc_ticks": "639184680353943619",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s30_best_model_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1179538,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "d94b9ba01b2acc6a502084c6d80d9acca0ff3fbe09d75a925b489810ab48bacf",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s30_best_model_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79652,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "e5637267cedf7a2faa5e38a965edfa0da9be2f236e4fc617d3ccfdc8def27fcb",
+      "last_write_time_utc_ticks": "639184667597256007",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s30_models_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1178748,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "551597bce3adff4cecfe2977d7c8b986c25e002c69ec99e48cbefcee20c6adff",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s30_models_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79394,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "3a7a80368974fe7f8d21b69c2261a8015294a16d497135a1d5bf0f88a2663f19",
+      "last_write_time_utc_ticks": "639184664200095560",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s50_best_model_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1176372,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b9d5b85490a4177be3bb7718e628ff49dd254e51020bbbb8a44e441fb1bf2a9e",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s50_best_model_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79650,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5d80889e1a0041a47d46dc095e73b009b25bcfc68133af165d4a9bf6ee562d59",
+      "last_write_time_utc_ticks": "639184672351932959",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s50_models_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1173180,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3B_COOLDOWN_STRENGTH_ABLATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c133cae0da310d5d10183f8529743a5916f035a71a410ee08d4dfeea199e4a8c",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3b_weak_d5_s50_models_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 79392,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ac164baf85aeb4a68f7e8a445ee5b713b3d2a6957444cc20b05face5f8300ca9",
+      "last_write_time_utc_ticks": "639184669814783225",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3c_budget_aware_stuck_diagnostics",
+      "type": "directory",
+      "file_count": 3,
+      "size_bytes": 9646167,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f540eaf29cbae61756e46c971ff4ddcba04999f87aab53f80f63da8a1442c2bb",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3c_budget_aware_stuck_diagnostics_strict_budget",
+      "type": "directory",
+      "file_count": 3,
+      "size_bytes": 9607292,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3C_BUDGET_AWARE_STUCK_TARGET_DIAGNOSTIC_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E3D_BUDGET_COOLDOWN_TRIGGER_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9720dff535dbf42fb9fdc1d2228f68929a484086d3a34af42fb74af6f68058ac",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_cooldown_mask_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 613,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 6,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3D_BUDGET_AWARE_COOLDOWN_TRIGGER_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "633c01be8dd2c44711e9bdda5101b68da9b8021a7099f4a7d7d1879981ea0b77",
+      "last_write_time_utc_ticks": "639184733369612222",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_cooldown_playback_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2149,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 7,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3D_BUDGET_AWARE_COOLDOWN_TRIGGER_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ee838a471304acddbb4ff7b8411108dd7da5d776c3b9aa224fc201122497ef82",
+      "last_write_time_utc_ticks": "639184746130170402",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_cooldown_playback_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 5399,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 6,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3D_BUDGET_AWARE_COOLDOWN_TRIGGER_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "01831b1a4eca40900d7a1851537f96c41e08a58dd625189abbacb97fb6596a3c",
+      "last_write_time_utc_ticks": "639184746130170402",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m10_slack0_d5_best_model_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1379685,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 6,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3D_BUDGET_AWARE_COOLDOWN_TRIGGER_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "77f0ad53f7eb589013ee31eb80d47c85374f7417c713eb1aa574a77cdb218924",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m10_slack0_d5_best_model_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39576,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5900f44aba936645dacd921bdf3a70f496e785e498c04d83396772dde69b1f18",
+      "last_write_time_utc_ticks": "639184745393571556",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m10_slack0_d5_models_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1400656,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 6,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3D_BUDGET_AWARE_COOLDOWN_TRIGGER_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c55ef56c71edd28be07dba790612ff455c777238a9af0ca54e9905490c0a4392",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m10_slack0_d5_models_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39446,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "2f761d55bc81fcf9b2e538b467e6b18af887c9fe453979876ce4e40ec996009a",
+      "last_write_time_utc_ticks": "639184742493946692",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m15_slack5_d5_best_model_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1378173,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 8,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3D_BUDGET_AWARE_COOLDOWN_TRIGGER_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "90d7754e0c7bffb097369f23c897fbded419d33fc7b04cb48e9068235fd3868c",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m15_slack5_d5_best_model_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39575,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "90db9336cf2e6bade8621670855120f3c0aa3fb2918ffb03334d0c975ab1a9c4",
+      "last_write_time_utc_ticks": "639184739778683555",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m15_slack5_d5_models_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1385307,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 8,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3D_BUDGET_AWARE_COOLDOWN_TRIGGER_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f926ccb62f1fa2067d7f1fe1104cf2eb89490e2a109ecb140372e8b2150123d0",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3d_budget_m15_slack5_d5_models_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39446,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9b921b864f1ce5dc62f78ac35f72e1f5c7a5a51c39fe8eb1a9ceb8fde0c1d6b5",
+      "last_write_time_utc_ticks": "639184735465787566",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3e_budget_trigger_trace_inspection/budget_trigger_events.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 37475,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E4B_BUDGET_TRAINED_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "12ee367874b3bbc4191afa1933b72c6895773a9c1b0e6ce2489e5054c0fb4687",
+      "last_write_time_utc_ticks": "639184754132620683",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3e_budget_trigger_trace_inspection/budget_trigger_windows.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 38098,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E4B_BUDGET_TRAINED_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "0526bcf9eee01bdd9c581496e31d3c65feef263264f80d5621da408b44d4c0eb",
+      "last_write_time_utc_ticks": "639184754132640600",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3e_budget_trigger_trace_inspection/conflict_after_trigger_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2707,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E4B_BUDGET_TRAINED_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c348141ae1e82c07fec88962836d5b039bca0f4bda227d3d8d24f928565160eb",
+      "last_write_time_utc_ticks": "639184754132650609",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3e_budget_trigger_trace_inspection/phase9e3e_budget_trigger_trace_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 4493,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E4B_BUDGET_TRAINED_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "314b166a510f8135c8a549e2e954df7e97fa54f62b97305ac3f6869eb4f1779a",
+      "last_write_time_utc_ticks": "639184754132660608",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e3e_budget_trigger_trace_inspection/post_trigger_redirect_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 12465,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E3E_BUDGET_TRIGGER_TRACE_INSPECTION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9E4B_BUDGET_TRAINED_PLAYBACK_20260701.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f6139495b8010bee0cbe451a3d1a6a301d9c1e7661359b64a4b1671f67d174f5",
+      "last_write_time_utc_ticks": "639184754132650609",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4a_budget_m15_slack5_d5_train_100k_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 237851,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "412afd14e0c5680bd73e9353a9ca072a8c7a7712f268ad8b4abef16182121c58",
+      "last_write_time_utc_ticks": "639184943147466253",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_best_model_no_cooldown_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1256769,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F0_DESIGN_PLAN_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c8c7c2a86607ad8a12974e674fac5dc355d8729a110bf0934620be25275cc29b",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_best_model_no_cooldown_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39374,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "76e4778509933fafbf4219fc0eda2773fbc294cd320ba1cde46c234c69e7cdee",
+      "last_write_time_utc_ticks": "639184988680988186",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_best_model_with_budget_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1399376,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 5,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F0_CONFLICT_AWARE_OR_ACTIVE_TASK_LIFECYCLE_DESIGN_PLAN.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b0016b94193d7f27b3d8201d7750b829e67923b1865fb70138e8ebc3c42c8cc3",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_best_model_with_budget_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39583,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "d246bccb99ea8dff13c33f63bc62e69564db3960eeac47f151a648e529de39b5",
+      "last_write_time_utc_ticks": "639184981819525113",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_models_no_cooldown_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1258473,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F0_DESIGN_PLAN_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "aea484d1c6c3f1aa02ae49340f3b9d374067d11f938f3eba321f4de1579e0b93",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_models_no_cooldown_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39245,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "48f45d8567aff95ee71b462cd92d2ce17f5647061b5df1ef6b3e8a96742e0b79",
+      "last_write_time_utc_ticks": "639184985999144714",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_models_with_budget_playback",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1398478,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 5,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F0_CONFLICT_AWARE_OR_ACTIVE_TASK_LIFECYCLE_DESIGN_PLAN.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "7ae2f10fe8942e622a4076333e32ef8e67250c776d083d750409e029be3c1027",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_models_with_budget_playback_console.log",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 39450,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "6d40dc7fb7ec8b0d57ab153a0771efe1c41c9bd6fb5c722ffbc1cc1a260fd88a",
+      "last_write_time_utc_ticks": "639184979178901242",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_playback_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2543,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 5,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F0_CONFLICT_AWARE_OR_ACTIVE_TASK_LIFECYCLE_DESIGN_PLAN.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5fa994cab89ad19ad76dcdfee3c2522c1b2e7802a8c70447b5713240b67485a0",
+      "last_write_time_utc_ticks": "639184990960499977",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_playback_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 8594,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 5,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E_FINAL_PRE_COMMIT_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F0_CONFLICT_AWARE_OR_ACTIVE_TASK_LIFECYCLE_DESIGN_PLAN.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ff062dd56193c51c17ee905483b0a3675e57b6dc800b9e4e0a05ab30a50ac42d",
+      "last_write_time_utc_ticks": "639184990961583354",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_trace_inspection/budget_trigger_events.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 18380,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "df3c2f2bada314f6794037806eb5e57d2f972c52e46cedb48de5f079f3ebf6f7",
+      "last_write_time_utc_ticks": "639184989411811793",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_trace_inspection/budget_trigger_windows.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 17523,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "43e8cd0365c094533e74103619dd207f4abea522b854095d87cc2205d6ba7a88",
+      "last_write_time_utc_ticks": "639184989411821799",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_trace_inspection/conflict_after_trigger_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2752,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ca6a6a28910c320e60eaffa05d35662c863234687aea89beb7a17062c22bb7e3",
+      "last_write_time_utc_ticks": "639184989411831807",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_trace_inspection/phase9e4b_budget_trained_trace_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 4584,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "66f5a2b2cf7b9a5560144125d2dfb1e8bbbca2e1d50d53de132d391bb99114cc",
+      "last_write_time_utc_ticks": "639184989411841795",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9e4b_budget_trained_trace_inspection/post_trigger_redirect_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 6280,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260701/PHASE9E4B_BUDGET_TRAINED_PLAYBACK_DIAGNOSTICS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "a5e3d533ce710da0f2b81aa4eb496f606b7bdf83b9d48f735c399d1946df9701",
+      "last_write_time_utc_ticks": "639184989411831807",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f1_post_budget_redirect_conflict_diagnostics/assignment_history_schema_inventory.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 26018,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F1_POST_BUDGET_REDIRECT_CONFLICT_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F2A_ROW_LEVEL_CONFLICT_LOGGING_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "2d5113df795b025d094c17f295c6c5b28724f481b54c2beb7fa267ac462e1a34",
+      "last_write_time_utc_ticks": "639185768351925908",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f1_post_budget_redirect_conflict_diagnostics/conflict_cause_attribution_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 2135,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F1_POST_BUDGET_REDIRECT_CONFLICT_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F2A_ROW_LEVEL_CONFLICT_LOGGING_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "51d84770156b4e45416e15cbf2c7c0323324735ae76bafad43b8128eaafa719d",
+      "last_write_time_utc_ticks": "639185768351945829",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f1_post_budget_redirect_conflict_diagnostics/phase9f1_conflict_diagnostics_summary.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 8343,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F1_POST_BUDGET_REDIRECT_CONFLICT_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F2A_ROW_LEVEL_CONFLICT_LOGGING_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "de7ad55298a5a50a5a29986a458a5e9d5423d0d3b2628ed20fc4e18ca68195b6",
+      "last_write_time_utc_ticks": "639185768351945829",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f1_post_budget_redirect_conflict_diagnostics/post_trigger_conflict_windows.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 27114,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F1_POST_BUDGET_REDIRECT_CONFLICT_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F2A_ROW_LEVEL_CONFLICT_LOGGING_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "eec6f108a553c2e0db6a9418636b4559f590152b3798b1ab8d9b1453d6d0af5e",
+      "last_write_time_utc_ticks": "639185768351935835",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f1_post_budget_redirect_conflict_diagnostics/post_trigger_next_target_summary.csv",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 725,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 3,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F1_POST_BUDGET_REDIRECT_CONFLICT_DIAGNOSTICS_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F2A_ROW_LEVEL_CONFLICT_LOGGING_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "2102a7c2648c937acac8c4fa543481535010231d7e7b36347ade3a6d665e3b8d",
+      "last_write_time_utc_ticks": "639185768351935835",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f2b_row_level_logging_validation",
+      "type": "directory",
+      "file_count": 5,
+      "size_bytes": 28805,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F2B_ROW_LEVEL_LOGGING_PLAYBACK_VALIDATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F2C_TRIGGER_WINDOW_ROW_LEVEL_VALIDATION_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f5ced0a4cfc11221ec19e7b1c843ffe20b7ea3e7b5ae0a19c234fbd5a4eedd76",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f2c_trigger_window_row_level_validation",
+      "type": "directory",
+      "file_count": 7,
+      "size_bytes": 784144,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 11,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/PHASE9F2C_TRIGGER_WINDOW_ROW_LEVEL_VALIDATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260702/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9F3_DESIGN_DECISION_20260702.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "4582ef8b6a0e7225c5e381463562f055e4ba2687ee254ba640e1cbace6525901",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9f5_redirect_guardrail_validation",
+      "type": "directory",
+      "file_count": 8,
+      "size_bytes": 814170,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 9,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260705/PHASE9F5_REDIRECT_GUARDRAIL_PLAYBACK_VALIDATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260705/PHASE9F6_COMMIT_READINESS_REVIEW.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9984a4a7bddfb2e547813f1633e594ccede08846135d7b07649cfc9d105bbce9",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g1_lifecycle_reconstruction_phase9f_existing",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 1957856,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/PHASE9G1_LIFECYCLE_RECONSTRUCTION_ANALYZER_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G2_FAILED_PAIR_RELEASE_MEMORY_20260706.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "4104962fa7822a221bd428807d0d77c1c27e88ac7a90b2ba767112bfe094fe9b",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g1_lifecycle_reconstruction_self_test",
+      "type": "directory",
+      "file_count": 6,
+      "size_bytes": 27202,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/PHASE9G1_LIFECYCLE_RECONSTRUCTION_ANALYZER_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G2_FAILED_PAIR_RELEASE_MEMORY_20260706.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c079cd6a0483585dbaaec5d7ddfa52b96ed3d575a91a1c30bc0f3b2abc288e19",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g3_failed_pair_memory_validation",
+      "type": "directory",
+      "file_count": 44,
+      "size_bytes": 7935796,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/PHASE9G3_FAILED_PAIR_MEMORY_PLAYBACK_VALIDATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/PHASE9G4B_FAILED_PAIR_MEMORY_D6_PLAYBACK_VALIDATION_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b0c68d8e5d3754058393dbc6383bab6edf8d83d1aa0355f96250516e3a874034",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g4a_ttl_boundary_smoke",
+      "type": "directory",
+      "file_count": 1,
+      "size_bytes": 22468,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/PHASE9G4A_TTL_BOUNDARY_SEMANTICS_REVIEW.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G4B_FAILED_PAIR_MEMORY_D6_PLAYBACK_VALIDATION_20260706.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "14b129c754c96324d967ce65f0e0ae32848313bd1e15817f59cde3d3795aa4fc",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g4b_failed_pair_memory_d6_validation",
+      "type": "directory",
+      "file_count": 19,
+      "size_bytes": 6003632,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260706/PHASE9G4B_FAILED_PAIR_MEMORY_D6_PLAYBACK_VALIDATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260707/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE9G5_FAILED_PAIR_MEMORY_DESIGN_DECISION_REVIEW_20260707.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "697a06758d8b450d5375f10316c2e2e6a82c5635e0a9fde72c1aabca81eca7ed",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g6d_lifecycle_runtime_validation",
+      "type": "directory",
+      "file_count": 36,
+      "size_bytes": 7511809,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 8,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260707/PHASE9G6D_PASSIVE_LIFECYCLE_BOUNDED_RUNTIME_VALIDATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260707/PHASE9G6E_COMMIT_READINESS_REVIEW.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "fb28df3f9391347bd5b5f14c3765b52d2dc1616460c5c15fa94216c16813cf93",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/phase9g7e_resolver_runtime_validation",
+      "type": "directory",
+      "file_count": 48,
+      "size_bytes": 10170678,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 4,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260708/PHASE9G7E_BOUNDED_RESOLVER_RUNTIME_VALIDATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202607/20260708/PHASE9G7F_COMMIT_READINESS_REVIEW.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "4740852776668baa348152e31cf9fa37c0cc985149dc595a3b7e50492df77f34",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_bbox_sample_generation.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 1980,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/REAL_COMPONENT_SCENARIO_CONFIG_USAGE.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "dfa3d61c8e99800ec393de4f37683418f7fa1decf750bd2183557cfab91c2087",
+      "last_write_time_utc_ticks": "639166732346056760",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_bbox_sample_headless_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 140493,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "d1217d777d26659bfb9485c9a2bcfc0562137d3567c922ded774a14ead899de5",
+      "last_write_time_utc_ticks": "639166735283232169",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_bbox_sample_visual_yaml_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 140495,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "420b4099f87d1662433f451ad34ba925fee624a11f6621878c7f3b0fcbef7f7a",
+      "last_write_time_utc_ticks": "639166745050816988",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_bounds_from_yaml.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 1576,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/REAL_COMPONENT_SCENARIO_CONFIG_USAGE.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "11f9e0bcc14f1666bd2cf3ff31b47685fb8e6abac6b50c438727c88bc953f6fa",
+      "last_write_time_utc_ticks": "639165708595190166",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_bounds_from_yaml_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 1576,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "51ea37db80c9465fb0f0cad2cd7a966aefb39d2f741067dfc94bfae88880a4d8",
+      "last_write_time_utc_ticks": "639166733821759663",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_generated_csv_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 140456,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b39b4bb9071008e5b33f7a90f3a3926880ae298e084515f32fe7bc09a103ea70",
+      "last_write_time_utc_ticks": "639165685716559502",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_generated_csv_visual_check.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 140458,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "117116993529a7717d7fdf5ad37b8439bf959a95539c37c133ab3544e8098864",
+      "last_write_time_utc_ticks": "639165697076880566",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_mesh_bounds.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 1230,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "539924ccbc447ac803eb8e0fa22ba70cfd72ced43a0eebfb956aeebbc572f0af",
+      "last_write_time_utc_ticks": "639165669718670543",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_mesh_bounds_base_center_origin.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 1576,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "f9f5ea373d1714c22b5c6f0e85f9eca2b13f602e991dc8a31a55faba4efd80b2",
+      "last_write_time_utc_ticks": "639165683244242660",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_mesh_only_visual_check.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 140502,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "dcd50d8378e3d9bb44e921a724b0009a51a460c747f0e45cdebd9edd4fbd5a5d",
+      "last_write_time_utc_ticks": "639165700913572317",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_mesh_only_visual_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 140500,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c7e71329ffe46a5d78d7830f0aed13b0003b20f7a6e3694589169618e3d60b4e",
+      "last_write_time_utc_ticks": "639165700082451566",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_n24_uncovered_level2_diagnostics.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 4333169,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 9,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260615/STAGE4B_REAL_COMPONENT_N24_ASSIGNMENT_LEVEL2_JOIN_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260615/STAGE4B_REAL_COMPONENT_N24_CONTROLLER_STATE_TRACE_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "94933d05d31be1ae16469e71f3d868e3691abb01f026cc3fe6c684e87b435b7e",
+      "last_write_time_utc_ticks": "639166980104078927",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_obj_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 36840,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "4ad26f904ab90a57c443539495eef6a3bc2c26be7f946559c8485465aef2efcc",
+      "last_write_time_utc_ticks": "639165670981617129",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/real_component_yaml_override_max_steps3_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 140493,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "2b4ff44d12d4849b0c3eadc173ce02a4715f317c88adf8830fcd10bb0ba3f799",
+      "last_write_time_utc_ticks": "639166736789864617",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/robot_config_phase2_legacy_fixed12_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 72093,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE3_CONDENSE_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "dfb0314746501c8fd255717338b338401051571011f9d20704c0a73b1ac7683f",
+      "last_write_time_utc_ticks": "639177136822119492",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/robot_config_phase2_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 71671,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE3_CONDENSE_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "2769bb0953de751895fe0671f28df5186a0d9360c3c51ffafb77b07b01d24955",
+      "last_write_time_utc_ticks": "639177136678916003",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/robot_config_phase3_m2_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 46830,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE3_CONDENSE_20260622.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE4_SIM_READY_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "aa6a4f5f2e7808f34375248847c98d385295633615fe53ba270d2b6e4faa6b37",
+      "last_write_time_utc_ticks": "639177137507759371",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/robot_config_phase3_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 71671,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE3_CONDENSE_20260622.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE4_SIM_READY_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "3724634239a0bb07c872e8aea28341d3774e2921b7913ad4e85b252ac60e8fda",
+      "last_write_time_utc_ticks": "639177137677926869",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/robot_config_phase3_m4_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 94922,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE3_CONDENSE_20260622.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE4_SIM_READY_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "51dfda911c7df08105276f35e9f11ba65f77857d3b45b174ce669a25756d3e22",
+      "last_write_time_utc_ticks": "639177137827490528",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sample_n6_after_scenario_config_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 34753,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "20ac190f3eda76a2f8d90b9100d2c2401244d27974b95e90f1a41c4ff6e6d297",
+      "last_write_time_utc_ticks": "639166743451921313",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sample_n6_regression_after_generated_csv.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 34753,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ac672c7f35505d3aca6713a77acbc71a4b4fa26007c95fbc4475745f4f43fc8e",
+      "last_write_time_utc_ticks": "639165683748739236",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/scene_assembly_phase6s_phase5_baseline_n12_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 73136,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "7158374b1c85bdbacb3db1c028ee3074a35cbadb332dd5276a376622a7a885d2",
+      "last_write_time_utc_ticks": "639177181967971129",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/scene_assembly_phase6s_real_scene_proxy_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 291396,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE6S2_VISUAL_MESH_FOLLOW_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ebdb6a98444b8333fe3e7988b2a413ed583a75965824e8de96c10b604415582d",
+      "last_write_time_utc_ticks": "639177183473212692",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/scene_visual_auto_bottom_align_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 298896,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7A_YAML_CAPABILITIES_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c720a8bb4c9f1ab27831a2e97dc32b43c0462d4fea22411c7fe622f3b26559ea",
+      "last_write_time_utc_ticks": "639177355001708237",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/scene_visual_inspection_phase6s3_gui_manual.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 297389,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/SCENE_VISUAL_INSPECTION_GUIDE.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c981587d4ac88bba4d08146b26d912df217693ab4cbfce98d6d0dde24f48fc59",
+      "last_write_time_utc_ticks": "639177336986540729",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/scene_visual_inspection_phase6s3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 297388,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/SCENE_VISUAL_INSPECTION_GUIDE.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE6S4_AUTO_BOTTOM_ALIGN_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "8d19c61764760c021228b5c20cb8c6ad77fa72e798969a08109a029b688d9dea",
+      "last_write_time_utc_ticks": "639177222974529075",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/scene_visual_mesh_follow_phase6s2_rerun_before_phase6s3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 296068,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE6S4_AUTO_BOTTOM_ALIGN_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "04ee4564ff95a71ceb0678261a989d2f69a51e0f4b273af4e5ceb81af1645ba1",
+      "last_write_time_utc_ticks": "639177220391052414",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/scene_visual_mesh_follow_phase6s2_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 296068,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/SCENE_VISUAL_MESH_FOLLOW_PROXY_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE6S3_VISUAL_INSPECTION_20260622.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "bb04d86790ea646dc1e80d13759b3247af2bf205d432eb3a2169fbf276f43926",
+      "last_write_time_utc_ticks": "639177206249068329",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n100_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 572848,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "13615c231edfa0bec3f904d064aa354e2598b142452de42dc26c931942abd60d",
+      "last_write_time_utc_ticks": "639177151116247120",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n12_m2_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 46830,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "db105b728353073239eb1254e8e0313d6fc4bf8c6c77c99af1586f110864872f",
+      "last_write_time_utc_ticks": "639177147720605484",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n12_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 71671,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "1565042c91cc0629e6525155f7908e0535f1a4c41bd4dd4f54003e585e3b369b",
+      "last_write_time_utc_ticks": "639177147886867582",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n12_m4_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 94922,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9fd4b12fc557664a161710c892852457ea73a9a135f517e5dabdb3e3335b1698",
+      "last_write_time_utc_ticks": "639177148043421198",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n200_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 1150712,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "0da4c86756908d72d9daf89398d1ca633cd5ddd1170f260236bf8faf39987337",
+      "last_write_time_utc_ticks": "639177151281229611",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n24_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 142145,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ad2386050c1e5dabd8e290b0635f6270471ea16ea2ce53698ed9c0952f173638",
+      "last_write_time_utc_ticks": "639177149759204649",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n50_m2_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 190752,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "84503017202c59ab306c5828a0ff7dc827b2a7550052f6757de3e2423236e8bf",
+      "last_write_time_utc_ticks": "639177150097910429",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n50_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 287498,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "9642b9e761a34545b947b2fb7e4fa9cf7b43b87722d92ba34f4e2e8d99d2c09e",
+      "last_write_time_utc_ticks": "639177149937620312",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/sim_ready_n50_m4_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 384241,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5d4a297de07983fa3ab7cd2b168295162a38a68963cfe3f9c2ddc7a0cd3470c7",
+      "last_write_time_utc_ticks": "639177150286832419",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/stage3b",
+      "type": "directory",
+      "file_count": 5,
+      "size_bytes": 336404,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "42ef86d3b52acfb2ad69cab8fb0ba0cb95360979394dc0581866438a0aaad461",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/stage_obj_fixed12_wrapper_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 70740,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "781fd4d81168569523092fa26568228fda3bd87396abba9486e62ad7b64221a9",
+      "last_write_time_utc_ticks": "639165670531118116",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/stage_obj_sample_n6_wrapper_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 34753,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260610/TASK_PROGRESS_ARCHIVE_BEFORE_STAGE4_PLAN_20260610.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "856276381bc585922f78df8c8bae9ea53b743a06dc7bc70509b91aa89e1efb8c",
+      "last_write_time_utc_ticks": "639165670738072873",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/state_interface_phase5_baseline_n12_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 71671,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ef8b0f29f5d3a50a4a977dfdd8dcb0662742fe290332e0b5ca2cacb1a9cf94f2",
+      "last_write_time_utc_ticks": "639177167776175766",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/state_interface_phase5_baseline_n50_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 287498,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "3dbd8bb72709e0ccb9ce829039eac57f62a3fc692669ba3d5be330e63a2a5873",
+      "last_write_time_utc_ticks": "639177167939736367",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/state_interface_phase5_n12_m2_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 48295,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "805904e64a9fd76529be3a57659ae661e90ce525f8086cf1724d8cc925bfe975",
+      "last_write_time_utc_ticks": "639177171934872994",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/state_interface_phase5_n12_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 73136,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260622/DYNAMIC_ASSIGNMENT_STATE_INTERFACE_MVP_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "66f768d30fa9c31e15e70e58bb9476a64b72ad453aba946140de9685e5b3a8b7",
+      "last_write_time_utc_ticks": "639177172077648025",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/state_interface_phase5_n12_m4_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 96387,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "7f1e86d6b9dd60fdd166ee564d76be4e8394ea7e1e9a53899d0964628e687c65",
+      "last_write_time_utc_ticks": "639177172216385632",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/state_interface_phase5_n50_m3_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 288963,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "b1e8438fe3badf23e4755652e9d06972ef25fdae5d0cf2b9dd84ca9cf3f149c9",
+      "last_write_time_utc_ticks": "639177172365032362",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/visual_real_scene_obstacle_debug_line_visibility_patch_regression.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 306583,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 1,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_GUI_PAUSE_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ecbb7af04dc72d2c48bf4bfdda81a76804a199986a85ce8059b5eefe9b710bae",
+      "last_write_time_utc_ticks": "639178021534079077",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/visual_real_scene_phase7a2_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304493,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/ALGORITHM_SCENARIO_DECOUPLING_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7A3_HYBRID_COMPONENT_MESH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "e1907c39325be973bde5000e3437e5c53a0eae417f418eef7dcad092492ef506",
+      "last_write_time_utc_ticks": "639177823262742484",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/visual_real_scene_phase7a3_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304493,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/HYBRID_ALGORITHM_COMPONENT_MESH_SCENARIO_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B1_MESH_FOOTPRINT_DIAGNOSTICS_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "5ec409e942b35a13b3a330f7e31f6fb32c5fb25f17d177c13e7a3df604f2b41d",
+      "last_write_time_utc_ticks": "639177843194312168",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/visual_real_scene_phase7b1_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304903,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/MESH_FOOTPRINT_OBSTACLE_DIAGNOSTICS_MVP_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B2_OBSTACLE_CANDIDATE_COMPARISON_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "280366c2fbbb12d9bd8b3f5e4a315ad2c8590406cb6cd39077a8c9ec42a1fe74",
+      "last_write_time_utc_ticks": "639177865639117942",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/visual_real_scene_phase7b25_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 306115,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/OBSTACLE_DIAGNOSTIC_GUI_LINE_VISUALIZATION_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B25_VISIBILITY_PATCH_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "ee7c023adc7296852a3e329f0d5fdb58fd75be8ba667ac484dafe9f3a87ac125",
+      "last_write_time_utc_ticks": "639178002788847820",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/visual_real_scene_phase7b2_regression_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 304903,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/OBSTACLE_AWARE_CANDIDATE_COMPARISON_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7B25_OBSTACLE_DEBUG_LINES_20260623.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "acc1405adf8fa9067d5f6d9f508c5ea85c6e12f01c4dc898586b6975a6affafb",
+      "last_write_time_utc_ticks": "639177986848373719",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_diagnostics/yaml_capability_profiles_phase7a_smoke.json",
+      "type": "file",
+      "file_count": 1,
+      "size_bytes": 302313,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 2,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/TASK_PROGRESS_ARCHIVE_BEFORE_PHASE7A2_ALGORITHM_SCENARIO_DECOUPLING_20260623.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260623/YAML_CAPABILITY_PROFILES_MVP_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "c71619f30b127d728599a92c85cf5fe13a297a109c59c9c99400001e7f1dc0af",
+      "last_write_time_utc_ticks": "639177800829163052",
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_eval",
+      "type": "directory",
+      "file_count": 6,
+      "size_bytes": 9097,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 53,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260606/FIXED12_ASSIGNMENT_RL_MVP_SUMMARY.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260606/PHASE5_FIXED12_EVAL_ANALYSIS_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "dbe2ef8f26bde84b339f2ca91ba2a18d32a9a5aefb989d340fd5cd6d16bae0ab",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_evaluation",
+      "type": "directory",
+      "file_count": 245,
+      "size_bytes": 42243554,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 51,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260615/STAGE4B_REAL_COMPONENT_N24_ASSIGNMENT_HISTORY_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260615/STAGE4B_REAL_COMPONENT_N24_ASSIGNMENT_LEVEL2_JOIN_REPORT.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "7c43a935cb5b421acc3f809004156de7615fa493c7494ccd988664ac954a05d6",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/assignment_evaluation_gui",
+      "type": "directory",
+      "file_count": 4,
+      "size_bytes": 74549,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "e0eeeb54e789021fb1efafc41c6847615b7c2a914d02d4e55ec9dc950b214541",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "results/isaaclab",
+      "type": "directory",
+      "file_count": 1621,
+      "size_bytes": 298433899,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 53,
+      "report_reference_paths": [
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260604/RL_ASSIGNMENT_PIPELINE_DIAGNOSTIC_REPORT.md",
+        "source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202606/20260605/TASK_PROGRESS_ARCHIVE_FULL_HISTORY_BEFORE_COMPACT_20260605.md"
+      ],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "3ce73bcc65113394b42bf3c801535a766b21b4331c6eb9b1cb27690399e5facb",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "scripts/reinforcement_learning/harl/outputs",
+      "type": "directory",
+      "file_count": 28,
+      "size_bytes": 175575,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "3df2a98fc6cb041efd36166fb96193882aee3d64b94a8b923ff8c4e5c4658a55",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    },
+    {
+      "relative_path": "scripts/reinforcement_learning/harl/results",
+      "type": "directory",
+      "file_count": 9,
+      "size_bytes": 3976621,
+      "phase_source": "pre-Phase-B historical outputs",
+      "reason": "Legacy non-Phase-B output; sole-copy/reanalysis ownership unresolved.",
+      "report_reference_count": 0,
+      "report_reference_paths": [],
+      "code_dependency": "HISTORICAL_ONLY",
+      "replacement_evidence": [],
+      "membership_sha256": "3f9885b4d9694021811ddca50482942bce27567158ab2495bec0762f3cd3e5aa",
+      "last_write_time_utc_ticks": null,
+      "tracked_file_count": 0
+    }
+  ]
+}
