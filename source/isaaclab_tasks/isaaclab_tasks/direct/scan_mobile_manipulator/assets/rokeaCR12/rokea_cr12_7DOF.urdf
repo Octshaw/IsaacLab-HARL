@@ -1,0 +1,285 @@
+<?xml version="1.0" ?>
+<robot xmlns:drake="http://drake.mit.edu" name="rokea_cr12">
+  <!-- xMateCR12 manipulator -->
+  <link name="world" />
+  <link name="agv">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\scanner_sys_agv_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\scanner_sys_agv_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="50.0"/>
+      <inertia ixx="1.0" ixy="0" ixz="0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+    </inertial>
+  </link>
+  <link name="elevate">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\scanner_sys_elevate_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\scanner_sys_elevate_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="10.0"/>
+      <inertia ixx="1.0" ixy="0" ixz="0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+    </inertial>
+  </link>
+  <link name="base_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_base_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_base_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="3.44074938"/>
+      <inertia ixx="0.01764837" ixy="0" ixz="0" iyy="0.016617391" iyz="-0.002218013" izz="1.120163944"/>
+      <origin rpy="0 0 0" xyz="-0.000072769597 -0.01679187012 0.2986854502"/>
+    </inertial>
+  </link>
+  <link name="link_1">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link1_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link1_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="3.44074938"/>
+      <inertia ixx="0.01764837" ixy="0" ixz="0" iyy="0.016617391" iyz="-0.002218013" izz="1.120163944"/>
+      <origin rpy="0 0 0" xyz="-0.000072769597 -0.01679187012 0.2986854502"/>
+    </inertial>
+  </link>
+  <link name="link_2">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link2_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link2_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="5.024380503"/>
+      <inertia ixx="0.136759927" ixy="0" ixz="0" iyy="1.747453457" iyz="-0.024189444" izz="0.012535321"/>
+      <origin rpy="0 0 0" xyz="-0 0.003491209523 0.2410487354"/>
+    </inertial>
+  </link>
+    <link name="link_3">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link3_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link3_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.439584706"/>
+      <inertia ixx="0.026159338" ixy="0" ixz="0" iyy="0.024282179" iyz="-0.00615637" izz="1.11989835"/>
+      <origin rpy="0 0 0" xyz="0 0.023 0.097"/>
+    </inertial>
+  </link>
+  <link name="link_4">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link4_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link4_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.439584706"/>
+      <inertia ixx="0.012" ixy="0" ixz="0" iyy="0.221" iyz="-0.002" izz="0.004"/>
+      <origin rpy="0 0 0" xyz="0 -0.020 -0.046"/>
+    </inertial>
+  </link>
+  <link name="link_5">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link5_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link5_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.422757896"/>
+      <inertia ixx="0.016" ixy="0" ixz="0" iyy="0.015" iyz="-0.002" izz="0.213"/>
+      <origin rpy="0 0 0" xyz="0 0.012 0.096"/>
+    </inertial>
+  </link>
+  <link name="link_6">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link6_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\cr12_link6_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.229800857"/>
+      <inertia ixx="0.002" ixy="-0.000000" ixz="-0.000000" iyy="0.212" iyz="-0.000000" izz="0.002"/>
+      <origin rpy="0 0 0" xyz="0 0.017 -0.043"/>
+    </inertial>
+  </link>
+
+  <!-- Joints -->
+  <joint name="joint_agv" type="fixed">
+    <origin xyz="0.0 0.0 0.053" rpy="0.0 0.0 0.0" />
+    <parent link="world" />
+    <child link="agv" />
+  </joint>
+  <joint name="joint_0" type="prismatic">
+    <origin xyz="0.0 0.0 0.314" rpy="0.0 0.0 0.0" />
+    <parent link="agv" />
+    <child link="elevate" />
+    <axis xyz="0 0 1" />
+    <limit lower="0.0" upper="0.5" effort="300" velocity="0.05" />
+  </joint>
+  <joint name="joint_base" type="fixed">
+    <origin xyz="0.105 0.0 0.748" rpy="0.0 0.0 0.0" />
+    <parent link="elevate" />
+    <child link="base_link" />
+  </joint>
+
+  <joint name="joint_1" type="revolute">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+    <parent link="base_link" />
+    <child link="link_1" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="2.0943950" />
+    <dynamics damping="0.7"/>
+  </joint>
+  <joint name="joint_2" type="revolute">
+    <origin xyz="0.0 0.0 0.35" rpy="0.0 0.0 0.0" />
+    <parent link="link_1" />
+    <child link="link_2" />
+    <axis xyz="0 1 0" />
+    <limit lower="-2.9671" upper="2.9671" effort="300" velocity="2.0943950" />
+    <dynamics damping="0.7"/>
+  </joint>
+  <joint name="joint_3" type="revolute">
+    <origin xyz="0.0 0.0 0.76" rpy="0.0 0.0 0.0" />
+    <parent link="link_2" />
+    <child link="link_3" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="3.1415926" />
+    <dynamics damping="0.7"/>
+  </joint>
+  <joint name="joint_4" type="revolute">
+    <origin xyz="0.0 0.0 0.54" rpy="0.0 0.0 0.0" />
+    <parent link="link_3" />
+    <child link="link_4" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="4.084070" />
+    <dynamics damping="0.7"/>
+  </joint>
+  <joint name="joint_5" type="revolute">
+    <origin xyz="0.0 -0.15 0.0 " rpy="0.0 0.0 0.0" />
+    <parent link="link_4" />
+    <child link="link_5" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="4.1887901" />
+    <dynamics damping="0.7"/>
+  </joint>
+  <joint name="joint_6" type="revolute">
+    <origin xyz="0.0 0.0 0.123" rpy="0.0 0.0 0.0" />
+    <parent link="link_5" />
+    <child link="link_6" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="4.1887901" />
+    <dynamics damping="0.7"/>
+  </joint>
+
+  <!-- ROS-Industrial 'tool0' frame: all-zeros tool frame -->
+  <link name="tool"/>
+  <joint name="joint_tool" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+    <parent link="link_6" />
+    <child link="tool" />
+  </joint>
+
+  <link name="scanner">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\scanner_sys_scanner_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="E:\Project\IsaacLab_HARL\source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\assets\rokeaCR12\model\scanner_sys_scanner_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.422757896"/>
+      <inertia ixx="0.016" ixy="0" ixz="0" iyy="0.015" iyz="-0.002" izz="0.213"/>
+      <origin rpy="0 0 0" xyz="0 0.012 0.096"/>
+    </inertial>
+  </link>
+  <joint name="joint_scanner" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 2.356194490192345" />
+    <parent link="tool" />
+    <child link="scanner" />
+  </joint>
+
+</robot>

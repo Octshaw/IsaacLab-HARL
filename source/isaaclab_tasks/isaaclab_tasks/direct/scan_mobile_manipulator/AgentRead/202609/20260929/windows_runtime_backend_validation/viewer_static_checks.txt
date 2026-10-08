@@ -1,0 +1,17 @@
+VIEWER STATIC REVIEW: PASS (source/AST only; no runtime claim)
+Reviewed at: 2026-09-29T08:56:57.414204+08:00
+Python executable: C:\isaacenvs\isaac45_harl\python.exe
+No viewer/train/play import, AppLauncher construction, CUDA operation or GUI run performed by this review.
+Shared startup: helper line 233 < unconditional pre-App prepare line 247 < unconditional AppLauncher line 250.
+The common prepare call is outside every runtime_check conditional; ordinary and diagnostic modes share it.
+Torch imports: only inside guarded Windows/CUDA prepare after its early-return guard, or main after AppLauncher.
+Preparation uses fixed 16x16 ones matmul and synchronize; no random/seed/precision/learner/optimizer changes or CPU fallback.
+Post-App diagnostic CUDA check is explicit, device-aware, finite/value-checked; expected each entry=16 and sum=4096.
+Real env cfg/make/reset/solver/controller/step call ASTs and validators match original HEAD; optional seed assignment unchanged.
+Step count increments only after successful env.step return (lines 195/196); early completion rejection is runtime_check-only.
+App construction, env construction and work are within the outer try; acquired env/app handles alone are closed.
+Primary exception is saved and re-raised; close exceptions are separately recorded, and raised only when no primary exists.
+Flushed pre_close_result line 284 records work, count, env close and failures before app.close line 290.
+Local SimulationApp DEFAULT_LAUNCHER_CONFIG fast_shutdown=True (simulation_app.py:79); forwarded /app/fastShutdown at :321; close invokes native app.shutdown at :616.
+Thus missing app_close_returned alone is not failure. Same-run outer exit/timeout and absence of internal failure records remain required.
+No must-fix finding within the requested startup/counting/cleanup review scope.

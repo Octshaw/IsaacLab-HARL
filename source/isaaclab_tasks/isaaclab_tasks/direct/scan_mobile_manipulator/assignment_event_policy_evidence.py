@@ -359,8 +359,14 @@ def capture_event_policy_physical_problem_evidence_v2(
     assignment_problem: Mapping[str, object],
     episode_progress_steps: torch.Tensor,
     scale_contract: Mapping[str, object],
+    physical_problem_source: str = "ScanMobileManipulatorEnv.get_assignment_problem current mapping",
 ) -> EventPolicyPhysicalProblemEvidenceV2:
     """Read every required current problem field once, validate, and detach."""
+
+    if type(physical_problem_source) is not str or not physical_problem_source.strip():
+        _fail("physical producer source must be explicit and nonempty",
+            failure_code="physical_problem_source", stage="physical_capture",
+            expected="nonempty str", actual=physical_problem_source)
 
     if not isinstance(assignment_problem, Mapping):
         _fail(
@@ -459,7 +465,7 @@ def capture_event_policy_physical_problem_evidence_v2(
         )
     provenance = {
         "schema_version": EVENT_POLICY_PHYSICAL_EVIDENCE_V2,
-        "physical_problem_source": "ScanMobileManipulatorEnv.get_assignment_problem current mapping",
+        "physical_problem_source": physical_problem_source,
         "physical_problem_required_keys": _PHYSICAL_PROBLEM_KEYS,
         "legacy_status_keys_excluded_from_lifecycle_truth": _EXCLUDED_LEGACY_STATUS_KEYS,
         "explicit_feasibility_source": "assignment_problem.feasible_mask",

@@ -26,7 +26,7 @@ if __name__ != CANONICAL_EVENT_PROFILE_RUNTIME_DOMAIN_MODULE:
     )
 
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from threading import Event, Lock
 
 import torch
@@ -73,6 +73,7 @@ from .assignment_lifecycle_transition_contract import (
     TransitionConsumeLedger,
 )
 from .assignment_event_terminal_critic_sidecar import PreResetCriticPhysicalSnapshotV2
+from .assignment_cr12_execution_adapter import _StagedPreResetExecutionReport
 from .assignment_profile_contract import (
     AssignmentProfileRouteError,
     ResolvedEventGatedAssignmentProfile,
@@ -693,6 +694,14 @@ class _EventProfileLifecycleEnvironmentPort:
         """Finalize one already-staged full-domain physical transition."""
 
         return self._domain._finalize_physical_transition(staged_report)
+
+    def finalize_execution_transition(
+        self,
+        staged_report: _StagedPreResetExecutionReport,
+    ) -> _EnvironmentPhysicalTransitionOutcome:
+        """Use the same authority pipeline for an explicitly bound CR12 report."""
+
+        return self._domain._finalize_execution_transition(staged_report)
 
     def assert_physical_step_allowed(self) -> None:
         """Fail synchronously until every prior terminal row is acknowledged."""
@@ -1321,9 +1330,26 @@ class _EventProfileLifecycleRuntimeDomain:
                 cause=cause,
             )
 
+    def _finalize_execution_transition(
+        self,
+        report: _StagedPreResetExecutionReport,
+    ) -> _EnvironmentPhysicalTransitionOutcome:
+        if type(report) is not _StagedPreResetExecutionReport:
+            raise _EventProfileLifecycleDomainRuntimeError(
+                "execution finalization requires the exact adapter report",
+                failure_code="execution_report_type",
+                expected=_StagedPreResetExecutionReport,
+                actual=type(report),
+            )
+        return self._finalize_physical_transition(
+            report._physical_report, execution_report=report,
+        )
+
     def _finalize_physical_transition(
         self,
         report: _StagedPreResetPhysicalReport,
+        *,
+        execution_report: _StagedPreResetExecutionReport | None = None,
     ) -> _EnvironmentPhysicalTransitionOutcome:
         if type(report) is not _StagedPreResetPhysicalReport:
             raise _EventProfileLifecycleDomainRuntimeError(
@@ -1397,6 +1423,22 @@ class _EventProfileLifecycleRuntimeDomain:
                     contexts=pending.contexts,
                 )
             )
+            if execution_report is not None:
+                completion, release, unavailable = execution_report._validate_for_domain(
+                    self._coordinator._domain_identity,
+                    self._coordinator.read_published_view(),
+                    revalidated,
+                )
+                task_completion = completion.any(dim=1)
+                transition_input = replace(
+                    transition_input,
+                    completion_signals=completion,
+                    forced_release_signals=release,
+                    robot_unavailable_signals=unavailable,
+                    physical_terminated=(
+                        report._coverage_before_transition | task_completion
+                    ).all(dim=1),
+                )
             facts = self._producer.build_facts(transition_input)
             current = self._coordinator._transact_with_terminal_handoff(
                 facts=facts,
@@ -1412,6 +1454,8 @@ class _EventProfileLifecycleRuntimeDomain:
                 canonical_task_completion=task_completion,
                 coverage_before_transition=report._coverage_before_transition,
             )
+            if execution_report is not None:
+                execution_report._adapter._register_committed(execution_report, outcome)
             object.__setattr__(self, "_pending_transition", None)
             return outcome
 

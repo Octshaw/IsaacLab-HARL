@@ -1,0 +1,227 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="cr12_fixed_lift0_visual_box_v1">
+  <link name="agv">
+    <visual name="agv_visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/scanner_sys_agv_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </visual>
+    <collision name="agv_collision">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/scanner_sys_agv_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <visual name="elevate_visual">
+      <origin xyz="0 0 0.314" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/scanner_sys_elevate_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </visual>
+    <collision name="elevate_collision">
+      <origin xyz="0 0 0.314" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/scanner_sys_elevate_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <visual name="base_link_visual">
+      <origin xyz="0.105 0 1.0620000000000001" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_base_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </visual>
+    <collision name="base_link_collision">
+      <origin xyz="0.105 0 1.0620000000000001" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_base_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="63.44074938" />
+      <origin xyz="0.0098475095269815981 0.00060378312986020244 0.61006075738429999" rpy="0 0 0" />
+      <inertia ixx="11.110953937031162" ixy="-0.0024589072476622568" ixz="-0.19641828154607133" iyy="12.797724005574134" iyz="-0.019800414112534564" izz="8.1735851869508505" />
+    </inertial>
+  </link>
+  <link name="link_1">
+    <visual name="link_1_visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link1_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3" />
+    </visual>
+    <collision name="link_1_collision">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link1_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="3.4407493800000002" />
+      <origin xyz="-8.323999999997056e-06 0.0036242029999999995 0.28385908100000001" rpy="0 0 0" />
+      <inertia ixx="0.04073140294097391" ixy="0" ixz="0" iyy="0.040002394958676538" iyz="0" izz="0.022845592193449473" />
+    </inertial>
+  </link>
+  <link name="link_2">
+    <visual name="link_2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link2_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3" />
+    </visual>
+    <collision name="link_2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link2_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="5.0243805029999997" />
+      <origin xyz="-2.3013999999994816e-05 0.191745411 0.36905632800000004" rpy="0 0 0" />
+      <inertia ixx="0.37951624430139341" ixy="0" ixz="0" iyy="0.37977352066037484" iyz="0" izz="0.028452046612631277" />
+    </inertial>
+  </link>
+  <link name="link_3">
+    <visual name="link_3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link3_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3" />
+    </visual>
+    <collision name="link_3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link3_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.4395847060000002" />
+      <origin xyz="-7.246400000000125e-05 0.021512237499999996 0.064993308999999999" rpy="0 0 0" />
+      <inertia ixx="0.021837733469756444" ixy="0" ixz="0" iyy="0.020865713673661811" iyz="0" izz="0.010365226827775118" />
+    </inertial>
+  </link>
+  <link name="link_4">
+    <visual name="link_4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link4_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3" />
+    </visual>
+    <collision name="link_4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link4_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.4395847060000002" />
+      <origin xyz="3.7994000000002998e-05 -0.0091808990000000062 -0.14190363499999997" rpy="0 0 0" />
+      <inertia ixx="0.035520706764277474" ixy="0" ixz="0" iyy="0.034323317142642834" iyz="0" izz="0.0066631290568761057" />
+    </inertial>
+  </link>
+  <link name="link_5">
+    <visual name="link_5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link5_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3" />
+    </visual>
+    <collision name="link_5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link5_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.4227578959999998" />
+      <origin xyz="-8.4039999999965809e-06 0.011287979000000004 -0.024584510499999997" rpy="0 0 0" />
+      <inertia ixx="0.011912174503244551" ixy="0" ixz="0" iyy="0.01102473334143262" iyz="0" izz="0.0059391851863190267" />
+    </inertial>
+  </link>
+  <link name="link_6">
+    <visual name="link_6_visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link6_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3" />
+    </visual>
+    <collision name="link_6_collision">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../../model/cr12_link6_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <visual name="scanner_visual">
+      <origin xyz="0 0 0" rpy="0 0 2.3561944901923448" />
+      <geometry>
+        <mesh filename="../../model/scanner_sys_scanner_visual.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+      <color rgba="0.7372549 0.3490196 0.1607843 0.3" />
+    </visual>
+    <collision name="scanner_collision">
+      <origin xyz="0 0 0" rpy="0 0 2.3561944901923448" />
+      <geometry>
+        <mesh filename="../../model/scanner_sys_scanner_collision.obj" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="3.6525587530000001" />
+      <origin xyz="0.060712673441715818 0.060718217885150361 0.11853282647734235" rpy="0 0 0" />
+      <inertia ixx="0.097615839417675765" ixy="-0.0091228670149093305" ixz="-0.016382306980800274" iyy="0.097627013934603754" iyz="-0.01636653580809325" izz="0.056319554644805946" />
+    </inertial>
+  </link>
+  <joint name="joint_1" type="revolute">
+    <origin xyz="0.105 0 1.0620000000000001" rpy="0.0 0.0 0.0" />
+    <parent link="agv" />
+    <child link="link_1" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="2.0943950" />
+    <dynamics damping="0.7" />
+  </joint>
+  <joint name="joint_2" type="revolute">
+    <origin xyz="0.0 0.0 0.35" rpy="0.0 0.0 0.0" />
+    <parent link="link_1" />
+    <child link="link_2" />
+    <axis xyz="0 1 0" />
+    <limit lower="-2.9671" upper="2.9671" effort="300" velocity="2.0943950" />
+    <dynamics damping="0.7" />
+  </joint>
+  <joint name="joint_3" type="revolute">
+    <origin xyz="0.0 0.0 0.76" rpy="0.0 0.0 0.0" />
+    <parent link="link_2" />
+    <child link="link_3" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="3.1415926" />
+    <dynamics damping="0.7" />
+  </joint>
+  <joint name="joint_4" type="revolute">
+    <origin xyz="0.0 0.0 0.54" rpy="0.0 0.0 0.0" />
+    <parent link="link_3" />
+    <child link="link_4" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="4.084070" />
+    <dynamics damping="0.7" />
+  </joint>
+  <joint name="joint_5" type="revolute">
+    <origin xyz="0.0 -0.15 0.0 " rpy="0.0 0.0 0.0" />
+    <parent link="link_4" />
+    <child link="link_5" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="4.1887901" />
+    <dynamics damping="0.7" />
+  </joint>
+  <joint name="joint_6" type="revolute">
+    <origin xyz="0.0 0.0 0.123" rpy="0.0 0.0 0.0" />
+    <parent link="link_5" />
+    <child link="link_6" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.0543" upper="3.0543" effort="300" velocity="4.1887901" />
+    <dynamics damping="0.7" />
+  </joint>
+</robot>

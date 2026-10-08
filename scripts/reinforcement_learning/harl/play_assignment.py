@@ -12,6 +12,8 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
+import json
 from datetime import datetime, timezone
 import math
 from pathlib import Path
@@ -192,6 +194,21 @@ _validate_initial_condition_prelaunch_cli(
     attribution_logging_enabled=bool(args_cli.log_assignment_proposal_effective),
     attribution_output_dir=args_cli.assignment_proposal_effective_output_dir,
 )
+# Load the pure-stdlib startup helper without importing the task package.
+_windows_runtime_original_argv = list(sys.argv)
+_windows_runtime_helper_path = REPO_ROOT / "scripts" / "environments" / "_windows_runtime_startup.py"
+_windows_runtime_spec = importlib.util.spec_from_file_location(
+    "_isaaclab_harl_windows_runtime_startup", _windows_runtime_helper_path
+)
+if _windows_runtime_spec is None or _windows_runtime_spec.loader is None:
+    raise ImportError(f"Cannot load Windows startup helper: {_windows_runtime_helper_path}")
+_windows_runtime_helper = importlib.util.module_from_spec(_windows_runtime_spec)
+_windows_runtime_spec.loader.exec_module(_windows_runtime_helper)
+_windows_runtime_record = _windows_runtime_helper.prepare_windows_runtime_args(
+    args_cli, original_argv=_windows_runtime_original_argv
+)
+print("[RUNTIME_STARTUP] " + json.dumps(_windows_runtime_record, sort_keys=True), flush=True)
+
 sys.argv = [sys.argv[0]] + hydra_args
 
 

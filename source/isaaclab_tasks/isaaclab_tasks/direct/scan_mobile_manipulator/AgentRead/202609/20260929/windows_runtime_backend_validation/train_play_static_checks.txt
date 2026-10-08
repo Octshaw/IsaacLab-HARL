@@ -1,0 +1,26 @@
+TRAIN/PLAY STATIC CHECKS: PASS
+Python executable: C:\isaacenvs\isaac45_harl\python.exe
+UTF8 mode: 1
+Mode: stdlib AST and py_compile only; neither entrypoint imported or executed.
+Reference: exact current worktree bytes captured before the authorized insertion; target diffs were empty.
+
+train.py: PASS
+  Exact pre-existing bytes preserved; only two stdlib imports and one startup block inserted.
+  Existing gate and CUDA warmup function bytes unchanged; Hydra/video/runner/checkpoint logic unchanged.
+  Ordering lines: preflight=102 < helper=139 < argv_clear=145 < warmup_call=167 < AppLauncher=192
+  Warmup definition lines: before=131 after=148
+  Pure-stdlib absolute-file helper loading; original argv snapshot and JSON record checked.
+  py_compile: PASS; no entrypoint import, --help, AppLauncher, CUDA or checkpoint execution.
+
+play_assignment.py: PASS
+  Exact pre-existing bytes preserved; only two stdlib imports and one startup block inserted.
+  Existing gate and CUDA warmup function bytes unchanged; Hydra/video/runner/checkpoint logic unchanged.
+  Ordering lines: preflight=179 < helper=207 < argv_clear=212 < warmup_call=231 < AppLauncher=233
+  Warmup definition lines: before=198 after=215
+  Pure-stdlib absolute-file helper loading; original argv snapshot and JSON record checked.
+  py_compile: PASS; no entrypoint import, --help, AppLauncher, CUDA or checkpoint execution.
+
+Parameter behavior is covered by the separate authorized helper-only test, not by running train/play.
+No train/play runtime validation claim.
+
+Scoped git diff --check: PASS (exit 0); only Git LF-to-CRLF advisory, no whitespace errors. No Git write operation.

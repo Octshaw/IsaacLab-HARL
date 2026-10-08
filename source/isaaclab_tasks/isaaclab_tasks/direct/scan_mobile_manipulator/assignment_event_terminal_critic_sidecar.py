@@ -171,6 +171,7 @@ def capture_pre_reset_critic_physical_snapshot_v2(
     assignment_problem: Mapping[str, object],
     episode_progress_steps: torch.Tensor,
     scale_contract: Mapping[str, object],
+    physical_problem_source: str = "ScanMobileManipulatorEnv.get_assignment_problem current mapping",
 ) -> PreResetCriticPhysicalSnapshotV2:
     """Capture the fixed physical basis once, before task-environment autoreset."""
 
@@ -178,6 +179,7 @@ def capture_pre_reset_critic_physical_snapshot_v2(
         assignment_problem=assignment_problem,
         episode_progress_steps=episode_progress_steps,
         scale_contract=scale_contract,
+        physical_problem_source=physical_problem_source,
     )
     descriptor = build_assignment_event_profile_schema_v2_descriptor(
         scale_contract=scale_contract

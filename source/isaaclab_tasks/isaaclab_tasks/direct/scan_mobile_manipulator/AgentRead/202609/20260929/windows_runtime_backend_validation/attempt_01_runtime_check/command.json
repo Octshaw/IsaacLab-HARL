@@ -1,0 +1,48 @@
+{
+  "recorded_at": "2026-09-29T08:59:57.434+08:00",
+  "cwd": "E:\\Project\\IsaacLab_HARL",
+  "argv": [
+    "D:\\miniconda3\\Scripts\\conda.exe",
+    "run",
+    "--no-capture-output",
+    "-p",
+    "C:\\isaacenvs\\isaac45_harl",
+    "python",
+    "-u",
+    "scripts/environments/view_scan_assignment.py",
+    "--task",
+    "Isaac-Scan-Mobile-Manipulator-Direct-v0",
+    "--num_envs",
+    "1",
+    "--solver",
+    "greedy",
+    "--device",
+    "cuda:0",
+    "--max_steps",
+    "120",
+    "--print_interval",
+    "120",
+    "--runtime_check",
+    "--info"
+  ],
+  "windows_command_line": "D:\\miniconda3\\Scripts\\conda.exe run --no-capture-output -p C:\\isaacenvs\\isaac45_harl python -u scripts/environments/view_scan_assignment.py --task Isaac-Scan-Mobile-Manipulator-Direct-v0 --num_envs 1 --solver greedy --device cuda:0 --max_steps 120 --print_interval 120 --runtime_check --info",
+  "mode": "runtime_check",
+  "expected_steps": 120,
+  "app_limit_seconds": 300.0,
+  "total_limit_seconds": 360.0,
+  "work_limit_seconds": 350.0,
+  "child_environment_original_modes": {
+    "HEADLESS": null,
+    "ENABLE_CAMERAS": null,
+    "LIVESTREAM": null,
+    "XR": null
+  },
+  "child_environment_overrides": {
+    "HEADLESS": "0",
+    "ENABLE_CAMERAS": "0",
+    "LIVESTREAM": "0",
+    "XR": "0"
+  },
+  "kit_args_omitted": true,
+  "supervisor_pid": 2464
+}

@@ -1,0 +1,227 @@
+{
+  "recorded_at": "2026-09-29T09:09:19+08:00",
+  "scope": "Windows legacy proxy viewer GUI runtime_check; one environment, three agents; combined D3D12 default and common pre-App CUDA preparation only",
+  "phase_b": "COMPLETE / GPT REVIEW PASS / CLOSED",
+  "production_files": [
+    "scripts/environments/view_scan_assignment.py",
+    "scripts/reinforcement_learning/harl/train.py",
+    "scripts/reinforcement_learning/harl/play_assignment.py",
+    "scripts/environments/_windows_runtime_startup.py"
+  ],
+  "implementation": "IMPLEMENTED_UNCOMMITTED",
+  "pure_checks": {
+    "helper_tests_passed": 12,
+    "py_compile": "PASS",
+    "train_play_static": "PASS",
+    "viewer_static": "PASS"
+  },
+  "gui_attempts": 1,
+  "viewer_gui_runtime_check": "PASS_WITHIN_RECORDED_SCOPE",
+  "identity": {
+    "stage": "startup_identity",
+    "pid": 36004,
+    "python": "C:\\isaacenvs\\isaac45_harl\\python.exe",
+    "utf8_mode": 1,
+    "cwd": "E:\\Project\\IsaacLab_HARL",
+    "entry": "E:\\Project\\IsaacLab_HARL\\scripts\\environments\\view_scan_assignment.py",
+    "head": "24ecbad7dd1bdcd006399b64bfb757a86b71aeec",
+    "parent_pid": 33692,
+    "original_argv": [
+      "scripts/environments/view_scan_assignment.py",
+      "--task",
+      "Isaac-Scan-Mobile-Manipulator-Direct-v0",
+      "--num_envs",
+      "1",
+      "--solver",
+      "greedy",
+      "--device",
+      "cuda:0",
+      "--max_steps",
+      "120",
+      "--print_interval",
+      "120",
+      "--runtime_check",
+      "--info"
+    ],
+    "runtime_check": true,
+    "app_launcher_source": "E:\\Project\\IsaacLab_HARL\\source\\isaaclab\\isaaclab\\app\\app_launcher.py",
+    "requested_device": "cuda:0",
+    "mode_environment": {
+      "HEADLESS": "0",
+      "ENABLE_CAMERAS": "0",
+      "LIVESTREAM": "0",
+      "XR": "0"
+    }
+  },
+  "backend_request": {
+    "stage": "startup_arguments",
+    "pid": 36004,
+    "original_argv": [
+      "scripts/environments/view_scan_assignment.py",
+      "--task",
+      "Isaac-Scan-Mobile-Manipulator-Direct-v0",
+      "--num_envs",
+      "1",
+      "--solver",
+      "greedy",
+      "--device",
+      "cuda:0",
+      "--max_steps",
+      "120",
+      "--print_interval",
+      "120",
+      "--runtime_check",
+      "--info"
+    ],
+    "original_kit_args": "",
+    "final_kit_args": "--/app/vulkan=false",
+    "source": "windows_default",
+    "requested_backend": "D3D12",
+    "utf8_mode": 1,
+    "platform": "win32"
+  },
+  "app": {
+    "stage": "app_created",
+    "pid": 36004,
+    "experience": "E:\\Project\\IsaacLab_HARL\\apps\\isaaclab.python.kit",
+    "headless": false,
+    "enable_cameras": false,
+    "livestream": 0,
+    "vulkan_setting": false,
+    "user_config_path": "c:/isaacenvs/isaac45_harl/lib/site-packages/omni/data/Kit/Isaac-Sim/4.5/user.config.json",
+    "kit_log_path": "c:/isaacenvs/isaac45_harl/lib/site-packages/omni/logs/Kit/Isaac-Sim/4.5/kit_20260929_090002.log",
+    "actual_graphics_api": "UNCONFIRMED_UNTIL_SAME_RUN_KIT_LOG"
+  },
+  "actual_graphics_api": {
+    "value": "D3D12",
+    "source": "attempt_01_runtime_check/kit_20260929_090002.log",
+    "matched_lines": [
+      {
+        "line": 2682,
+        "text": "2026-09-29 01:00:03 [1,280ms] [Info] [omni.gpu_foundation_factory.plugin] [Graphics API] DX12"
+      },
+      {
+        "line": 3341,
+        "text": "| Driver Version: 610.60        | Graphics API: D3D12"
+      }
+    ]
+  },
+  "pre_app_cuda": {
+    "stage": "pre_app_cuda_ready",
+    "pid": 36004,
+    "performed": true,
+    "requested_device": "cuda:0",
+    "actual_device": "cuda:0",
+    "torch_version": "2.5.1+cu121",
+    "torch_source": "C:\\isaacenvs\\isaac45_harl\\lib\\site-packages\\torch\\__init__.py",
+    "synchronized": true
+  },
+  "post_app_cuda": {
+    "stage": "cuda_verified",
+    "pid": 36004,
+    "requested_device": "cuda:0",
+    "actual_device": "cuda:0",
+    "shape": [
+      16,
+      16
+    ],
+    "expected_entry": 16.0,
+    "expected_sum": 4096.0,
+    "actual_sum": 4096.0,
+    "finite": true,
+    "all_entries_correct": true,
+    "synchronized": true,
+    "gpu_name": "NVIDIA GeForce RTX 4060 Ti"
+  },
+  "environment": {
+    "stage": "environment_created",
+    "pid": 36004,
+    "env_class": "isaaclab_tasks.direct.scan_mobile_manipulator.scan_mobile_manipulator_env.ScanMobileManipulatorEnv",
+    "env_source": "e:/project/isaaclab_harl/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/scan_mobile_manipulator_env.py",
+    "actual_device": "cuda:0",
+    "cfg_device": "cuda:0",
+    "num_envs": 1,
+    "agents": [
+      "robot_0",
+      "robot_1",
+      "robot_2"
+    ],
+    "profile": "legacy"
+  },
+  "explicit_reset": {
+    "stage": "reset_completed",
+    "pid": 36004,
+    "reset_calls": 1
+  },
+  "steps": {
+    "stage": "steps_completed",
+    "pid": 36004,
+    "step_count": 120,
+    "expected_steps": 120,
+    "stop_reason": "step_budget",
+    "work_completed": true,
+    "count_unit": "successful env.step returns"
+  },
+  "process": {
+    "started_at": "2026-09-29T08:59:57.434+08:00",
+    "ended_at": "2026-09-29T09:03:35.953+08:00",
+    "elapsed_seconds": 218.51499999999942,
+    "app_created_elapsed_seconds": 30.639999999999418,
+    "conda_pid": 28724,
+    "viewer_pid": 36004,
+    "conda_exit_code": 0,
+    "viewer_exit_code": 0,
+    "timed_out": false,
+    "termination_requested": false,
+    "all_owned_processes_exited": true,
+    "remaining_owned_pids": [],
+    "console_drain_complete": true,
+    "supervisor_errors": [],
+    "failure_events": [],
+    "pre_close_result": {
+      "stage": "pre_close_result",
+      "pid": 36004,
+      "runtime_check": true,
+      "work_completed": true,
+      "step_count": 120,
+      "expected_steps": 120,
+      "env_close_ok": true,
+      "app_close_requested": true,
+      "last_work_phase": "environment_steps",
+      "failures": []
+    }
+  },
+  "supervisor_tool_exit_code": 0,
+  "app_close_returned_marker_present": false,
+  "ordinary_diagnostic_startup": "SHARED_SOURCE_CONFIRMED; ordinary mode NOT_RUN",
+  "not_run": [
+    "train",
+    "play_assignment",
+    "headless",
+    "Linux",
+    "explicit Vulkan runtime",
+    "CR12",
+    "camera acquisition",
+    "checkpoint",
+    "URDF import",
+    "two-viewpoint executor"
+  ],
+  "limitations": [
+    "No isolated backend causal attribution",
+    "No ordinary-mode independent runtime evidence",
+    "CUDA arithmetic and legacy env steps do not prove articulation, collision safety or training",
+    "Warnings retained; no dependency or driver changes"
+  ],
+  "evidence": [
+    "attempt_01_runtime_check/command.json",
+    "attempt_01_runtime_check/console.log",
+    "attempt_01_runtime_check/events.jsonl",
+    "attempt_01_runtime_check/result.json",
+    "attempt_01_runtime_check/kit_20260929_090002.log",
+    "helper_parameter_tests.txt",
+    "syntax_checks.txt",
+    "train_play_static_checks.txt",
+    "viewer_static_checks.txt",
+    "windows_runtime_startup.patch"
+  ]
+}

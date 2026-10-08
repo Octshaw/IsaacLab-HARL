@@ -1,0 +1,1089 @@
+diff --git a/scripts/environments/view_scan_assignment.py b/scripts/environments/view_scan_assignment.py
+index ab61b88a..75878ddb 100644
+--- a/scripts/environments/view_scan_assignment.py
++++ b/scripts/environments/view_scan_assignment.py
+@@ -5,40 +5,86 @@
+ 
+ """View high-level scan viewpoint assignment behavior in Isaac Sim."""
+ 
+-"""Launch Isaac Sim Simulator first."""
++from __future__ import annotations
+ 
+ import argparse
++import json
++import os
++import subprocess
++import sys
+ import time
++from pathlib import Path
+ 
+-from isaaclab.app import AppLauncher
++from _windows_runtime_startup import prepare_windows_runtime_args
+ 
+-parser = argparse.ArgumentParser(description="Viewer for scan viewpoint assignment solvers.")
+-parser.add_argument("--task", type=str, default="Isaac-Scan-Mobile-Manipulator-Direct-v0", help="Name of the task.")
+-parser.add_argument("--solver", type=str, default="greedy", choices=("random", "nearest", "greedy"), help="Solver name.")
+-parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to simulate.")
+-parser.add_argument("--seed", type=int, default=None, help="Optional environment seed.")
+-parser.add_argument("--duration", type=float, default=None, help="Optional viewer duration in seconds.")
+-parser.add_argument("--max_steps", type=int, default=None, help="Optional maximum number of viewer steps.")
+-parser.add_argument("--step_rate", type=float, default=5.0, help="Environment steps per second.")
+-parser.add_argument("--print_interval", type=int, default=1, help="Print every N environment steps.")
+-parser.add_argument(
+-    "--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations."
+-)
+-AppLauncher.add_app_launcher_args(parser)
+-args_cli = parser.parse_args()
+ 
+-app_launcher = AppLauncher(args_cli)
+-simulation_app = app_launcher.app
++def _emit(stage: str, **facts):
++    """Flush compact facts before Kit shutdown can end this process."""
++    print("[RUNTIME_CHECK] " + json.dumps({"stage": stage, "pid": os.getpid(), **facts}, ensure_ascii=True), flush=True)
+ 
+-"""Rest everything follows."""
+ 
+-import gymnasium as gym
+-import torch
++def _parse_args(app_launcher_type):
++    parser = argparse.ArgumentParser(description="Viewer for scan viewpoint assignment solvers.")
++    parser.add_argument("--task", type=str, default="Isaac-Scan-Mobile-Manipulator-Direct-v0", help="Name of the task.")
++    parser.add_argument("--solver", type=str, default="greedy", choices=("random", "nearest", "greedy"), help="Solver name.")
++    parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to simulate.")
++    parser.add_argument("--seed", type=int, default=None, help="Optional environment seed.")
++    parser.add_argument("--duration", type=float, default=None, help="Optional viewer duration in seconds.")
++    parser.add_argument("--max_steps", type=int, default=None, help="Optional maximum number of viewer steps.")
++    parser.add_argument("--step_rate", type=float, default=5.0, help="Environment steps per second.")
++    parser.add_argument("--print_interval", type=int, default=1, help="Print every N environment steps.")
++    parser.add_argument("--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations.")
++    parser.add_argument("--runtime_check", action="store_true", help="Require CUDA verification and the full step budget.")
++    app_launcher_type.add_app_launcher_args(parser)
++    args = parser.parse_args()
++    if args.num_envs <= 0:
++        parser.error("--num_envs must be positive")
++    if args.max_steps is not None and args.max_steps <= 0:
++        parser.error("--max_steps must be positive when provided")
++    if args.print_interval <= 0:
++        parser.error("--print_interval must be positive")
++    if args.runtime_check and (args.max_steps is None or not args.device.startswith("cuda")):
++        parser.error("--runtime_check requires --max_steps and an explicit CUDA device (for example --device cuda:0)")
++    return args
+ 
+-import isaaclab_tasks  # noqa: F401
+-from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_controller import viewpoint_assignment_to_actions
+-from isaaclab_tasks.direct.scan_mobile_manipulator.solvers import make_solver
+-from isaaclab_tasks.utils import parse_env_cfg
++
++def _prepare_cuda_before_app(device_arg: str):
++    """New shared Windows/CUDA startup preparation; no random numbers or learners."""
++    if sys.platform != "win32" or not device_arg.startswith("cuda"):
++        return {"performed": False, "reason": "not_windows_cuda", "requested_device": device_arg}
++    import torch
++
++    if not torch.cuda.is_available():
++        raise RuntimeError(f"CUDA requested ({device_arg}), but CUDA is unavailable; no CPU fallback")
++    device = torch.device(device_arg)
++    torch.cuda.set_device(device)
++    left = torch.ones((16, 16), dtype=torch.float32, device=device)
++    right = torch.ones((16, 16), dtype=torch.float32, device=device)
++    product = left @ right
++    torch.cuda.synchronize(device)
++    return {"performed": True, "requested_device": device_arg, "actual_device": str(product.device),
++            "torch_version": torch.__version__, "torch_source": torch.__file__, "synchronized": True}
++
++
++def _verify_cuda_after_app(device_arg: str):
++    device = torch.device(device_arg)
++    if device.type != "cuda" or not torch.cuda.is_available():
++        raise RuntimeError("Runtime CUDA check requires an available CUDA device; no CPU fallback")
++    left = torch.ones((16, 16), dtype=torch.float32, device=device)
++    product = left @ left
++    total = product.sum()
++    finite = torch.isfinite(product).all()
++    expected_entries = (product == 16.0).all()
++    torch.cuda.synchronize(device)
++    value = total.item()
++    actual = product.device
++    expected_index = device.index if device.index is not None else torch.cuda.current_device()
++    if (actual.type != "cuda" or actual.index != expected_index or not finite.item()
++            or not expected_entries.item() or value != 4096.0):
++        raise RuntimeError(f"CUDA numerical/device check failed: device={actual}, sum={value}")
++    _emit("cuda_verified", requested_device=device_arg, actual_device=str(actual), shape=[16, 16],
++          expected_entry=16.0, expected_sum=4096.0, actual_sum=value, finite=True,
++          all_entries_correct=True, synchronized=True, gpu_name=torch.cuda.get_device_name(actual))
+ 
+ 
+ def _validate_assignment(problem: dict, assignment: torch.Tensor):
+@@ -74,14 +120,14 @@ def _validate_actions(env, actions: dict[str, torch.Tensor]):
+             raise RuntimeError(f"{agent} action contains values outside [-1, 1]")
+ 
+ 
+-def main():
+-    if args_cli.num_envs <= 0:
+-        raise ValueError("--num_envs must be positive")
+-    if args_cli.max_steps is not None and args_cli.max_steps <= 0:
+-        raise ValueError("--max_steps must be positive when provided")
+-    if args_cli.print_interval <= 0:
+-        raise ValueError("--print_interval must be positive")
++def _run_environment(args_cli, simulation_app, resources):
++    import gymnasium as gym
++    import isaaclab_tasks
++    from isaaclab_tasks.direct.scan_mobile_manipulator.assignment_controller import viewpoint_assignment_to_actions
++    from isaaclab_tasks.direct.scan_mobile_manipulator.solvers import make_solver
++    from isaaclab_tasks.utils import parse_env_cfg
+ 
++    resources["phase"] = "environment_config"
+     env_cfg = parse_env_cfg(
+         args_cli.task,
+         device=args_cli.device,
+@@ -91,8 +137,24 @@ def main():
+     if args_cli.seed is not None:
+         env_cfg.seed = args_cli.seed
+ 
++    if args_cli.runtime_check:
++        _emit("environment_config", task_source=isaaclab_tasks.__file__, requested_device=args_cli.device,
++              cfg_device=str(env_cfg.sim.device), num_envs=env_cfg.scene.num_envs,
++              profile=getattr(env_cfg, "assignment_lifecycle_profile", None))
++        if getattr(env_cfg, "assignment_lifecycle_profile", None) != "legacy":
++            raise RuntimeError("This bounded viewer check requires the existing default legacy profile")
++        if torch.device(env_cfg.sim.device) != torch.device(args_cli.device):
++            raise RuntimeError("Requested CUDA device and environment config device differ")
++    resources["phase"] = "environment_constructing"
+     env = gym.make(args_cli.task, cfg=env_cfg)
++    resources["env"] = env
+     unwrapped = env.unwrapped
++    _emit("environment_created", env_class=f"{type(unwrapped).__module__}.{type(unwrapped).__name__}",
++          env_source=sys.modules[type(unwrapped).__module__].__file__, actual_device=str(unwrapped.device),
++          cfg_device=str(env_cfg.sim.device), num_envs=unwrapped.num_envs,
++          agents=list(unwrapped.possible_agents), profile=getattr(env_cfg, "assignment_lifecycle_profile", None))
++    if args_cli.runtime_check and torch.device(unwrapped.device) != torch.device(args_cli.device):
++        raise RuntimeError("Actual environment device differs from the requested CUDA device")
+     solver = make_solver(args_cli.solver)
+ 
+     print(f"[INFO]: Agents: {unwrapped.possible_agents}")
+@@ -104,16 +166,22 @@ def main():
+     )
+     print("[INFO]: Close Isaac Sim to stop.")
+ 
++    resources["phase"] = "environment_reset"
+     env.reset(seed=args_cli.seed)
++    _emit("reset_completed", reset_calls=1)
+     start_time = time.time()
+     step_count = 0
+     min_step_dt = 0.0 if args_cli.step_rate <= 0 else 1.0 / args_cli.step_rate
++    resources["phase"] = "environment_steps"
++    stop_reason = "app_closed"
+ 
+     with torch.inference_mode():
+         while simulation_app.is_running():
+             if args_cli.duration is not None and time.time() - start_time >= args_cli.duration:
++                stop_reason = "duration"
+                 break
+             if args_cli.max_steps is not None and step_count >= args_cli.max_steps:
++                stop_reason = "step_budget"
+                 break
+ 
+             step_start = time.time()
+@@ -126,6 +194,7 @@ def main():
+ 
+             env.step(actions)
+             step_count += 1
++            resources["step_count"] = step_count
+ 
+             if step_count % args_cli.print_interval == 0:
+                 coverage = unwrapped.viewpoints_covered.float().mean(dim=-1).detach().cpu().tolist()
+@@ -136,9 +205,96 @@ def main():
+             if elapsed < min_step_dt:
+                 time.sleep(min_step_dt - elapsed)
+ 
+-    env.close()
++    if args_cli.runtime_check and step_count != args_cli.max_steps:
++        raise RuntimeError(f"Incomplete runtime check: {step_count}/{args_cli.max_steps} env.step calls ({stop_reason})")
++    resources["work_completed"] = args_cli.max_steps is None or step_count == args_cli.max_steps
++    _emit("steps_completed", step_count=step_count, expected_steps=args_cli.max_steps,
++          stop_reason=stop_reason, work_completed=resources["work_completed"],
++          count_unit="successful env.step returns")
++
++
++def main():
++    global torch
++    simulation_app = None
++    primary_error = None
++    close_errors = []
++    resources = {"env": None, "phase": "arguments", "step_count": 0, "work_completed": False}
++    expected_steps = None
++    runtime_check = False
++    failures = []
++    try:
++        from isaaclab.app import AppLauncher
++
++        original_argv = list(sys.argv)
++        args_cli = _parse_args(AppLauncher)
++        expected_steps = args_cli.max_steps
++        runtime_check = args_cli.runtime_check
++        resources["phase"] = "windows_startup_arguments"
++        startup = prepare_windows_runtime_args(args_cli, original_argv=original_argv)
++        _emit("startup_arguments", **startup)
++        if runtime_check:
++            repo_root = Path(__file__).resolve().parents[2]
++            head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_root, check=True,
++                                  capture_output=True, text=True, timeout=5).stdout.strip()
++            _emit("startup_identity", python=sys.executable, utf8_mode=sys.flags.utf8_mode,
++                  cwd=os.getcwd(), entry=str(Path(__file__).resolve()), head=head, pid=os.getpid(),
++                  parent_pid=os.getppid(), original_argv=original_argv, runtime_check=True,
++                  app_launcher_source=sys.modules[AppLauncher.__module__].__file__,
++                  requested_device=args_cli.device,
++                  mode_environment={key: os.environ.get(key) for key in ("HEADLESS", "ENABLE_CAMERAS", "LIVESTREAM", "XR")})
++        resources["phase"] = "pre_app_cuda"
++        # Shared by ordinary and diagnostic mode; diagnostic mode has no startup shortcut.
++        _emit("pre_app_cuda_ready", **_prepare_cuda_before_app(args_cli.device))
++        resources["phase"] = "app_constructing"
++        _emit("app_constructing")
++        app_launcher = AppLauncher(args_cli)
++        simulation_app = app_launcher.app
++        import carb.settings
++        import torch
++
++        settings = carb.settings.get_settings()
++        _emit("app_created", experience=app_launcher._sim_experience_file,
++              headless=app_launcher._headless, enable_cameras=app_launcher._enable_cameras,
++              livestream=app_launcher._livestream, vulkan_setting=settings.get("/app/vulkan"),
++              user_config_path=settings.get("/app/userConfigPath"), kit_log_path=settings.get("/log/file"),
++              actual_graphics_api="UNCONFIRMED_UNTIL_SAME_RUN_KIT_LOG")
++        resources["phase"] = "post_app_cuda"
++        if runtime_check:
++            if startup["requested_backend"] == "D3D12" and settings.get("/app/vulkan") is not False:
++                raise RuntimeError("Requested D3D12 but /app/vulkan is not False; inspect this run's Kit log")
++            _verify_cuda_after_app(args_cli.device)
++        _run_environment(args_cli, simulation_app, resources)
++    except BaseException as exc:
++        primary_error = exc
++        failures.append({"phase": resources["phase"], "type": type(exc).__name__, "message": str(exc)})
++        _emit("failure", **failures[-1], step_count=resources["step_count"])
++        raise
++    finally:
++        env_close_ok = None
++        if resources["env"] is not None:
++            try:
++                resources["env"].close()
++                env_close_ok = True
++                _emit("environment_closed")
++            except BaseException as exc:
++                env_close_ok = False
++                close_errors.append(exc)
++                failures.append({"phase": "env_close", "type": type(exc).__name__, "message": str(exc)})
++                _emit("close_failure", **failures[-1])
++        _emit("pre_close_result", runtime_check=runtime_check, work_completed=resources["work_completed"],
++              step_count=resources["step_count"], expected_steps=expected_steps,
++              env_close_ok=env_close_ok, app_close_requested=simulation_app is not None,
++              last_work_phase=resources["phase"], failures=failures)
++        if simulation_app is not None:
++            try:
++                simulation_app.close()
++                _emit("app_close_returned")
++            except BaseException as exc:
++                close_errors.append(exc)
++                _emit("close_failure", phase="app_close", type=type(exc).__name__, message=str(exc))
++        if primary_error is None and close_errors:
++            raise close_errors[0]
+ 
+ 
+ if __name__ == "__main__":
+     main()
+-    simulation_app.close()
+diff --git a/scripts/reinforcement_learning/harl/play_assignment.py b/scripts/reinforcement_learning/harl/play_assignment.py
+index 52e55311..31e133a4 100644
+--- a/scripts/reinforcement_learning/harl/play_assignment.py
++++ b/scripts/reinforcement_learning/harl/play_assignment.py
+@@ -12,6 +12,8 @@
+ from __future__ import annotations
+ 
+ import argparse
++import importlib.util
++import json
+ from datetime import datetime, timezone
+ import math
+ from pathlib import Path
+@@ -192,6 +194,21 @@ _validate_initial_condition_prelaunch_cli(
+     attribution_logging_enabled=bool(args_cli.log_assignment_proposal_effective),
+     attribution_output_dir=args_cli.assignment_proposal_effective_output_dir,
+ )
++# Load the pure-stdlib startup helper without importing the task package.
++_windows_runtime_original_argv = list(sys.argv)
++_windows_runtime_helper_path = REPO_ROOT / "scripts" / "environments" / "_windows_runtime_startup.py"
++_windows_runtime_spec = importlib.util.spec_from_file_location(
++    "_isaaclab_harl_windows_runtime_startup", _windows_runtime_helper_path
++)
++if _windows_runtime_spec is None or _windows_runtime_spec.loader is None:
++    raise ImportError(f"Cannot load Windows startup helper: {_windows_runtime_helper_path}")
++_windows_runtime_helper = importlib.util.module_from_spec(_windows_runtime_spec)
++_windows_runtime_spec.loader.exec_module(_windows_runtime_helper)
++_windows_runtime_record = _windows_runtime_helper.prepare_windows_runtime_args(
++    args_cli, original_argv=_windows_runtime_original_argv
++)
++print("[RUNTIME_STARTUP] " + json.dumps(_windows_runtime_record, sort_keys=True), flush=True)
++
+ sys.argv = [sys.argv[0]] + hydra_args
+ 
+ 
+diff --git a/scripts/reinforcement_learning/harl/train.py b/scripts/reinforcement_learning/harl/train.py
+index b0d543ea..f3621d1b 100644
+--- a/scripts/reinforcement_learning/harl/train.py
++++ b/scripts/reinforcement_learning/harl/train.py
+@@ -6,6 +6,8 @@
+ """Train an algorithm."""
+ 
+ import argparse
++import importlib.util
++import json
+ import sys
+ import time
+ from pathlib import Path
+@@ -124,6 +126,21 @@ if args_cli.assignment_rl and args_cli.scenario_config is not None:
+ if args_cli.video:
+     args_cli.enable_cameras = True
+ 
++# Load the pure-stdlib startup helper without importing the task package.
++_windows_runtime_original_argv = list(sys.argv)
++_windows_runtime_helper_path = REPO_ROOT / "scripts" / "environments" / "_windows_runtime_startup.py"
++_windows_runtime_spec = importlib.util.spec_from_file_location(
++    "_isaaclab_harl_windows_runtime_startup", _windows_runtime_helper_path
++)
++if _windows_runtime_spec is None or _windows_runtime_spec.loader is None:
++    raise ImportError(f"Cannot load Windows startup helper: {_windows_runtime_helper_path}")
++_windows_runtime_helper = importlib.util.module_from_spec(_windows_runtime_spec)
++_windows_runtime_spec.loader.exec_module(_windows_runtime_helper)
++_windows_runtime_record = _windows_runtime_helper.prepare_windows_runtime_args(
++    args_cli, original_argv=_windows_runtime_original_argv
++)
++print("[RUNTIME_STARTUP] " + json.dumps(_windows_runtime_record, sort_keys=True), flush=True)
++
+ # clear out sys.argv for Hydra
+ sys.argv = [sys.argv[0]] + hydra_args
+ 
+diff --git a/scripts/environments/_windows_runtime_startup.py b/scripts/environments/_windows_runtime_startup.py
+new file mode 100644
+--- /dev/null
++++ b/scripts/environments/_windows_runtime_startup.py
+@@ -0,0 +1,116 @@
++"""Pure argument preparation for this project's Windows Kit entry points.
++
++This module neither imports the simulator nor selects a runtime device.  The
++returned backend is a request; Kit's same-run log must confirm the actual API.
++"""
++
++from __future__ import annotations
++
++import sys
++
++
++_D3D12_ARG = "--/app/vulkan=false"
++_BACKEND_REQUESTS = {"--vulkan": "Vulkan", "--/app/vulkan=true": "Vulkan", _D3D12_ARG: "D3D12"}
++_KIT_USAGE = 'Use one --kit_args="--/app/vulkan=false" or --kit_args="--/app/vulkan=true" argument.'
++
++
++def _looks_like_backend_option(token: str) -> bool:
++    """Recognize backend spellings needing review without banning other Kit args."""
++    option = token.strip("\"'").lower().split("=", 1)[0]
++    return option in {
++        "--vulkan", "--no-vulkan", "--no_vulkan", "--/app/vulkan", "/app/vulkan",
++        "--d3d12", "--d3d11", "--dx12", "--directx", "--directx12",
++        "--graphics-api", "--graphics_api", "--graphicsapi", "--/app/graphicsapi",
++        "--/renderer/backend", "--/renderer/graphicsapi",
++    }
++
++
++def _check_original_argv(argv: list[str]) -> None:
++    """Catch parse_known_args leakage and repeated options hidden by argparse."""
++    occurrences = 0
++    index = 0
++    while index < len(argv):
++        token = argv[index]
++        if token == "--kit_args":
++            occurrences += 1
++            if index + 1 >= len(argv):
++                raise ValueError(f"--kit_args requires a value. {_KIT_USAGE}")
++            # Its entire following argv element is the Kit payload, not a bare
++            # backend option. AppLauncher later applies str.split() to it.
++            index += 2
++            continue
++        if token.startswith("--kit_args="):
++            occurrences += 1
++        elif _looks_like_backend_option(token):
++            raise ValueError(
++                f"Bare backend option {token!r} is not accepted by the project entry point; "
++                f"it must not leak into Hydra arguments. {_KIT_USAGE}"
++            )
++        index += 1
++    if occurrences > 1:
++        raise ValueError(
++            "Repeated --kit_args options may hide an earlier backend choice during argument parsing. "
++            f"Combine the Kit options into one value. {_KIT_USAGE}"
++        )
++
++
++def prepare_windows_runtime_args(
++    args: object, original_argv: list[str] | tuple[str, ...] | None = None
++) -> dict[str, object]:
++    """Prepare ``args.kit_args`` and return JSON-safe request provenance.
++
++    Non-Windows calls leave the namespace untouched and add no validation rules.
++    On Windows, validation completes before the sole mutation (``kit_args``).
++    Token recognition deliberately follows AppLauncher's plain ``str.split``;
++    the original string and its unrelated quoting/spacing are never rebuilt.
++    ``original_argv`` should be captured before any Hydra/Kit argv rewriting.
++    """
++    argv = list(sys.argv if original_argv is None else original_argv)
++    original = getattr(args, "kit_args", "")
++    record: dict[str, object] = {
++        "original_argv": argv,
++        "original_kit_args": original,
++        "final_kit_args": original,
++        "source": "non_windows_unchanged",
++        "requested_backend": None,
++        "utf8_mode": sys.flags.utf8_mode,
++        "platform": sys.platform,
++    }
++    if sys.platform != "win32":
++        return record
++
++    if sys.flags.utf8_mode != 1:
++        raise RuntimeError(
++            "Windows runtime startup requires UTF8 mode 1 before Python starts. "
++            "Use D:\\miniconda3\\Scripts\\conda.exe run -p C:\\isaacenvs\\isaac45_harl "
++            "python <entry.py> <args>, or start the selected Python with -X utf8. "
++            "Changing PYTHONUTF8 inside this running process cannot enable its UTF8 mode."
++        )
++    if not isinstance(original, str):
++        raise ValueError(f"kit_args must be a string. {_KIT_USAGE}")
++    _check_original_argv(argv)
++
++    selected: set[str] = set()
++    for token in original.split():
++        if token in _BACKEND_REQUESTS:
++            selected.add(_BACKEND_REQUESTS[token])
++        elif _looks_like_backend_option(token):
++            raise ValueError(f"Unsupported or ambiguous backend spelling {token!r}. {_KIT_USAGE}")
++    if len(selected) > 1:
++        raise ValueError(
++            "Conflicting Vulkan and D3D12 requests in kit_args; "
++            f"the project does not use last-option-wins. {_KIT_USAGE}"
++        )
++
++    if selected:
++        backend = next(iter(selected))
++        source = "explicit"
++        final = original
++    else:
++        backend = "D3D12"
++        source = "windows_default"
++        separator = "" if not original or original[-1].isspace() else " "
++        final = original + separator + _D3D12_ARG
++        setattr(args, "kit_args", final)
++    record.update(final_kit_args=final, source=source, requested_backend=backend)
++    return record
+diff --git a/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260929/windows_runtime_backend_validation/test_windows_runtime_startup.py b/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260929/windows_runtime_backend_validation/test_windows_runtime_startup.py
+new file mode 100644
+--- /dev/null
++++ b/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260929/windows_runtime_backend_validation/test_windows_runtime_startup.py
+@@ -0,0 +1,148 @@
++"""Bounded standard-library tests: no viewer, training, or simulator imports."""
++
++from __future__ import annotations
++
++import importlib.util
++import json
++from pathlib import Path
++import sys
++from types import SimpleNamespace
++import unittest
++from unittest import mock
++
++
++REPO_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "isaaclab.bat").is_file())
++HELPER_PATH = REPO_ROOT / "scripts/environments/_windows_runtime_startup.py"
++
++
++def load_helper():
++    spec = importlib.util.spec_from_file_location("_windows_runtime_startup_under_test", HELPER_PATH)
++    module = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(module)
++    return module
++
++
++HELPER = load_helper()
++
++
++class WindowsRuntimeArgumentsTest(unittest.TestCase):
++    def prepare(self, args, argv=None, *, platform="win32", utf8=1):
++        with mock.patch.object(HELPER.sys, "platform", platform), mock.patch.object(
++            HELPER.sys, "flags", SimpleNamespace(utf8_mode=utf8)
++        ):
++            return HELPER.prepare_windows_runtime_args(args, original_argv=["entry.py"] if argv is None else argv)
++
++    def test_empty_windows_request(self):
++        args = SimpleNamespace(kit_args="", device="cuda:0", experience="custom.kit", headless=False)
++        record = self.prepare(args)
++        self.assertEqual(args.kit_args, "--/app/vulkan=false")
++        self.assertEqual(record["source"], "windows_default")
++        self.assertEqual(record["requested_backend"], "D3D12")
++        self.assertEqual(record["original_kit_args"], "")
++        self.assertEqual(vars(args), dict(kit_args="--/app/vulkan=false", device="cuda:0", experience="custom.kit", headless=False))
++        json.dumps(record)
++
++    def test_explicit_backend_requests_are_preserved(self):
++        for value, backend in (("--vulkan", "Vulkan"), ("--/app/vulkan=true", "Vulkan"), ("--/app/vulkan=false", "D3D12")):
++            with self.subTest(value=value):
++                args = SimpleNamespace(kit_args=value)
++                record = self.prepare(args, ["entry.py", "--kit_args=" + value])
++                self.assertEqual(args.kit_args, value)
++                self.assertEqual(record["source"], "explicit")
++                self.assertEqual(record["requested_backend"], backend)
++
++    def test_conflicts_fail_before_namespace_mutation(self):
++        for value in ("--vulkan --/app/vulkan=false", "--/app/vulkan=false --/app/vulkan=true"):
++            with self.subTest(value=value):
++                args = SimpleNamespace(kit_args=value)
++                with self.assertRaisesRegex(ValueError, "Conflicting"):
++                    self.prepare(args)
++                self.assertEqual(args.kit_args, value)
++
++    def test_same_value_duplicates_and_repeated_helper_calls(self):
++        for value in ("--vulkan --/app/vulkan=true --vulkan", "--/app/vulkan=false --/app/vulkan=false", ""):
++            with self.subTest(value=value):
++                args = SimpleNamespace(kit_args=value)
++                first = self.prepare(args)
++                second = self.prepare(args)
++                self.assertEqual(first["final_kit_args"], second["final_kit_args"])
++                self.assertEqual(args.kit_args, value or "--/app/vulkan=false")
++
++    def test_unrelated_content_is_not_reformatted(self):
++        for value in ('  --/custom/text="two words"\t--/rtx/foo=7  ', '--unknown=1', '\t'):
++            with self.subTest(value=value):
++                args = SimpleNamespace(kit_args=value)
++                self.prepare(args)
++                self.assertTrue(args.kit_args.startswith(value))
++                self.assertEqual(args.kit_args[:len(value)], value)
++                self.assertEqual(args.kit_args.split()[-1], "--/app/vulkan=false")
++        value = ' --/custom/text="two words"\t--/app/vulkan=false  '
++        args = SimpleNamespace(kit_args=value)
++        self.prepare(args)
++        self.assertEqual(args.kit_args, value)
++
++    def test_ambiguous_backend_spellings_fail(self):
++        for value in ('--/app/vulkan=False', '--/app/vulkan=0', '--/app/vulkan false', '--vulkan=false',
++                      '--d3d12', '--no-vulkan', '"--/app/vulkan=false"', '--graphics-api=D3D12'):
++            with self.subTest(value=value):
++                args = SimpleNamespace(kit_args=value)
++                with self.assertRaisesRegex(ValueError, "--kit_args"):
++                    self.prepare(args)
++                self.assertEqual(args.kit_args, value)
++
++    def test_bare_backend_cannot_leak_into_hydra(self):
++        for token in ('--vulkan', '--/app/vulkan=false', '--d3d12'):
++            with self.subTest(token=token):
++                args = SimpleNamespace(kit_args="")
++                with self.assertRaisesRegex(ValueError, "Bare backend"):
++                    self.prepare(args, ["entry.py", token])
++                self.assertEqual(args.kit_args, "")
++
++    def test_repeated_cli_kit_args_are_not_hidden_by_argparse(self):
++        for argv in (["entry.py", "--kit_args=--vulkan", "--kit_args=--/app/vulkan=false"],
++                     ["entry.py", "--kit_args", "--/app/vulkan=false", "--kit_args=--/app/vulkan=false"]):
++            with self.subTest(argv=argv):
++                args = SimpleNamespace(kit_args="--/app/vulkan=false")
++                with self.assertRaisesRegex(ValueError, "Repeated --kit_args"):
++                    self.prepare(args, argv)
++                self.assertEqual(args.kit_args, "--/app/vulkan=false")
++
++    def test_separate_kit_payload_is_not_a_bare_backend(self):
++        args = SimpleNamespace(kit_args="--/app/vulkan=false --unrelated=x")
++        argv = ["entry.py", "--kit_args", args.kit_args, "agent.seed=7"]
++        record = self.prepare(args, argv)
++        self.assertEqual(record["original_argv"], argv)
++        self.assertEqual(record["source"], "explicit")
++
++    def test_windows_requires_interpreter_utf8(self):
++        args = SimpleNamespace(kit_args="")
++        with self.assertRaisesRegex(RuntimeError, "conda.exe run.*-X utf8"):
++            self.prepare(args, utf8=0)
++        self.assertEqual(args.kit_args, "")
++
++    def test_nonwindows_preserves_even_conflicting_requests(self):
++        args = SimpleNamespace(kit_args="--vulkan --/app/vulkan=false --d3d12", device="cpu")
++        before = vars(args).copy()
++        record = self.prepare(args, ["entry.py", "--vulkan", "--kit_args=a", "--kit_args=b"], platform="linux", utf8=0)
++        self.assertEqual(vars(args), before)
++        self.assertEqual(record["source"], "non_windows_unchanged")
++        self.assertIsNone(record["requested_backend"])
++
++    def test_import_has_no_runtime_import_or_global_state_mutation(self):
++        before_modules = set(sys.modules)
++        before_path = list(sys.path)
++        before_argv = list(sys.argv)
++        original_import = __import__
++        def guarded_import(name, *args, **kwargs):
++            self.assertFalse(name.split(".")[0] in {"torch", "isaaclab", "isaaclab_tasks", "isaacsim", "omni", "carb", "pxr"}, name)
++            return original_import(name, *args, **kwargs)
++        with mock.patch("builtins.__import__", side_effect=guarded_import):
++            load_helper()
++        self.assertEqual(sys.path, before_path)
++        self.assertEqual(sys.argv, before_argv)
++        runtime_modules = {name for name in set(sys.modules) - before_modules if name.split(".")[0] in {"torch", "isaaclab", "isaacsim", "omni", "carb", "pxr"}}
++        self.assertFalse(runtime_modules)
++
++
++if __name__ == "__main__":
++    unittest.main(verbosity=2)
+diff --git a/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260929/windows_runtime_backend_validation/supervise_viewer.py b/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260929/windows_runtime_backend_validation/supervise_viewer.py
+new file mode 100644
+--- /dev/null
++++ b/source/isaaclab_tasks/isaaclab_tasks/direct/scan_mobile_manipulator/AgentRead/202609/20260929/windows_runtime_backend_validation/supervise_viewer.py
+@@ -0,0 +1,447 @@
++"""Supervise only the authorized real viewer; standard library, Windows only.
++
++The main thread never reads the output pipe.  A suspended conda process is
++assigned to an exclusive kill-on-close Job Object before any of its code runs.
++No process-name termination, alternate runtime, or persistent settings are used.
++Run only after the production changes and their pure checks have been reviewed.
++"""
++
++from __future__ import annotations
++
++import argparse
++import ctypes
++from ctypes import wintypes
++from datetime import datetime, timezone
++import json
++import os
++from pathlib import Path
++import queue
++import re
++import subprocess
++import sys
++import threading
++import time
++import traceback
++
++
++REPO_ROOT = Path(r"E:\Project\IsaacLab_HARL")
++CONDA = r"D:\miniconda3\Scripts\conda.exe"
++ENV_PREFIX = r"C:\isaacenvs\isaac45_harl"
++ENTRY = "scripts/environments/view_scan_assignment.py"
++OUTPUT_ROOT = Path(__file__).resolve().parent
++APP_LIMIT_SECONDS = 300.0
++TOTAL_LIMIT_SECONDS = 360.0
++WORK_LIMIT_SECONDS = 350.0  # Reserve ten seconds of the total for owned-process cleanup.
++PREFIX = b"[RUNTIME_CHECK] "
++MODE_OVERRIDES = {"HEADLESS": "0", "ENABLE_CAMERAS": "0", "LIVESTREAM": "0", "XR": "0"}
++
++
++def now() -> str:
++    return datetime.now(timezone.utc).astimezone().isoformat(timespec="milliseconds")
++
++
++def write_json(path: Path, value: dict) -> None:
++    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
++
++
++def check_input_desktop() -> dict:
++    """Read-only check; never switch desktops or substitute a headless launch."""
++    user = ctypes.WinDLL("user32", use_last_error=True)
++    user.OpenInputDesktop.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
++    user.OpenInputDesktop.restype = wintypes.HANDLE
++    user.CloseDesktop.argtypes = [wintypes.HANDLE]
++    user.CloseDesktop.restype = wintypes.BOOL
++    desktop = user.OpenInputDesktop(0, False, 0x0001)  # DESKTOP_READOBJECTS
++    if not desktop:
++        return {"input_desktop_opened": False, "winerror": ctypes.get_last_error()}
++    user.CloseDesktop(desktop)
++    return {"input_desktop_opened": True, "winerror": None}
++
++
++class WindowsJob:
++    """Handle-scoped ownership and cleanup; breakaway is deliberately disabled."""
++
++    def __init__(self) -> None:
++        self.kernel = ctypes.WinDLL("kernel32", use_last_error=True)
++        self.ntdll = ctypes.WinDLL("ntdll")
++        self._configure_signatures()
++        self.handle = self.kernel.CreateJobObjectW(None, None)
++        if not self.handle:
++            raise ctypes.WinError(ctypes.get_last_error())
++
++        class BasicLimits(ctypes.Structure):
++            _fields_ = [
++                ("PerProcessUserTimeLimit", ctypes.c_longlong),
++                ("PerJobUserTimeLimit", ctypes.c_longlong),
++                ("LimitFlags", wintypes.DWORD),
++                ("MinimumWorkingSetSize", ctypes.c_size_t),
++                ("MaximumWorkingSetSize", ctypes.c_size_t),
++                ("ActiveProcessLimit", wintypes.DWORD),
++                ("Affinity", ctypes.c_size_t),
++                ("PriorityClass", wintypes.DWORD),
++                ("SchedulingClass", wintypes.DWORD),
++            ]
++
++        class IoCounters(ctypes.Structure):
++            _fields_ = [(name, ctypes.c_ulonglong) for name in (
++                "ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
++                "ReadTransferCount", "WriteTransferCount", "OtherTransferCount",
++            )]
++
++        class ExtendedLimits(ctypes.Structure):
++            _fields_ = [
++                ("BasicLimitInformation", BasicLimits), ("IoInfo", IoCounters),
++                ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
++                ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t),
++            ]
++
++        limits = ExtendedLimits()
++        limits.BasicLimitInformation.LimitFlags = 0x00002000  # KILL_ON_JOB_CLOSE
++        if not self.kernel.SetInformationJobObject(self.handle, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
++            error = ctypes.WinError(ctypes.get_last_error())
++            self.close()
++            raise error
++
++    def _configure_signatures(self) -> None:
++        signatures = {
++            "CreateJobObjectW": ([ctypes.c_void_p, wintypes.LPCWSTR], wintypes.HANDLE),
++            "SetInformationJobObject": ([wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD], wintypes.BOOL),
++            "QueryInformationJobObject": ([wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p], wintypes.BOOL),
++            "AssignProcessToJobObject": ([wintypes.HANDLE, wintypes.HANDLE], wintypes.BOOL),
++            "IsProcessInJob": ([wintypes.HANDLE, wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)], wintypes.BOOL),
++            "OpenProcess": ([wintypes.DWORD, wintypes.BOOL, wintypes.DWORD], wintypes.HANDLE),
++            "GetExitCodeProcess": ([wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)], wintypes.BOOL),
++            "TerminateJobObject": ([wintypes.HANDLE, wintypes.UINT], wintypes.BOOL),
++            "CloseHandle": ([wintypes.HANDLE], wintypes.BOOL),
++        }
++        for name, (args, result) in signatures.items():
++            function = getattr(self.kernel, name)
++            function.argtypes, function.restype = args, result
++        self.ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
++        self.ntdll.NtResumeProcess.restype = ctypes.c_long
++
++    def assign(self, process: subprocess.Popen) -> None:
++        if not self.kernel.AssignProcessToJobObject(self.handle, wintypes.HANDLE(int(process._handle))):
++            raise ctypes.WinError(ctypes.get_last_error())
++
++    def resume(self, process: subprocess.Popen) -> None:
++        status = self.ntdll.NtResumeProcess(wintypes.HANDLE(int(process._handle)))
++        if status < 0:
++            raise OSError(f"NtResumeProcess failed: NTSTATUS=0x{status & 0xffffffff:08x}")
++
++    def pids(self) -> list[int]:
++        capacity = 32
++        while capacity <= 65536:
++            class PidList(ctypes.Structure):
++                _fields_ = [
++                    ("NumberOfAssignedProcesses", wintypes.DWORD),
++                    ("NumberOfProcessIdsInList", wintypes.DWORD),
++                    ("ProcessIdList", ctypes.c_size_t * capacity),
++                ]
++            data = PidList()
++            if self.kernel.QueryInformationJobObject(self.handle, 3, ctypes.byref(data), ctypes.sizeof(data), None):
++                return [int(data.ProcessIdList[i]) for i in range(data.NumberOfProcessIdsInList)]
++            error = ctypes.get_last_error()
++            if error != 234:  # ERROR_MORE_DATA
++                raise ctypes.WinError(error)
++            capacity = max(capacity * 2, data.NumberOfAssignedProcesses)
++        raise RuntimeError("Unexpectedly large owned process tree")
++
++    def open_owned_process(self, pid: int):
++        handle = self.kernel.OpenProcess(0x00100000 | 0x1000, False, pid)  # SYNCHRONIZE | QUERY_LIMITED_INFORMATION
++        if not handle:
++            raise ctypes.WinError(ctypes.get_last_error())
++        belongs = wintypes.BOOL()
++        if not self.kernel.IsProcessInJob(handle, self.handle, ctypes.byref(belongs)) or not belongs.value:
++            self.kernel.CloseHandle(handle)
++            raise RuntimeError(f"PID {pid} is not confirmed in this attempt's Job Object")
++        return handle
++
++    def exit_code(self, handle) -> int:
++        value = wintypes.DWORD()
++        if not self.kernel.GetExitCodeProcess(handle, ctypes.byref(value)):
++            raise ctypes.WinError(ctypes.get_last_error())
++        return int(value.value)
++
++    def terminate(self) -> None:
++        if not self.kernel.TerminateJobObject(self.handle, 124):
++            raise ctypes.WinError(ctypes.get_last_error())
++
++    def close(self) -> None:
++        if self.handle:
++            self.kernel.CloseHandle(self.handle)
++            self.handle = None
++
++
++def drain_output(pipe, console_path: Path, messages: queue.Queue) -> None:
++    """Preserve bytes promptly, even when an output line is incomplete."""
++    pending = b""
++    try:
++        with console_path.open("xb", buffering=0) as console:
++            while True:
++                chunk = os.read(pipe.fileno(), 65536)
++                if not chunk:
++                    break
++                console.write(chunk)
++                pending += chunk
++                lines = pending.split(b"\n")
++                pending = lines.pop()
++                for line in lines:
++                    if line.startswith(PREFIX):
++                        try:
++                            event = json.loads(line[len(PREFIX):].decode("utf-8"))
++                            if not isinstance(event, dict) or not isinstance(event.get("stage"), str):
++                                raise ValueError("event must contain a stage string")
++                            messages.put(("event", event, now(), time.monotonic()))
++                        except (UnicodeError, ValueError) as error:
++                            messages.put(("error", f"Invalid runtime event: {error}", now(), time.monotonic()))
++                if len(pending) > 1024 * 1024:
++                    messages.put(("error", "Console line exceeds 1 MiB; bytes remain saved", now(), time.monotonic()))
++                    pending = b""
++            if pending.startswith(PREFIX):
++                messages.put(("error", "Runtime event missing its terminating newline", now(), time.monotonic()))
++    except BaseException as error:
++        messages.put(("error", f"Console drain failed: {error!r}", now(), time.monotonic()))
++    finally:
++        pipe.close()
++        messages.put(("eof", None, now(), time.monotonic()))
++
++
++def build_command(ordinary: bool) -> list[str]:
++    steps = 20 if ordinary else 120
++    command = [
++        CONDA, "run", "--no-capture-output", "-p", ENV_PREFIX, "python", "-u", ENTRY,
++        "--task", "Isaac-Scan-Mobile-Manipulator-Direct-v0", "--num_envs", "1",
++        "--solver", "greedy", "--device", "cuda:0", "--max_steps", str(steps),
++        "--print_interval", str(steps),
++    ]
++    if not ordinary:
++        command.append("--runtime_check")
++    command.append("--info")
++    return command
++
++
++def check_previous_attempts(ordinary: bool) -> None:
++    previous = list(OUTPUT_ROOT.glob("*/command.json"))
++    resumed_count = 0
++    for command_path in previous:
++        result_path = command_path.with_name("result.json")
++        previous_result = json.loads(result_path.read_text(encoding="utf-8")) if result_path.exists() else {}
++        if previous_result.get("all_owned_processes_exited") is not True:
++            raise RuntimeError(f"Previous attempt has no confirmed complete process cleanup: {command_path.parent}")
++        resumed_count += previous_result.get("process_resumed") is True
++    if resumed_count >= 2:
++        raise RuntimeError("This validation directory already has two launches; no third launch is authorized")
++    if ordinary and resumed_count == 0:
++        raise RuntimeError("The first authorized launch must be the 120-step runtime check")
++
++
++def supervise(attempt: Path, ordinary: bool) -> int:
++    command = build_command(ordinary)
++    child_env = os.environ.copy()
++    original_modes = {key: child_env.get(key) for key in MODE_OVERRIDES}
++    child_env.update(MODE_OVERRIDES)
++    command_record = {
++        "recorded_at": now(), "cwd": str(REPO_ROOT), "argv": command,
++        "windows_command_line": subprocess.list2cmdline(command),
++        "mode": "ordinary" if ordinary else "runtime_check", "expected_steps": 20 if ordinary else 120,
++        "app_limit_seconds": APP_LIMIT_SECONDS, "total_limit_seconds": TOTAL_LIMIT_SECONDS,
++        "work_limit_seconds": WORK_LIMIT_SECONDS,
++        "child_environment_original_modes": original_modes, "child_environment_overrides": MODE_OVERRIDES,
++        "kit_args_omitted": True, "supervisor_pid": os.getpid(),
++    }
++    write_json(attempt / "command.json", command_record)
++    result = {
++        **command_record, "started_at": None, "ended_at": None, "conda_pid": None,
++        "viewer_pid": None, "conda_exit_code": None, "viewer_exit_code": None,
++        "timed_out": False, "timeout_phase": None, "last_stage": None, "last_completed_stage": None,
++        "job_assigned": False, "process_resumed": False, "termination_requested": False,
++        "all_owned_processes_exited": False, "seen_owned_pids": [], "remaining_owned_pids": [],
++        "supervisor_errors": [], "failure_events": [], "pre_close_result": None,
++        "stage_names": [], "console_drain_complete": False,
++        "internal_work_and_process_exit_pass": False,
++        "graphics_api": "NOT_CHECKED_BY_SUPERVISOR; inspect this attempt's Kit log",
++    }
++    job = None
++    process = None
++    reader = None
++    viewer_handle = None
++    events = queue.Queue()
++    started = None
++    app_created = False
++    seen_pids = set()
++    event_log = (attempt / "events.jsonl").open("x", encoding="utf-8", buffering=1)
++
++    def consume_events() -> None:
++        nonlocal app_created, viewer_handle
++        while True:
++            try:
++                kind, item, received_at, received_mono = events.get_nowait()
++            except queue.Empty:
++                return
++            if kind == "eof":
++                result["console_drain_complete"] = True
++            elif kind == "error":
++                result["supervisor_errors"].append(item)
++            else:
++                record = {"received_at": received_at, "elapsed_seconds": received_mono - started, "event": item}
++                event_log.write(json.dumps(record, ensure_ascii=False) + "\n")
++                stage = item["stage"]
++                result["last_stage"] = stage
++                result["stage_names"].append(stage)
++                if stage in {"startup_identity", "pre_app_cuda_ready", "app_created", "cuda_verified",
++                             "environment_created", "reset_completed", "steps_completed", "environment_closed",
++                             "app_close_returned"}:
++                    result["last_completed_stage"] = stage
++                if "pid" in item and viewer_handle is None:
++                    pid = item.get("pid")
++                    if type(pid) is not int or pid <= 0:
++                        result["supervisor_errors"].append("Runtime event has no valid viewer pid")
++                    else:
++                        result["viewer_pid"] = pid
++                        try:
++                            viewer_handle = job.open_owned_process(pid)
++                            seen_pids.add(pid)
++                        except (OSError, RuntimeError) as error:
++                            result["supervisor_errors"].append(f"Cannot retain owned viewer handle: {error}")
++                if stage == "app_created":
++                    app_created = True
++                    result["app_created_elapsed_seconds"] = received_mono - started
++                    if received_mono - started > APP_LIMIT_SECONDS:
++                        result["timed_out"] = True
++                        result["timeout_phase"] = "app_creation"
++                if stage in {"failure", "close_failure"}:
++                    result["failure_events"].append(item)
++                if stage == "pre_close_result":
++                    result["pre_close_result"] = item
++                print(f"[SUPERVISOR] stage={stage} elapsed={received_mono - started:.3f}s", flush=True)
++
++    try:
++        result["desktop_preflight"] = check_input_desktop()
++        if result["desktop_preflight"]["input_desktop_opened"] is not True:
++            raise RuntimeError("No accessible input desktop: GUI NOT_RUN; no headless substitution")
++        job = WindowsJob()
++        started = time.monotonic()
++        result["started_at"] = now()
++        process = subprocess.Popen(
++            command, cwd=REPO_ROOT, env=child_env, stdin=subprocess.DEVNULL,
++            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
++            creationflags=0x00000004,  # CREATE_SUSPENDED; GUI is still permitted.
++        )
++        result["conda_pid"] = process.pid
++        job.assign(process)
++        result["job_assigned"] = True
++        seen_pids.add(process.pid)
++        reader = threading.Thread(target=drain_output, args=(process.stdout, attempt / "console.log", events), daemon=True)
++        reader.start()
++        job.resume(process)
++        result["process_resumed"] = True
++        while True:
++            consume_events()
++            active = job.pids()
++            seen_pids.update(active)
++            elapsed = time.monotonic() - started
++            if elapsed >= WORK_LIMIT_SECONDS or (not app_created and elapsed >= APP_LIMIT_SECONDS):
++                result["timed_out"] = True
++                result["timeout_phase"] = "work_budget_reserved_cleanup" if elapsed >= WORK_LIMIT_SECONDS else "app_creation"
++            if result["timed_out"] or result["supervisor_errors"]:
++                break
++            if process.poll() is not None and not active:
++                break
++            time.sleep(0.1)
++    except BaseException as error:
++        result["supervisor_errors"].append(f"{type(error).__name__}: {error}")
++        result["supervisor_traceback"] = traceback.format_exc()
++    finally:
++        # Only a held process handle or this exclusive Job Object may be terminated.
++        final_deadline = time.monotonic() if started is None else started + TOTAL_LIMIT_SECONDS
++
++        def remaining_wait(maximum: float) -> float:
++            return max(0.0, min(maximum, final_deadline - time.monotonic()))
++
++        try:
++            if process is not None:
++                if result["job_assigned"]:
++                    if job.pids():
++                        result["termination_requested"] = True
++                        job.terminate()
++                    cleanup_deadline = min(time.monotonic() + 8.0, final_deadline - 1.0)
++                    while job.pids() and time.monotonic() < cleanup_deadline:
++                        time.sleep(0.05)
++                    result["remaining_owned_pids"] = job.pids()
++                    result["all_owned_processes_exited"] = not result["remaining_owned_pids"]
++                else:
++                    # Assignment failed while the child was still suspended: no child code ran.
++                    if process.poll() is None:
++                        result["termination_requested"] = True
++                        process.terminate()
++                    process.wait(timeout=remaining_wait(8.0))
++                    result["all_owned_processes_exited"] = True
++                result["conda_exit_code"] = process.wait(timeout=remaining_wait(1.0)) if result["all_owned_processes_exited"] else process.poll()
++            else:
++                result["all_owned_processes_exited"] = True
++            if reader is not None:
++                reader.join(timeout=remaining_wait(1.0))
++            consume_events()
++            if viewer_handle is not None:
++                result["viewer_exit_code"] = job.exit_code(viewer_handle)
++        except BaseException as error:
++            result["supervisor_errors"].append(f"Cleanup: {type(error).__name__}: {error}")
++        finally:
++            if viewer_handle is not None:
++                job.kernel.CloseHandle(viewer_handle)
++            if job is not None:
++                job.close()  # Last-resort kill-on-close applies only to this job.
++            event_log.close()
++        result["ended_at"] = now()
++        result["elapsed_seconds"] = None if started is None else time.monotonic() - started
++        if result["elapsed_seconds"] is not None and result["elapsed_seconds"] > TOTAL_LIMIT_SECONDS:
++            result["timed_out"] = True
++            result["timeout_phase"] = "total_including_cleanup"
++        result["execution_status"] = "FINISHED" if result["process_resumed"] else "NOT_RUN"
++        result["seen_owned_pids"] = sorted(seen_pids)
++        summary = result["pre_close_result"] or {}
++        required_stages = {"app_created", "environment_created", "reset_completed", "steps_completed"}
++        if not ordinary:
++            required_stages.update({"startup_identity", "cuda_verified"})
++        result["internal_work_and_process_exit_pass"] = bool(
++            summary.get("work_completed") is True
++            and summary.get("runtime_check") is (not ordinary)
++            and summary.get("env_close_ok") is True
++            and summary.get("app_close_requested") is True
++            and summary.get("failures") == []
++            and type(summary.get("step_count")) is int
++            and summary.get("step_count") == command_record["expected_steps"]
++            and summary.get("expected_steps") == command_record["expected_steps"]
++            and required_stages.issubset(result["stage_names"])
++            and result["conda_exit_code"] == 0 and result["viewer_exit_code"] == 0
++            and result["all_owned_processes_exited"] and result["console_drain_complete"]
++            and not result["timed_out"] and not result["termination_requested"]
++            and not result["supervisor_errors"] and not result["failure_events"]
++        )
++        write_json(attempt / "result.json", result)
++    print(json.dumps({"attempt": str(attempt), "internal_work_and_process_exit_pass": result["internal_work_and_process_exit_pass"],
++                      "timed_out": result["timed_out"], "last_stage": result["last_stage"],
++                      "all_owned_processes_exited": result["all_owned_processes_exited"]}, ensure_ascii=False), flush=True)
++    return 0 if result["internal_work_and_process_exit_pass"] else 1
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--attempt", required=True, help="Unique simple name for a new evidence directory")
++    parser.add_argument("--ordinary", action="store_true", help="Optional second attempt, ordinary viewer with 20 steps")
++    args = parser.parse_args()
++    if os.name != "nt":
++        parser.error("This bounded supervisor supports only the authorized Windows environment")
++    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", args.attempt):
++        parser.error("--attempt must use 1-64 letters, digits, underscores or hyphens")
++    if Path.cwd().resolve() != REPO_ROOT.resolve():
++        parser.error(f"Run from the authorized repository: {REPO_ROOT}")
++    check_previous_attempts(args.ordinary)
++    attempt = OUTPUT_ROOT / args.attempt
++    attempt.mkdir(exist_ok=False)
++    return supervise(attempt, args.ordinary)
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

@@ -1,0 +1,8 @@
+SYNTAX CHECK: PASS Interpreter: C:\isaacenvs\isaac45_harl\python.exe Command: D:\miniconda3\Scripts\conda.exe run -p C:\isaacenvs\isaac45_harl python -m py_compile <files below>
+scripts/environments/_windows_runtime_startup.py
+scripts/environments/view_scan_assignment.py
+scripts/reinforcement_learning/harl/train.py
+scripts/reinforcement_learning/harl/play_assignment.py
+source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\AgentRead\202609\20260929\windows_runtime_backend_validation\test_windows_runtime_startup.py
+source\isaaclab_tasks\isaaclab_tasks\direct\scan_mobile_manipulator\AgentRead\202609\20260929\windows_runtime_backend_validation\supervise_viewer.py
+ExitCode=0
