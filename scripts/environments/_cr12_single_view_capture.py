@@ -38,7 +38,7 @@ def check_arrived_hold(position_error_m, orientation_error_rad, native_dq):
 
 class SingleViewRequest:
     """A single request with sticky failure and separate data/save/OFF facts."""
-    def __init__(self, goal_id, attempt_id, product_path, capture_id, *, delivery_policy='artifact-required'):
+    def __init__(self, goal_id, attempt_id, product_path, capture_id, *, delivery_policy='artifact-required', execution_profile=None):
         for name, value in (('goal_id', goal_id), ('attempt_id', attempt_id),
                             ('product_path', product_path), ('capture_id', capture_id)):
             if not isinstance(value, str) or not value:
@@ -47,6 +47,13 @@ class SingleViewRequest:
         if delivery_policy not in ('artifact-required', 'raw-held-with-custody'):
             raise ValueError('Unsupported data delivery policy')
         self.delivery_policy = delivery_policy
+        self.pose_steps, self.total_steps = POSE_STEPS, TOTAL_STEPS
+        if execution_profile is not None:
+            from _cr12_shared_task_profile import PROFILE_NAME, MAX_STEPS, REQUEST_MAX_STEPS
+            if execution_profile != PROFILE_NAME or delivery_policy != 'raw-held-with-custody':
+                raise ValueError('Only the trusted shared capture integration profile is supported')
+            self.pose_steps, self.total_steps = MAX_STEPS, REQUEST_MAX_STEPS
+        self.execution_profile = execution_profile
         self._custody = None
         self.cancel_requested = None
         self.product_path = product_path
@@ -113,7 +120,7 @@ class SingleViewRequest:
         step = tick.get('step')
         actual_time = float(tick.get('controlled_time_s', math.nan))
         physics_time = float(tick.get('physics_time_s', math.nan))
-        if (type(step) is not int or step != self.step + 1 or step > TOTAL_STEPS
+        if (type(step) is not int or step != self.step + 1 or step > self.total_steps
                 or not math.isfinite(actual_time) or not math.isfinite(physics_time)
                 or abs(actual_time - step * DT) > 1e-4
                 or (self.simulation_time is not None and abs(physics_time-self.simulation_time-DT) > 1e-4)):
@@ -123,8 +130,8 @@ class SingleViewRequest:
         if self.state in ('MOVING_OFF', 'ARRIVED_HOLD_OFF'):
             self._off({'updates_enabled': updates_enabled})
         if self.state == 'MOVING_OFF':
-            if step > POSE_STEPS:
-                self._reject('POSE_TIMEOUT', 'Arrival was not established within 960 steps')
+            if step > self.pose_steps:
+                self._reject('POSE_TIMEOUT', f'Arrival was not established within {self.pose_steps} steps')
             if tick.get('pose_reached') is True:
                 sample = tick.get('sample', {})
                 count = sample.get('stable_samples', 0)
@@ -317,11 +324,11 @@ class SingleViewRequest:
         # Another step is forbidden at that endpoint; wall budgets are hard caps.
         def exhausted(steps, limit):
             return steps >= limit if before_tick else steps > limit
-        if exhausted(self.step, TOTAL_STEPS):
-            self.fail('TOTAL_BUDGET', 'Total 1800-step budget exhausted')
+        if exhausted(self.step, self.total_steps):
+            self.fail('TOTAL_BUDGET', f'Total {self.total_steps}-step budget exhausted')
             if not self.off_confirmed:
                 self._transition('STOP_UNCONFIRMED')
-            raise CaptureRequestError('TOTAL_BUDGET', 'Total 1800-step budget exhausted')
+            raise CaptureRequestError('TOTAL_BUDGET', f'Total {self.total_steps}-step budget exhausted')
         if self.close_boundary is not None:
             if exhausted(self.step-self.close_boundary['physics_step'], CLOSE_STEPS) or now-self.close_boundary['wall_time'] >= CLOSE_WALL_SECONDS:
                 self.fail('CLOSE_TIMEOUT', 'OFF could not be confirmed within its independent budget')
@@ -330,12 +337,14 @@ class SingleViewRequest:
         elif self.capture_boundary is not None:
             if exhausted(self.step-self.capture_boundary['physics_step'], CAPTURE_STEPS) or now-self.capture_boundary['wall_time'] >= CAPTURE_WALL_SECONDS:
                 self._reject('CAPTURE_TIMEOUT', 'No completed acquisition within its independent budget')
-        elif self.state == 'MOVING_OFF' and exhausted(self.step, POSE_STEPS):
-            self._reject('POSE_TIMEOUT', 'Arrival was not established within 960 steps')
+        elif self.state == 'MOVING_OFF' and exhausted(self.step, self.pose_steps):
+            self._reject('POSE_TIMEOUT', f'Arrival was not established within {self.pose_steps} steps')
 
     def summary(self):
         from copy import deepcopy
         return deepcopy({'state': self.state, **self.ids, 'render_product_path': self.product_path,
+                         'execution_profile': self.execution_profile,
+                         'pose_steps_limit': self.pose_steps, 'total_steps_limit': self.total_steps,
                          'completed_physics_steps': self.step, 'controlled_simulation_time_s': self.controlled_time_s,
                          'arrival': self.arrival, 'capture_boundary': self.capture_boundary, 'close_boundary': self.close_boundary,
                          'capture_steps': 0 if self.capture_boundary is None else (self.close_boundary or {'physics_step': self.step})['physics_step']-self.capture_boundary['physics_step'],

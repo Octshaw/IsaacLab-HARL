@@ -6,6 +6,7 @@ import inspect
 from pathlib import Path
 import types
 import unittest
+import numpy as np
 
 
 SOURCE = Path(__file__).resolve().parents[3] / "scripts/environments/_cr12_runtime_support.py"
@@ -49,6 +50,8 @@ class SceneFixture:
             PHYSICS_DT=1 / 120, CONTACT_OFFSET=.002, REST_OFFSET=0, ASSET_MODEL_ID="accepted",
             make_cr12_cfg=lambda *a, **kw: object())
         namespace = {
+            "copy": copy,
+            "_validated_root_pose": lambda value: np.array([[1.,0,0,0], [0,1.,0,0], [0,0,1.,.053], [0,0,0,1.]]),
             "DriveCheckError": RuntimeError,
             "sim_utils": types.SimpleNamespace(
                 PhysxCfg=lambda **kw: types.SimpleNamespace(**kw),
@@ -73,17 +76,19 @@ class SceneFixture:
             "omni": types.SimpleNamespace(physx=context_api, timeline=timeline_api),
             "_calibrate_root_anchor": lambda *a: self.record("anchor", {}),
             "_frame_locals": lambda *a: self.record("frames", {}),
-            "_make_contacts": lambda *a: self.record("contacts", {}),
+            "_make_contacts": lambda *a, **kw: self.record("contacts", {}),
             "_clock": lambda sim: (sim.index, sim.time),
             "_assert_active": lambda *a: self.events.append("active"),
             "_read_physics": lambda *a: self.record("native_read", ([0], [0], {})),
         }
         tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
-        function = copy.deepcopy(next(n for n in tree.body if isinstance(n, ast.FunctionDef)
-                                      and n.name == "create_fixed_cr12_scene"))
+        names = ("create_fixed_cr12_world", "spawn_fixed_cr12_instance", "prepare_fixed_cr12_contacts",
+                 "reset_fixed_cr12_world", "read_fixed_cr12_instance", "create_fixed_cr12_scene")
+        functions = [copy.deepcopy(n) for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names]
         # No Kit/Isaac imports are executed. Every remaining statement is production code.
-        function.body = [n for n in function.body if not isinstance(n, (ast.Import, ast.ImportFrom))]
-        module = ast.fix_missing_locations(ast.Module(body=[function], type_ignores=[]))
+        for function in functions:
+            function.body = [n for n in function.body if not isinstance(n, (ast.Import, ast.ImportFrom))]
+        module = ast.fix_missing_locations(ast.Module(body=functions, type_ignores=[]))
         exec(compile(module, str(SOURCE), "exec"), namespace)
         self.create = namespace["create_fixed_cr12_scene"]
 

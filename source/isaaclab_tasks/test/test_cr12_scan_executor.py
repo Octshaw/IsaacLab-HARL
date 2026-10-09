@@ -44,6 +44,9 @@ class SessionTests(unittest.TestCase):
         # Exercise production methods while substituting only native/CUDA boundaries.
         s = ex.Cr12PoseControlSession.__new__(ex.Cr12PoseControlSession)
         s.app = object()
+        s.args = SimpleNamespace(output_dir=Path('cpu_fixture'))
+        s.scene = {'robot_id': 0}
+        s.control_segment_id = None
         s.sim = SimpleNamespace(clock=(2, 2*pc.DT))
         s.baseline = s.sim.clock
         s._clock_boundary = s.baseline
@@ -96,7 +99,7 @@ class SessionTests(unittest.TestCase):
         s.visuals = None
         s.contacts = {'sensor': {'updates': 0}}
 
-        def contacts(*unused):
+        def contacts(*unused, **unused_keywords):
             s.contacts['sensor']['updates'] += 1
             return 0.
         replacements = {

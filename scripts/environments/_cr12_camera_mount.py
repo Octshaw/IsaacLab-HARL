@@ -124,11 +124,73 @@ def _author_transform(prim, matrix):
         raise ValueError('New camera/fixture cannot reset the parent stack')
 
 
-def create_camera_and_fixture(stage, info, config, model, nominal_root):
+@dataclass(frozen=True)
+class SharedFixture:
+    stage: object
+    path: str
+    world_matrix: tuple
+
+
+def shared_fixture_pose(config, scanner_target):
+    import _cr12_shared_task_profile as shared
+    target = pc._transform(scanner_target)
+    if not np.array_equal(target, shared.scanner_target()):
+        raise ValueError('Shared fixture must use the one frozen scanner task target')
+    camera = target @ config.t_sc
+    board = camera.copy()
+    board[:3, 3] += camera[:3, 0] * .5
+    return board
+
+
+def create_shared_fixture(stage, config, scanner_target, *, fixture_path='/World/SharedTaskCameraFixture'):
+    from pxr import UsdGeom
+    import _cr12_shared_task_profile as shared
+    if fixture_path != shared.SHARED_FIXTURE_PATH or stage.GetPrimAtPath(fixture_path).IsValid():
+        raise ValueError('Shared fixture requires its new, fixed world prim path')
+    if abs(UsdGeom.GetStageMetersPerUnit(stage) - 1.0) > 1e-12:
+        raise ValueError('Shared fixture requires the accepted metre stage')
+    matrix = shared_fixture_pose(config, scanner_target)
+    _create_fixture(stage, fixture_path, matrix)
+    return SharedFixture(stage, fixture_path, tuple(tuple(float(v) for v in row) for row in matrix))
+
+
+def _validate_shared_fixture(stage, shared_fixture, config):
+    from pxr import UsdGeom, UsdPhysics
+    import _cr12_shared_task_profile as shared
+    if not isinstance(shared_fixture, SharedFixture) or shared_fixture.stage is not stage:
+        raise ValueError('Shared fixture must be the owned handle from this stage')
+    expected = shared_fixture_pose(config, shared.scanner_target())
+    if shared_fixture.path != shared.SHARED_FIXTURE_PATH or not np.array_equal(shared_fixture.world_matrix, expected):
+        raise ValueError('Shared fixture handle differs from the frozen placement')
+    prim = stage.GetPrimAtPath(shared_fixture.path)
+    mesh = stage.GetPrimAtPath(shared_fixture.path + '/ColorPlate')
+    if not prim.IsValid() or not mesh.IsValid() or not mesh.IsA(UsdGeom.Mesh):
+        raise ValueError('Owned shared fixture or its plate is missing')
+    transform = UsdGeom.Xformable(prim)
+    if transform.GetResetXformStack() or not np.allclose(
+            np.asarray(transform.GetLocalTransformation()).T, expected, rtol=0, atol=1e-12):
+        raise ValueError('Shared fixture transform changed')
+    for item in (prim, mesh):
+        if any(item.HasAPI(schema) for schema in (UsdPhysics.MassAPI, UsdPhysics.RigidBodyAPI, UsdPhysics.CollisionAPI)) or item.IsA(UsdPhysics.Joint):
+            raise ValueError('Shared fixture must remain nonphysical')
+    return expected
+
+
+def create_camera_and_fixture(stage, info, config, model, nominal_root, *,
+                              fixture_path='/World/CameraInterfaceFixture', shared_fixture=None):
     from pxr import Gf, UsdGeom, UsdPhysics
     if abs(UsdGeom.GetStageMetersPerUnit(stage) - 1.0) > 1e-12:
         raise ValueError('Camera v1 requires the accepted metre stage')
     camera_path = info['body_paths']['link_6'] + '/SingleViewCamera'
+    if (not isinstance(fixture_path, str) or not fixture_path.startswith('/World/')
+            or fixture_path.endswith('/') or fixture_path == camera_path
+            or fixture_path.startswith(info['body_paths']['link_6'] + '/')):
+        raise ValueError('Fixture must have its own absolute world prim path')
+    if shared_fixture is not None:
+        fixture_pose = _validate_shared_fixture(stage, shared_fixture, config)
+        fixture_path = shared_fixture.path
+    elif stage.GetPrimAtPath(fixture_path).IsValid():
+        raise ValueError('Fixture prim already exists')
     if stage.GetPrimAtPath(camera_path).IsValid():
         raise ValueError('Camera prim already exists')
     camera = UsdGeom.Camera.Define(stage, camera_path)
@@ -141,11 +203,22 @@ def create_camera_and_fixture(stage, info, config, model, nominal_root):
     camera.CreateFocalLengthAttr(config.focal_length_m * 10)
     camera.CreateClippingRangeAttr(Gf.Vec2f(config.near_m, config.far_m))
     camera.CreateFStopAttr(0.0)
-    fixture_path = '/World/CameraInterfaceFixture'
-    if stage.GetPrimAtPath(fixture_path).IsValid():
-        raise ValueError('Fixture prim already exists')
+    if shared_fixture is None:
+        fixture_pose = nominal_fixture_pose(config, model, nominal_root)
+        _create_fixture(stage, fixture_path, fixture_pose)
+    if any(camera.GetPrim().HasAPI(schema) for schema in
+           (UsdPhysics.MassAPI, UsdPhysics.RigidBodyAPI, UsdPhysics.CollisionAPI)):
+        raise ValueError('Camera must remain nonphysical')
+    return {'camera_prim': camera_path, 'fixture_prim': fixture_path,
+            'fixture_world_matrix': fixture_pose.tolist(), 'fixture_size_m': [.2, .2],
+            'fixture_source': ('shared frozen task camera pose; owned fixture reused'
+                if shared_fixture is not None else 'one nominal final camera pose, authored once before physics'),
+            'nonphysical': True, 'camera_world_pose_writes_during_run': 0}
+
+
+def _create_fixture(stage, fixture_path, fixture_pose):
+    from pxr import UsdGeom, UsdPhysics
     fixture = UsdGeom.Xform.Define(stage, fixture_path)
-    fixture_pose = nominal_fixture_pose(config, model, nominal_root)
     _author_transform(fixture.GetPrim(), fixture_pose)
     # One double-sided, asymmetric four-face colour plate in local Y/Z.
     # The unequal split and distinct colours make camera axes readable.
@@ -166,13 +239,9 @@ def create_camera_and_fixture(stage, info, config, model, nominal_root):
     mesh.CreateSubdivisionSchemeAttr('none')
     mesh.CreateDoubleSidedAttr(True)
     mesh.CreateDisplayColorPrimvar(UsdGeom.Tokens.uniform).Set(colors)
-    for prim in (camera.GetPrim(), fixture.GetPrim(), mesh.GetPrim()):
+    for prim in (fixture.GetPrim(), mesh.GetPrim()):
         if any(prim.HasAPI(schema) for schema in (UsdPhysics.MassAPI, UsdPhysics.RigidBodyAPI, UsdPhysics.CollisionAPI)) or prim.IsA(UsdPhysics.Joint):
             raise ValueError('Camera/fixture must remain nonphysical')
-    return {'camera_prim': camera_path, 'fixture_prim': fixture_path,
-            'fixture_world_matrix': fixture_pose.tolist(), 'fixture_size_m': [.2, .2],
-            'fixture_source': 'one nominal final camera pose, authored once before physics',
-            'nonphysical': True, 'camera_world_pose_writes_during_run': 0}
 
 
 def numpy_value(value):

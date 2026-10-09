@@ -11,6 +11,15 @@ from dataclasses import dataclass
 
 import numpy as np
 
+# Keep original standalone-file imports dependency-free. The new fixed profile
+# is loaded only when explicitly selected; old formal/manual callers need none.
+_SHARED_PROFILE_NAME = 'shared_m2n1'
+
+
+def _shared_config():
+    import _cr12_shared_task_profile
+    return _cr12_shared_task_profile
+
 
 DT = 1.0 / 120.0
 REFERENCE_SECONDS = 4.0
@@ -39,11 +48,11 @@ MANUAL_WITNESS_BETA = 1.0  # Frozen before the first App after the 101-sample CP
 
 @dataclass(frozen=True)
 class MotionProfile:
-    """Only two fixed profiles; no caller-supplied timing, witness or gain values."""
+    """Fixed, explicitly selected profiles; no caller-supplied budgets or gains."""
     name: str = "formal"
 
     def __post_init__(self):
-        if self.name not in ("formal", "manual_visible_local_v1"):
+        if self.name not in ("formal", "manual_visible_local_v1", _SHARED_PROFILE_NAME):
             raise PoseCheckError("SETUP", "Unknown fixed motion profile", name=self.name)
 
     @property
@@ -52,15 +61,25 @@ class MotionProfile:
 
     @property
     def reference_seconds(self):
+        if self.name == _SHARED_PROFILE_NAME:
+            return _shared_config().REFERENCE_SECONDS
         return 6.0 if self.manual_visual_only else REFERENCE_SECONDS
 
     @property
     def max_seconds(self):
+        if self.name == _SHARED_PROFILE_NAME:
+            return _shared_config().MAX_SECONDS
         return 10.0 if self.manual_visual_only else MAX_SECONDS
 
     @property
     def max_steps(self):
+        if self.name == _SHARED_PROFILE_NAME:
+            return _shared_config().MAX_STEPS
         return 1200 if self.manual_visual_only else MAX_STEPS
+
+    @property
+    def trust_degrees(self):
+        return _shared_config().TRUST_DEG if self.name == _SHARED_PROFILE_NAME else (5.,)*6
 
     @property
     def witness_deg(self):
@@ -73,6 +92,7 @@ class MotionProfile:
 
 FORMAL_PROFILE = MotionProfile()
 MANUAL_VISIBLE_LOCAL_V1 = MotionProfile("manual_visible_local_v1")
+SHARED_M2N1 = MotionProfile(_SHARED_PROFILE_NAME)
 
 
 def select_motion_profile(name="formal"):
@@ -80,6 +100,8 @@ def select_motion_profile(name="formal"):
         return FORMAL_PROFILE
     if name == "manual_visible_local_v1":
         return MANUAL_VISIBLE_LOCAL_V1
+    if name == _SHARED_PROFILE_NAME:
+        return SHARED_M2N1
     raise PoseCheckError("SETUP", "Unknown fixed motion profile", name=name)
 
 
@@ -280,6 +302,43 @@ def _indices(actual, expected, label):
     return [actual.index(name) for name in expected]
 
 
+def check_path_tube(q_actual, q_park, q_goal):
+    """Require one common geometric s for all axes, never time-reference progress."""
+    q = _array(q_actual, (6,), "actual tube q", "PATH_TUBE")
+    park = _array(q_park, (6,), "park q", "PATH_TUBE")
+    goal = _array(q_goal, (6,), "goal q", "PATH_TUBE")
+    tolerance = math.radians(_shared_config().TUBE_DEG)
+    lower, upper = 0.0, 1.0
+    delta = goal - park
+    for index in range(6):
+        if delta[index] == 0.0:
+            if abs(q[index] - park[index]) > tolerance:
+                raise PoseCheckError("PATH_TUBE", "Zero-change axis leaves the actual path tube", joint=index+1)
+        else:
+            ends = ((q[index]-park[index]-tolerance)/delta[index],
+                    (q[index]-park[index]+tolerance)/delta[index])
+            lower, upper = max(lower, min(ends)), min(upper, max(ends))
+    if lower > upper:
+        raise PoseCheckError("PATH_TUBE", "No single geometric progress satisfies all six actual axes",
+                             interval=[lower, upper], q_actual=q.tolist())
+    progress = (lower + upper) * .5
+    residual = float(np.max(np.abs(q-(park+progress*delta))))
+    return {"s": progress, "s_interval": [lower, upper], "maximum_residual_rad": residual,
+            "tolerance_rad": tolerance, "kind": "common_s_path_tube", "passed": True}
+
+
+def check_fixed_neighborhood(q_actual, q_park):
+    q = _array(q_actual, (6,), "actual fixed-neighborhood q", "PARK_NEIGHBORHOOD")
+    park = _array(q_park, (6,), "fixed park q", "PARK_NEIGHBORHOOD")
+    error = float(np.max(np.abs(q-park)))
+    tolerance = math.radians(_shared_config().TUBE_DEG)
+    if error > tolerance:
+        raise PoseCheckError("PARK_NEIGHBORHOOD", "Actual joint leaves the fixed park/clear neighborhood",
+                             maximum_error_rad=error, tolerance_rad=tolerance)
+    return {"maximum_residual_rad": error, "tolerance_rad": tolerance,
+            "kind": "fixed_park_neighborhood", "passed": True}
+
+
 def resolve_mapping(body_names, joint_names, is_fixed_base):
     body_ids = _indices(body_names, BODY_NAMES, "body names")
     joint_ids = _indices(joint_names, JOINT_NAMES, "joint names")
@@ -409,7 +468,12 @@ class CommandProposal:
 
 
 class CommandIntegrator:
-    def __init__(self, initial_q, limits=JOINT_LIMITS, dt=DT):
+    def __init__(self, initial_q, limits=JOINT_LIMITS, dt=DT, *, profile=FORMAL_PROFILE):
+        if not isinstance(profile, MotionProfile):
+            raise PoseCheckError("SETUP", "Integrator requires a fixed MotionProfile")
+        self.profile = profile
+        self.trust_radians = np.radians(profile.trust_degrees)
+        self.trust_radians.setflags(write=False)
         if not math.isfinite(float(dt)) or abs(float(dt) - DT) > 1e-12:
             raise PoseCheckError("SETUP", "The approved command period is fixed at 1/120 s")
         self.dt = DT
@@ -439,8 +503,9 @@ class CommandIntegrator:
                            _array(dq, (6,), "actual dq", "PHYSICS_GUARD"))
 
     def _trust(self, q, label):
-        if float(np.max(np.abs(q - self.initial_q))) > math.radians(5):
-            raise PoseCheckError("COMMAND_REJECTED", f"{label} exceeds the 5-degree trust region")
+        if np.any(np.abs(q - self.initial_q) > self.trust_radians):
+            raise PoseCheckError("COMMAND_REJECTED", f"{label} exceeds the fixed initial-anchor trust region",
+                                 trust_degrees=list(self.profile.trust_degrees))
 
     def _command_limits(self, q, label):
         if np.any(q < self.limits[:, 0] + .02) or np.any(q > self.limits[:, 1] - .02):

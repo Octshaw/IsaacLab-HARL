@@ -25,6 +25,8 @@ def parse_args(app_launcher_type, argv=None, *, configure_parser=None):
     parser.add_argument('--usd-path', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--manual-check', action='store_true')
+    parser.add_argument('--gui-startup-diagnostics', action='store_true',
+                        help='Record read-only Windows GUI startup facts and enforce the frozen DPI experiment.')
     add_external_forces_arguments(parser)
     app_launcher_type.add_app_launcher_args(parser)
     if configure_parser is not None:
@@ -116,10 +118,10 @@ class CompactPoseTrace:
         pass
 
 
-def prepare_scene(args, app, recorder, resources, expected, camera_config, receive_context, *, camera_request_limit=1, camera_integration=False):
-    import numpy as np
+def _make_camera_pre_physics(args, recorder, resources, camera_config, receive_context, *,
+        camera_request_limit=1, camera_integration=False, prim_path='/World/CR12', nominal_root=None,
+        fixture_path=None, resource_names=None, defer_visual_seal=False, shared_fixture=None):
     import omni.physx
-    import omni.timeline
     import _cr12_pose_control as pc
     from _cr12_camera_mount import create_camera_and_fixture
     from _cr12_camera_capture import OwnedCameraCapture
@@ -128,6 +130,8 @@ def prepare_scene(args, app, recorder, resources, expected, camera_config, recei
 
     derived = args.usd_path.parent.parent / 'cr12_fixed_lift0.urdf'
     model = pc.KinematicModel.from_derived_urdf(derived)
+    if nominal_root is None:
+        nominal_root = pc.pose_from_wxyz(ROOT_TRANSLATION, (1, 0, 0, 0))
     def pre_physics(*, stage, sim, robot, info):
         timing = {'robot_initialized': bool(robot.is_initialized), 'simulation_view_present': sim.physics_sim_view is not None,
             'robot_view_present': getattr(robot, '_root_physx_view', None) is not None,
@@ -138,26 +142,29 @@ def prepare_scene(args, app, recorder, resources, expected, camera_config, recei
                 'physics_initialized', 'physics_running', 'timeline_playing')) or not timing['timeline_stopped'] or timing['attached_stage_id_observed'] != 0:
             raise DriveCheckError('preinit_timing', 'Scene already initialized before new camera/visual creation', actual=timing)
         recorder.result['preinit_timing'] = timing
-        recorder.result['camera_mount'] = create_camera_and_fixture(stage, info, camera_config, model,
-            pc.pose_from_wxyz(ROOT_TRANSLATION, (1, 0, 0, 0)))
-        mapping = inspect_preinit_mapping(stage, '/World/CR12', derived)
+        recorder.result['camera_mount'] = create_camera_and_fixture(stage, info, camera_config, model, nominal_root,
+            **({} if fixture_path is None else {'fixture_path': fixture_path}),
+            **({} if shared_fixture is None else {'shared_fixture': shared_fixture}))
+        mapping = inspect_preinit_mapping(stage, prim_path, derived)
         if not mapping['pass']:
             raise DriveCheckError('visual_mapping', 'Accepted visual/collision mapping differs', errors=mapping['errors'])
         override = CollisionVisualOverride(stage, mapping)
         resources['visual_override'] = override
-        before = physical_snapshot(stage, '/World/CR12')
+        before = physical_snapshot(stage, prim_path)
         applied = override.apply(before_first_physics_initialization=True)
-        if before != physical_snapshot(stage, '/World/CR12'):
+        if before != physical_snapshot(stage, prim_path):
             raise DriveCheckError('physical_invariance', 'Visual override changed composed physical properties')
-        override.seal_before_physics_initialization()
+        if not defer_visual_seal:
+            override.seal_before_physics_initialization()
         recorder.result['visual_preinit'] = {'apply_count': 1, 'revoke_count': 0, 'reapply_count': 0,
             'composed_apply_equal': True, 'render_override': applied,
-            'stage_checks': [override.verify_stable('preinit')], 'pass': False}
+            'stage_checks': [] if defer_visual_seal else [override.verify_stable('preinit')], 'pass': False}
         phase_saved(recorder, 'overlay_applied_preinit')
         before_camera = _clock(sim)
         updates_before = resources.get('app_update_counter', {}).get('count')
         capture = OwnedCameraCapture.prepare(recorder.result['camera_mount']['camera_prim'],
             resolution=camera_config.resolution, context_provider=lambda: copy.deepcopy(receive_context),
+            **(resource_names or {}),
             **({'max_requests': camera_request_limit, 'integration_mode': True} if camera_integration
                else ({} if camera_request_limit == 1 else {'max_requests': camera_request_limit})))
         resources['capture'] = capture
@@ -167,12 +174,10 @@ def prepare_scene(args, app, recorder, resources, expected, camera_config, recei
         if before_camera != _clock(sim):
             raise DriveCheckError('physics_count', 'Camera prepare advanced physics')
         phase_saved(recorder, 'camera_prepared_off', product_path=capture.product_path)
+    return pre_physics
 
-    def before_native_read(*, robot, sim):
-        recorder.result['setup_native_validity'] = native_validity(robot, sim)
-    scene = create_fixed_cr12_scene(args, app, recorder, resources, expected,
-        pre_physics=pre_physics, before_native_read=before_native_read)
-    initial = initialize_fixed_cr12_state(args, recorder, scene)
+
+def _initialize_camera_off(scene, recorder, resources):
     recorder.result['simulation']['camera_sensor_created'] = True
     capture = resources['capture']
     before_init = _clock(scene['sim'])
@@ -185,9 +190,18 @@ def prepare_scene(args, app, recorder, resources, expected, camera_config, recei
         raise DriveCheckError('physics_count', 'Camera initialize advanced physics')
     recorder.result['visual_preinit']['stage_checks'].append(resources['visual_override'].verify_stable('after_camera_initialize'))
     recorder.result['initialization']['app_update_events_before_motion'] = resources.get('app_update_counter', {}).get('count')
+
+
+def prepare_scene(args, app, recorder, resources, expected, camera_config, receive_context, *, camera_request_limit=1, camera_integration=False):
+    pre_physics = _make_camera_pre_physics(args, recorder, resources, camera_config, receive_context,
+        camera_request_limit=camera_request_limit, camera_integration=camera_integration)
+    def before_native_read(*, robot, sim):
+        recorder.result['setup_native_validity'] = native_validity(robot, sim)
+    scene = create_fixed_cr12_scene(args, app, recorder, resources, expected,
+        pre_physics=pre_physics, before_native_read=before_native_read)
+    initial = initialize_fixed_cr12_state(args, recorder, scene)
+    _initialize_camera_off(scene, recorder, resources)
     return scene, initial
-
-
 def preserve_artifact(args, recorder, snapshot, request, camera_config):
     """Saving is separate from acquisition and OFF; a failed save is not no-data."""
     from _cr12_camera_capture import save_rgba_png
@@ -226,47 +240,58 @@ def preserve_artifact(args, recorder, snapshot, request, camera_config):
         request.fail('ARTIFACT_METADATA', recorder.result['metadata_error'])
 
 
-def refresh_initial_camera_publication(scene, initial, capture, camera_config, recorder, resources):
-    """Publish the authorized zero initialization to Fabric without advancing time.
-
-    Native link reads update kinematics, but do not flush Fabric. The existing
-    render path performs this forward operation before its app.update; here only
-    its non-rendering publication is needed, once, before MOVING_OFF.
-    """
+def refresh_initial_camera_publications(runs):
+    """Publish every prepared zero state through exactly one shared forward."""
     import numpy as np
     from _cr12_camera_mount import actual_camera_pose, numpy_value, read_local_mount
-    sim, robot = scene['sim'], scene['robot']
-    capture.assert_off('initial_fabric_publication')
-    native_validity(robot, sim)
-    before_clock = _clock(sim)
-    before_updates = resources.get('app_update_counter', {}).get('count')
-    view = robot.root_physx_view
-    def native_snapshot():
-        return tuple(np.array(numpy_value(getter().clone()), copy=True) for getter in
-            (view.get_dof_positions, view.get_dof_velocities, view.get_link_transforms))
-    native_before = native_snapshot()
-    record = {'before_clock': list(before_clock), 'app_updates_before': before_updates,
-        'local_mount': read_local_mount(capture.camera, camera_config),
-        'before_camera': actual_camera_pose(capture.camera, initial['poses']['link_6'], camera_config,
-            clock=before_clock, phase='initial_before_fabric_publication', require_match=False)}
-    recorder.result['initial_fabric_publication'] = record
-    recorder.save()
+    if not runs or len({id(run['scene']['sim']) for run in runs}) != 1:
+        raise DriveCheckError('SETUP', 'Fabric publication requires one shared simulation')
+    sim = runs[0]['scene']['sim']
+    pending = []
+    for run in runs:
+        scene, initial, capture = run['scene'], run['initial'], run['capture']
+        config, recorder, resources = run['camera_config'], run['recorder'], run['resources']
+        capture.assert_off('initial_fabric_publication')
+        native_validity(scene['robot'], sim)
+        view = scene['robot'].root_physx_view
+        getters = (view.get_dof_positions, view.get_dof_velocities, view.get_link_transforms)
+        native_before = tuple(np.array(numpy_value(getter().clone()), copy=True) for getter in getters)
+        before_clock = _clock(sim)
+        before_updates = resources.get('app_update_counter', {}).get('count')
+        record = {'before_clock': list(before_clock), 'app_updates_before': before_updates,
+            'local_mount': read_local_mount(capture.camera, config),
+            'before_camera': actual_camera_pose(capture.camera, initial['poses']['link_6'], config,
+                clock=before_clock, phase='initial_before_fabric_publication', require_match=False)}
+        recorder.result['initial_fabric_publication'] = record
+        recorder.save()
+        pending.append((run, getters, native_before, before_clock, before_updates, record))
     sim.forward()
-    native_after = native_snapshot()
-    record.update(after_clock=list(_clock(sim)), app_updates_after=resources.get('app_update_counter', {}).get('count'),
-        native_arrays_equal=[bool(np.array_equal(a, b)) for a, b in zip(native_before, native_after)],
-        native_array_shapes=[list(a.shape) for a in native_before], forward_calls=1)
-    if (_clock(sim) != before_clock or record['app_updates_after'] != before_updates
-            or not all(record['native_arrays_equal'])):
-        raise DriveCheckError('physical_invariance', 'Initial Fabric publication changed native state or clocks', evidence=record)
-    capture.assert_off('after_initial_fabric_publication')
-    after_camera = actual_camera_pose(capture.camera, initial['poses']['link_6'], camera_config,
-        clock=_clock(sim), phase='initial_after_fabric_publication')
-    record.update(after_camera=after_camera, extra_physics_steps=0, extra_app_updates=0, pass_=True)
-    recorder.save()
-    return after_camera
+    # Verify both native states before accepting either camera pose.
+    for run, getters, native_before, before_clock, before_updates, record in pending:
+        native_after = tuple(np.array(numpy_value(getter().clone()), copy=True) for getter in getters)
+        record.update(after_clock=list(_clock(sim)),
+            app_updates_after=run['resources'].get('app_update_counter', {}).get('count'),
+            native_arrays_equal=[bool(np.array_equal(a, b)) for a, b in zip(native_before, native_after)],
+            native_array_shapes=[list(a.shape) for a in native_before], forward_calls=1,
+            shared_instance_count=len(runs))
+        if (_clock(sim) != before_clock or record['app_updates_after'] != before_updates
+                or not all(record['native_arrays_equal'])):
+            raise DriveCheckError('physical_invariance', 'Initial Fabric publication changed native state or clocks', evidence=record)
+    after_cameras = []
+    for run, _getters, _before, _clock_before, _updates, record in pending:
+        run['capture'].assert_off('after_initial_fabric_publication')
+        after_camera = actual_camera_pose(run['capture'].camera, run['initial']['poses']['link_6'], run['camera_config'],
+            clock=_clock(sim), phase='initial_after_fabric_publication')
+        record.update(after_camera=after_camera, extra_physics_steps=0, extra_app_updates=0, pass_=True)
+        run['recorder'].save()
+        after_cameras.append(after_camera)
+    return tuple(after_cameras)
 
 
+def refresh_initial_camera_publication(scene, initial, capture, camera_config, recorder, resources):
+    """Preserved single-instance wrapper around the common Fabric publication."""
+    return refresh_initial_camera_publications((dict(scene=scene, initial=initial, capture=capture,
+        camera_config=camera_config, recorder=recorder, resources=resources),))[0]
 def initialize_capture_run(args, app, recorder, resources, expected, camera_config, *, camera_request_limit=1, camera_integration=False):
     """One scene/sensor/native lifecycle; shared by explicit one/two-view entries."""
     from _cr12_camera_mount import read_optics
@@ -286,6 +311,130 @@ def initialize_capture_run(args, app, recorder, resources, expected, camera_conf
     trace = resources['trace'] = CompactPoseTrace()
     return dict(scene=scene, initial=initial, initial_parameters=initial_parameters,
         receive_context=receive_context, mount_aggregate=mount_aggregate, initial_camera=initial_camera, trace=trace)
+
+
+def _validated_dual_specs(specs, *, profile_name='legacy'):
+    """Independent expected layout, never inferred from measured robot poses."""
+    import numpy as np
+    shared = profile_name == 'shared_m2n1'
+    if profile_name not in ('legacy', 'shared_m2n1'):
+        raise DriveCheckError('instance_setup', 'Unknown dual instance profile')
+    values = tuple(dict(item) for item in specs)
+    if len(values) != 2:
+        raise DriveCheckError('instance_setup', 'This entry requires exactly two fixed camera instances')
+    robot_ids = [item.get('robot_id') for item in values]
+    if any(type(robot_id) is not int for robot_id in robot_ids) or set(robot_ids) != {0, 1}:
+        raise DriveCheckError('instance_setup', 'Dual specs must contain robot IDs 0 and 1 exactly once')
+    result = []
+    for item in values:
+        robot_id = item['robot_id']
+        expected = np.eye(4, dtype=np.float64)
+        expected[:3, 3] = (0., 2.*robot_id, .053)
+        if shared:
+            from _cr12_shared_task_profile import root_pose
+            expected = root_pose(robot_id)
+        required = dict(robot_id=robot_id, prim_path=f'/World/CR12_{robot_id}',
+            fixture_path='/World/SharedTaskCameraFixture' if shared else f'/World/CameraInterfaceFixture_R{robot_id}',
+            product_name=f'CR12_R{robot_id}_Capture',
+            camera_name=f'cr12_r{robot_id}_camera', observer_name=f'cr12.r{robot_id}.independent_completion')
+        if any(item.get(key) != value for key, value in required.items()):
+            raise DriveCheckError('instance_setup', 'Dual instance identity/fields differ from the approved layout', expected=required)
+        pose = np.asarray(item.get('expected_root_pose'), dtype=np.float64)
+        if pose.shape != (4, 4) or not np.array_equal(pose, expected):
+            raise DriveCheckError('instance_setup', 'Expected root pose differs from the independent approved layout')
+        item['expected_root_pose'] = pose.copy()
+        result.append(item)
+    return tuple(result)
+
+
+class _InstanceRecorder(Recorder):
+    """Small per-robot record, persisted in the one parent result."""
+    def __init__(self, parent, robot_id):
+        super().__init__()
+        self.parent, self.robot_id = parent, robot_id
+        self.result['robot_id'] = robot_id
+        self.result['pd_selection'] = copy.deepcopy(parent.result['pd_selection'])
+
+    def save(self):
+        self.parent.save()
+
+    def emit(self, event, **facts):
+        facts.setdefault('robot_id', self.robot_id)
+        self.parent.emit(event, **facts)
+
+
+def initialize_dual_capture_runs(args, app, recorder, resources, expected, camera_config, specs, *, profile_name='legacy'):
+    """Two explicit instances, one reset and one common zero-state publication."""
+    from _cr12_runtime_support import (create_fixed_cr12_world, spawn_fixed_cr12_instance,
+        prepare_fixed_cr12_contacts, reset_fixed_cr12_world, read_fixed_cr12_instance)
+    from _cr12_camera_mount import read_optics
+    from _cr12_camera_capture import verify_camera_isolation
+    specs = _validated_dual_specs(specs, profile_name=profile_name)
+    shared = profile_name == 'shared_m2n1'
+    if 'runs' in resources:
+        raise DriveCheckError('instance_setup', 'Dual preparation may only occur once')
+    runs = resources['runs'] = []  # Present before construction, including partial-failure cleanup.
+    recorder.result['instance_setup'] = []
+    world = create_fixed_cr12_world(args, app, recorder, resources)
+    shared_fixture = None
+    if shared:
+        from _cr12_shared_task_profile import scanner_target, initial_q
+        from _cr12_camera_mount import create_shared_fixture
+        shared_fixture = create_shared_fixture(world['stage'], camera_config, scanner_target())
+        resources['shared_fixture'] = shared_fixture
+    for spec in specs:
+        instance_recorder = _InstanceRecorder(recorder, spec['robot_id'])
+        recorder.result['instance_setup'].append(instance_recorder.result)
+        instance_resources = {'app_update_counter': resources['app_update_counter']}
+        instance_resources['external_forces_context'] = resources['external_forces_context']
+        run = dict(robot_id=spec['robot_id'], recorder=instance_recorder, resources=instance_resources, receive_context={},
+            camera_config=camera_config, spec=spec)
+        runs.append(run)
+        hook = _make_camera_pre_physics(args, instance_recorder, instance_resources, camera_config,
+            run['receive_context'], camera_request_limit=2, camera_integration=True,
+            prim_path=spec['prim_path'], nominal_root=spec['expected_root_pose'], fixture_path=spec['fixture_path'],
+            resource_names={key: spec[key] for key in ('product_name', 'camera_name', 'observer_name')},
+            defer_visual_seal=True, **({'shared_fixture': shared_fixture} if shared else {}))
+        run['scene'] = spawn_fixed_cr12_instance(args, app, instance_recorder, instance_resources, expected,
+            world=world, prim_path=spec['prim_path'], expected_root_pose=spec['expected_root_pose'], pre_physics=hook,
+            **({'profile_name': profile_name, 'initial_q': initial_q(spec['robot_id'])} if shared else {}))
+        run['capture'] = instance_resources['capture']
+    # Every camera/fixture/product exists before the layers are sealed and the
+    # shared physics scene is initialized. Contacts resolve both complete roots.
+    for run in runs:
+        prepare_fixed_cr12_contacts(run['scene'], run['resources'],
+            other_instances=tuple(other['scene'] for other in runs if other is not run))
+    for run in runs:
+        overlay = run['resources']['visual_override']
+        overlay.seal_before_physics_initialization()
+        run['recorder'].result['visual_preinit']['stage_checks'].append(overlay.verify_stable('preinit'))
+        run['capture'].assert_off('both_prepared_before_shared_reset')
+    world['sim'].set_camera_view(eye=(3., -3., 3.), target=(0., 1., 1.3))
+    reset_fixed_cr12_world(world, app, recorder, [run['scene'] for run in runs])
+    for run in runs:
+        scene, instance_recorder = run['scene'], run['recorder']
+        def before_native_read(*, robot, sim, _recorder=instance_recorder):
+            _recorder.result['setup_native_validity'] = native_validity(robot, sim)
+        read_fixed_cr12_instance(scene, instance_recorder, expected, before_native_read=before_native_read)
+        run['initial'] = initialize_fixed_cr12_state(args, instance_recorder, scene)
+        run['initial_parameters'] = copy.deepcopy(instance_recorder.result['physx_readback'])
+    # Both one-time initial state writes precede either camera initialization/publication.
+    for run in runs:
+        _initialize_camera_off(run['scene'], run['recorder'], run['resources'])
+        run['recorder'].result['camera_optics'] = read_optics(run['capture'].camera, camera_config)
+        run['recorder'].result['capture_product_path'] = run['capture'].product_path
+    recorder.result['camera_isolation_initial'] = verify_camera_isolation([run['capture'] for run in runs])
+    initial_cameras = refresh_initial_camera_publications(runs)
+    for run, camera in zip(runs, initial_cameras):
+        run['initial_camera'] = camera
+        run['mount_aggregate'] = {'count': 1, 'maximum_position_error_m': camera['position_error_m'],
+            'maximum_orientation_error_rad': camera['orientation_error_rad'], 'selected_samples': [camera]}
+        run['recorder'].result['camera_mount_checks'] = run['mount_aggregate']
+        run['trace'] = run['resources']['trace'] = CompactPoseTrace()
+    recorder.result['common_camera_publication'] = {'forward_calls': 1, 'instance_count': 2,
+        'physics_clock': list(_clock(world['sim'])), 'pass': True}
+    recorder.save()
+    return tuple(runs)
 
 
 def receive_context_callback(initial, receive_context):
@@ -530,7 +679,7 @@ def execute_capture_request(args, app, recorder, resources, camera_config, *, sc
     return {'request': request, 'snapshot': snapshot, 'last_tick': latest_tick, 'last_camera': last_camera}
 
 
-def finalize_capture_scene(scene, expected, recorder, resources, initial_parameters, request, *, total_steps=None):
+def verify_final_capture_scene(scene, expected, recorder, resources, initial_parameters, request, *, total_steps=None):
     from _cr12_external_forces import read_scene_external_forces
     sim, robot, capture = scene['sim'], scene['robot'], resources['capture']
     # Camera is OFF, but the same valid physics scene remains active until all
@@ -552,6 +701,13 @@ def finalize_capture_scene(scene, expected, recorder, resources, initial_paramet
     recorder.result['physical_summary'] = {'all_guards_passed': all(n == (request.step if total_steps is None else total_steps) for n in stats['guard_pass_counts'].values()),
         'guard_pass_counts': dict(stats['guard_pass_counts']), 'native_lifecycle_pass': True,
         'visual_preinit_pass': True, 'mount_pose_checks_pass': True}
+    recorder.save()
+
+
+def finalize_capture_scene(scene, expected, recorder, resources, initial_parameters, request, *, total_steps=None):
+    """Legacy wrapper; dual callers verify both instances before either release."""
+    verify_final_capture_scene(scene, expected, recorder, resources, initial_parameters, request, total_steps=total_steps)
+    capture = resources['capture']
     recorder.result['camera_release'] = capture.release()
     recorder.result['camera_resources_released'] = True
     recorder.result['resource_release_before_stop'] = True
@@ -579,7 +735,22 @@ def cleanup_failure(recorder, exc, phase, primary):
     return primary
 
 
-def main(*, capture_runner=None, success_label='SINGLE_VIEW_CAPTURE_INTEGRATION_PASS', entry_source=None, configure_parser=None, pre_app_validator=None):
+def release_capture_with_record(capture, recorder):
+    """Separate cached pre-release facts from the result of owned cleanup."""
+    before = copy.deepcopy(capture.summary())
+    recorder.result['camera_backend'] = before  # compatibility: this is explicitly pre-release
+    recorder.result['camera_backend_snapshot_at'] = 'pre_release'
+    recorder.result['camera_backend_pre_release'] = copy.deepcopy(before)
+    recorder.result['camera_backend_post_release'] = 'NOT_READ'
+    recorder.result['camera_backend_post_release_snapshot_at'] = 'NOT_READ'
+    release = capture.release()
+    recorder.result['camera_release'] = copy.deepcopy(release)
+    recorder.result['camera_backend_post_release'] = copy.deepcopy(capture.summary())
+    recorder.result['camera_backend_post_release_snapshot_at'] = 'post_release'
+    return release
+
+
+def main(*, capture_runner=None, success_label='SINGLE_VIEW_CAPTURE_INTEGRATION_PASS', entry_source=None, configure_parser=None, pre_app_validator=None, completion_label=None):
     recorder, resources, app, failure = Recorder(), {}, None, None
     recorder.emit('process_started', python=sys.executable, cwd=os.getcwd(), argv=list(sys.argv), utf8_mode=sys.flags.utf8_mode)
     try:
@@ -615,9 +786,14 @@ def main(*, capture_runner=None, success_label='SINGLE_VIEW_CAPTURE_INTEGRATION_
         recorder.emit('pre_app_cuda_begin')
         recorder.result['pre_app_cuda'] = _prepare_cuda_before_app(args.device)
         recorder.emit('pre_app_cuda_ready', **recorder.result['pre_app_cuda'])
+        if args.gui_startup_diagnostics:
+            from _cr12_gui_startup_diagnostics import record_gui_startup_diagnostics
+            record_gui_startup_diagnostics(args, recorder, 'before_app')
         phase_saved(recorder, 'app_constructor_begin')
         launcher = AppLauncher(args)
         app = launcher.app
+        if args.gui_startup_diagnostics:
+            record_gui_startup_diagnostics(args, recorder, 'after_app', launcher=launcher)
         import carb
         settings = carb.settings.get_settings()
         effective = {'experience': launcher._sim_experience_file, 'kit_log_file': settings.get('/log/file'),
@@ -639,15 +815,36 @@ def main(*, capture_runner=None, success_label='SINGLE_VIEW_CAPTURE_INTEGRATION_
             raise DriveCheckError('asset_protection', 'Accepted asset/source content changed')
         recorder.result['asset_protection'] = {'pass': True, 'count': len(protected), 'files_sha256': protected}
         recorder.result.update(status='WORK_COMPLETED_PENDING_PROCESS_EXIT', work_completed=True,
-            classification=success_label, diagnostics_complete=True)
+            classification=success_label if completion_label is None else completion_label(recorder.result), diagnostics_complete=True)
         phase_saved(recorder, 'work_completed', completed_physics_steps=recorder.result['completed_physics_steps'])
     except BaseException as exc:
         failure = exc
-        recorder.result['classification'] = success_label.removesuffix('_PASS') + '_FAIL'
+        recorder.result['classification'] = ('NOT_HIT'
+            if recorder.result.get('case_classification') == 'NOT_HIT'
+            else success_label.removesuffix('_PASS') + '_FAIL')
         recorder.fail(exc)
     finally:
         # No robot native getter here. All required native reads precede release
         # and STOP; failure cleanup never tries to resurrect an invalid view.
+        for run in resources.get('runs', ()):
+            own_resources, own_recorder = run['resources'], run['recorder']
+            owned = own_resources.get('capture')
+            if owned is not None and not own_recorder.result.get('camera_resources_released'):
+                try:
+                    owned.request_off()
+                except BaseException as exc:
+                    failure = cleanup_failure(recorder, exc, 'camera_off_cleanup_r'+str(run['robot_id']), failure)
+                try:
+                    release_capture_with_record(owned, own_recorder)
+                    own_recorder.result['camera_resources_released'] = True
+                    own_recorder.result['resource_release_before_stop'] = True
+                except BaseException as exc:
+                    failure = cleanup_failure(recorder, exc, 'camera_resource_cleanup_r'+str(run['robot_id']), failure)
+            if 'contacts' in own_resources:
+                try:
+                    own_recorder.result['contact_summary'] = _contact_summary(own_resources['contacts'])
+                except BaseException as exc:
+                    failure = cleanup_failure(recorder, exc, 'contact_summary_r'+str(run['robot_id']), failure)
         capture = resources.get('capture')
         if capture is not None and not recorder.result.get('camera_resources_released'):
             try:
@@ -655,8 +852,7 @@ def main(*, capture_runner=None, success_label='SINGLE_VIEW_CAPTURE_INTEGRATION_
             except BaseException as exc:
                 failure = cleanup_failure(recorder, exc, 'camera_off_cleanup', failure)
             try:
-                recorder.result['camera_backend'] = capture.summary()
-                capture.release()
+                release_capture_with_record(capture, recorder)
                 recorder.result['camera_resources_released'] = True
                 recorder.result['resource_release_before_stop'] = True
             except BaseException as exc:

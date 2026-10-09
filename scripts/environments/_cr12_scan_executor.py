@@ -133,7 +133,8 @@ class Cr12PoseControlSession:
     """Nonblocking command/readback phases around one externally owned tick."""
 
     def __init__(self, args, app, recorder, resources, expected, *, scene, initial,
-                 integration=False, continuation=None, continue_after_arrival=True):
+                 integration=False, continuation=None, continue_after_arrival=True,
+                 allow_unbound_hold=False, set_view=True, shared_robot_id=None):
         from isaaclab.controllers import DifferentialIKController, DifferentialIKControllerCfg
         from _cr12_external_forces import read_scene_external_forces
         from _cr12_pose_visuals import set_spectator_view
@@ -142,9 +143,21 @@ class Cr12PoseControlSession:
         self.resources, self.expected = resources, expected
         self.scene, self.initial = scene, initial
         self.integration, self.continuation = bool(integration), continuation
+        self.shared_robot_id = shared_robot_id
+        if shared_robot_id is not None:
+            from _cr12_shared_task_profile import PROFILE_NAME
+            if (type(shared_robot_id) is not int or shared_robot_id not in (0, 1)
+                    or not integration or not allow_unbound_hold or args.motion_profile != PROFILE_NAME):
+                raise pc.PoseCheckError('SETUP', 'Shared execution requires the explicit two-robot profile')
+        elif args.motion_profile == 'shared_m2n1':
+            raise pc.PoseCheckError('SETUP', 'Shared profile requires a fixed robot identity')
         self.continue_after_arrival = bool(continue_after_arrival)
+        if allow_unbound_hold and not integration:
+            raise pc.PoseCheckError('SETUP', 'Unbound hold requires the private lifecycle session')
+        self.allow_unbound_hold = bool(allow_unbound_hold)
+        self._idle_hold = self.allow_unbound_hold
         if integration and (continuation is not None or not continue_after_arrival
-                            or args.motion_profile != 'formal'):
+                            or args.motion_profile != ('formal' if shared_robot_id is None else 'shared_m2n1')):
             raise pc.PoseCheckError('SETUP', 'Lifecycle session requires formal continuation without a two-view context')
         self.index = 0
         self._phase = 'ready'
@@ -155,6 +168,13 @@ class Cr12PoseControlSession:
         self.goal_id = None
         self.goal_index = 0
         self.goal_start_step = 0
+        self.segment_start_step = 0
+        self.control_segment_id = None
+        self.control_segment_kind = None
+        self._setup_phase = 'SETUP_PENDING' if self.shared else None
+        self._setup_stable_count = 0
+        self._setup_stable_start = None
+        self._setup_stable_now = False
         self._goal_submitted = not integration
         self.profile = pc.select_motion_profile(self.args.motion_profile)
         if self.continue_after_arrival and self.profile.manual_visual_only:
@@ -184,10 +204,25 @@ class Cr12PoseControlSession:
         self.model = pc.KinematicModel.from_derived_urdf(self.args.usd_path.parent.parent / 'cr12_fixed_lift0.urdf')
         self.limits = np.asarray(self.recorder.result['physx_readback']['joints']['position_limits'])
         self.com = np.asarray(self.recorder.result['physx_readback']['bodies']['link_6']['com_body'])
-        self.controller_ref = pc.CommandIntegrator(self.q, self.limits)
+        anchor = self.q
+        if self.shared:
+            from _cr12_shared_task_profile import initial_q
+            anchor = initial_q(self.shared_robot_id)
+            if not np.allclose(self.q, anchor, rtol=0, atol=1e-6):
+                raise pc.PoseCheckError('SETUP', 'Shared native initial q differs from frozen initial state')
+        self.controller_ref = pc.CommandIntegrator(anchor, self.limits,
+            **({'profile': self.profile} if self.shared else {}))
         self.controller_ref.propose(self.q, self.dq, self.q)
         self.initial_scanner = pc.scanner_from_ee(self.poses['link_6'])
         self.target = pc.FrozenManualPoseTarget(self.initial_scanner, self.poses['agv'], self.model) if self.profile.manual_visual_only else pc.FrozenPoseTarget(self.initial_scanner)
+        if self._idle_hold:
+            from _cr12_pose_continuation import FrozenPoseSegment
+            self.target = FrozenPoseSegment(self.initial_scanner, self.initial_scanner)
+        if self.shared:
+            from _cr12_shared_task_profile import segment, scanner_target
+            self.target = segment(self.model, self.shared_robot_id, 'park')
+            self.scanner_task_target = scanner_target()
+            self.cleanup_target = self.target.target.copy()
         if self.continuation is not None:
             self.target = self.continuation.initial_target(self.initial_scanner)
             self.recorder.result['pose_continuation'] = self.continuation.record()
@@ -229,7 +264,7 @@ class Cr12PoseControlSession:
                 self.recorder.result['spectator'] = self.visuals.metadata['view']
                 self.recorder.result['visual_setup_completed'] = True
                 self.recorder.result['visual_update_count'] = 1
-            else:
+            elif set_view:
                 self.recorder.result['spectator'] = set_spectator_view(self.initial_scanner, self.args.view_preset, target_scanner_pose=self.target.target)
         except Exception as exc:
             self.recorder.result['visual_errors'].append(f'{type(exc).__name__}: {exc}')
@@ -256,6 +291,7 @@ class Cr12PoseControlSession:
         self.recorder.emit('physics_ready', body_count=7, dof_count=6, initial_physics_clock=list(self.baseline))
         self.recorder.phase = 'controlled_pose'
         self.goal_start_physics_time = self.baseline[1]
+        self.segment_start_physics_time = self.baseline[1]
         self.actual_scanner = self.initial_scanner.copy()
         self.controlled_time = 0.0
         self._clock_boundary = self.baseline
@@ -287,6 +323,13 @@ class Cr12PoseControlSession:
         if self.failure is None:
             self.failure = {'category': getattr(exc, 'category', 'INFRASTRUCTURE'),
                             'message': str(exc), 'step': self.index + 1}
+            if self.shared:
+                self.failure.update(details=copy.deepcopy(getattr(exc, 'details', {})),
+                    observed_physics_steps=self.recorder.result.get('completed_physics_steps', self.index),
+                    q=np.asarray(self.q).tolist(), dq=np.asarray(self.dq).tolist(),
+                    q_cmd=list(self.submitted_q), dq_cmd=list(self.submitted_dq),
+                    control_segment_id=self.control_segment_id)
+                self.recorder.result.setdefault('shared_execution', {})['failure'] = copy.deepcopy(self.failure)
         if self.continuation is not None:
             self.continuation.fail(getattr(exc, 'category', 'INFRASTRUCTURE'), str(exc))
             self.recorder.result['pose_continuation'] = self.continuation.record()
@@ -313,7 +356,164 @@ class Cr12PoseControlSession:
                 'render_count': self.stats['render_calls'], 'pose_reached': self.monitor.reached,
                 'goal_id': self.goal_id, 'goal_index': self.goal_index,
                 'local_step': self.index - self.goal_start_step,
-                'local_time_s': self._clock_boundary[1] - self.goal_start_physics_time}
+                'local_time_s': self._clock_boundary[1] - self.goal_start_physics_time,
+                **self._shared_tick_fields(self.index, self._clock_boundary[1])}
+
+    @property
+    def shared(self):
+        return getattr(self, 'shared_robot_id', None) is not None
+
+    @property
+    def setup_hold_ready(self):
+        return bool(self.shared and self._setup_phase in ('SETUP_SETTLING', 'SETUP_HOLD_READY')
+                    and self._setup_stable_now and self._setup_stable_count >= 121
+                    and self._setup_stable_start is not None
+                    and self._clock_boundary[1] - self._setup_stable_start >= 1.0 - 1e-6)
+
+    def _shared_tick_fields(self, step, clock):
+        if not self.shared:
+            return {}
+        setup_span = (getattr(self, '_setup_completed_span', 0.) if self._setup_phase == 'COMPLETE'
+                      else (0. if self._setup_stable_start is None else clock-self._setup_stable_start))
+        return {'execution_phase': self._setup_phase if self._setup_phase != 'COMPLETE' else
+                    ('IDLE_HOLD' if self.idle_hold else self.control_segment_kind),
+                'setup_stable_now': self._setup_stable_now, 'setup_hold_ready': self.setup_hold_ready,
+                'setup_stable_samples': self._setup_stable_count,
+                'setup_stable_span_s': setup_span,
+                'setup_hold_completed': self._setup_phase == 'COMPLETE',
+                'control_segment_id': self.control_segment_id,
+                'control_segment_kind': self.control_segment_kind,
+                'segment_step': step-self.segment_start_step,
+                'segment_time_s': clock-self.segment_start_physics_time,
+                'scanner_task_target': self.scanner_task_target.copy(),
+                'cleanup_target': self.cleanup_target.copy(),
+                'actual_tube': copy.deepcopy(getattr(self, '_actual_tube', None))}
+
+    def _shared_actual_guard(self):
+        if not self.shared:
+            return None
+        from _cr12_shared_task_profile import initial_q, goal_q
+        park = initial_q(self.shared_robot_id)
+        if (self._setup_phase != 'COMPLETE' or self.idle_hold
+                or (self.control_segment_kind == 'retreat' and self.monitor.reached)):
+            # B may retire at the task target; only A is required to park after retreat.
+            if self.idle_hold and self.control_segment_kind == 'approach' and self.monitor.reached:
+                result = pc.check_path_tube(self.q, park, goal_q(self.shared_robot_id))
+            else:
+                result = pc.check_fixed_neighborhood(self.q, park)
+        else:
+            result = pc.check_path_tube(self.q, park, goal_q(self.shared_robot_id))
+        self._actual_tube = result
+        record = self.recorder.result.setdefault('shared_execution', {})
+        record['latest_actual_tube'] = copy.deepcopy(result)
+        record['actual_tube_check_count'] = record.get('actual_tube_check_count', 0) + 1
+        record['maximum_actual_tube_residual_rad'] = max(record.get('maximum_actual_tube_residual_rad', 0.),
+            result['maximum_residual_rad'])
+        return result
+
+    @_fail_closed
+    def begin_setup_hold(self):
+        self._require('ready')
+        if not self.shared or self._setup_phase != 'SETUP_PENDING' or self.index != 0 or self.goal_id is not None:
+            raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Setup hold starts once before any claim')
+        self._validate_latest_boundary(self.current_state())
+        self._setup_phase = 'SETUP_SETTLING'
+        self.control_segment_kind = 'park'
+        self.control_segment_id = f'setup_robot_{self.shared_robot_id}'
+        self._shared_actual_guard()
+        self.recorder.result.setdefault('shared_execution', {}).update(robot_id=self.shared_robot_id,
+            setup_phase=self._setup_phase, setup_start_step=self.index,
+            original_trust_anchor_rad=self.controller_ref.initial_q.tolist(),
+            actual_joint_drive_effort='NOT_COLLECTED; no torque estimate substituted')
+        return self.current_state()
+
+    @_fail_closed
+    def complete_setup_hold(self):
+        self._require('ready')
+        if not self.setup_hold_ready:
+            raise pc.PoseCheckError('SETUP_HOLD_FAIL', 'Setup has no current consecutive stable window')
+        self._validate_latest_boundary(self.current_state())
+        self._shared_actual_guard()
+        from _cr12_single_view_capture import check_arrived_hold
+        check_arrived_hold(*pc.pose_error(self.actual_scanner, self.target.target), self.dq)
+        evidence = self.current_state()
+        self._setup_completed_span = evidence['setup_stable_span_s']
+        self._setup_phase = 'COMPLETE'
+        self.recorder.result['shared_execution'].update(setup_phase='COMPLETE',
+            setup_completed_step=self.index, setup_stable_samples=self._setup_stable_count,
+            setup_stable_span_s=evidence['setup_stable_span_s'])
+        return evidence
+
+    def _validate_latest_boundary(self, boundary):
+        state = self.current_state()
+        if boundary is None:
+            raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Shared segment requires latest actual boundary')
+        for key in ('step', 'physics_time_s', 'q', 'dq', 'scanner', 'q_cmd', 'dq_cmd'):
+            if key not in boundary or not np.array_equal(boundary[key], state[key]):
+                raise pc.PoseCheckError('EXECUTOR_PROTOCOL', f'Segment boundary is stale: {key}')
+        if _clock(self.sim) != (self.baseline[0] + self.index, state['physics_time_s']):
+            raise pc.PoseCheckError('PHYSICS_GUARD', 'Segment boundary clock changed')
+        return state
+
+    @_fail_closed
+    def submit_bound_segment(self, kind='retreat', latest_actual_boundary=None):
+        self._require('ready')
+        if (not self.shared or self.shared_robot_id != 0 or kind != 'retreat'
+                or self._setup_phase != 'COMPLETE' or not self._goal_submitted
+                or self.control_segment_kind != 'approach' or not self.monitor.reached):
+            raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Only the arrived, still-bound A goal may retreat')
+        state = self._validate_latest_boundary(latest_actual_boundary)
+        from _cr12_single_view_capture import check_arrived_hold
+        check_arrived_hold(*pc.pose_error(self.actual_scanner, self.target.target), self.dq)
+        from _cr12_shared_task_profile import segment
+        self.target = segment(self.model, self.shared_robot_id, kind)
+        self.monitor = pc.PoseMonitor(self.profile)
+        self.control_segment_kind = kind
+        self.control_segment_id = self.goal_id + ':retreat'
+        self.segment_start_step = self.index
+        self.segment_start_physics_time = state['physics_time_s']
+        self.stats.update(stable_samples=0, stable_span_s=0., stable_count=0, outcome='RUNNING')
+        self.recorder.result['pose_outcome'] = 'RUNNING'
+        record = {'control_segment_id': self.control_segment_id, 'kind': kind,
+            'goal_id': self.goal_id, 'global_step': self.index, 'physics_time_s': state['physics_time_s'],
+            'actual_scanner': _pose_record(self.actual_scanner),
+            'reference_start': _pose_record(self.target.initial),
+            'first_reference_error': list(pc.pose_error(self.actual_scanner, self.target.initial)),
+            'first_submitted_reference_error': list(pc.pose_error(self.actual_scanner, self.target.reference(pc.DT))),
+            'scanner_task_target': _pose_record(self.scanner_task_target),
+            'cleanup_target': _pose_record(self.cleanup_target),
+            'q_cmd': list(self.submitted_q), 'dq_cmd': list(self.submitted_dq),
+            'controller_object_id': id(self.controller), 'integrator_object_id': id(self.controller_ref),
+            'integrator_generation': self.controller_ref.generation,
+            'trust_initial_q_rad': self.controller_ref.initial_q.tolist()}
+        self.recorder.result.setdefault('bound_segments', []).append(record)
+        self.recorder.emit('bound_segment_activated', **record)
+        return copy.deepcopy(record)
+
+    @property
+    def idle_hold(self):
+        return bool(getattr(self, '_idle_hold', False))
+
+    @_fail_closed
+    def enter_idle_hold(self):
+        """Retain the last frozen target and integrator; never chase actual state."""
+        self._require('ready')
+        if not self.integration or not self.allow_unbound_hold:
+            raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'This session does not admit unbound hold')
+        if self.shared and (self._setup_phase != 'COMPLETE'
+                or (self.shared_robot_id == 0 and self.control_segment_kind != 'retreat')):
+            raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Shared A can retire only after bound retreat')
+        if self._goal_submitted and not self.monitor.reached:
+            raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Unbound hold requires arrived retirement')
+        from _cr12_single_view_capture import check_arrived_hold
+        ep, er = pc.pose_error(self.actual_scanner, self.target.target)
+        check_arrived_hold(ep, er, self.dq)
+        self._idle_hold = True
+        self._goal_submitted = False
+        self.recorder.emit('unbound_hold_entered', global_step=self.index, previous_goal=self.goal_id,
+                           frozen_target=_pose_record(self.target.target), q_cmd=list(self.submitted_q))
+        self.goal_id = None
+        self._shared_actual_guard()
 
     @_fail_closed
     def submit_goal(self, goal_id, target, latest_actual_boundary=None):
@@ -322,6 +522,8 @@ class Cr12PoseControlSession:
         self._require('ready')
         if not self.integration:
             raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Explicit goals require lifecycle mode')
+        if self.shared and (self._setup_phase != 'COMPLETE' or self._goal_ids):
+            raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Shared robot requires completed setup and one request')
         if not isinstance(goal_id, str) or not goal_id or goal_id in self._goal_ids:
             raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Each goal needs a new nonempty goal_id')
         if self._goal_submitted and not self.monitor.reached:
@@ -333,15 +535,28 @@ class Cr12PoseControlSession:
                     raise pc.PoseCheckError('EXECUTOR_PROTOCOL', f'Goal boundary is stale: {key}')
         if _clock(self.sim) != (self.baseline[0] + self.index, state['physics_time_s']):
             raise pc.PoseCheckError('PHYSICS_GUARD', 'Goal submission cannot advance physics')
-        new_target = FrozenPoseSegment(self.actual_scanner, target)
+        if self.shared:
+            from _cr12_shared_task_profile import segment, scanner_target
+            self._validate_latest_boundary(latest_actual_boundary)
+            if not np.array_equal(np.asarray(target), scanner_target()):
+                raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Shared task target cannot change with the owner')
+            new_target = segment(self.model, self.shared_robot_id, 'approach')
+        else:
+            new_target = FrozenPoseSegment(self.actual_scanner, target)
         self.target = new_target
         self.monitor = pc.PoseMonitor(self.profile)
         self.goal_id = goal_id
         self.goal_index += 1
         self._goal_ids.add(goal_id)
         self._goal_submitted = True
+        self._idle_hold = False
         self.goal_start_step = self.index
         self.goal_start_physics_time = state['physics_time_s']
+        if self.shared:
+            self.control_segment_kind = 'approach'
+            self.control_segment_id = goal_id + ':approach'
+            self.segment_start_step = self.index
+            self.segment_start_physics_time = state['physics_time_s']
         self.stats.update(stable_samples=0, stable_span_s=0.0, stable_count=0,
                           outcome='RUNNING', goal_id=goal_id)
         for key in ('arrival_step', 'arrival_time_s', 'arrival_local_step', 'arrival_local_time_s'):
@@ -356,6 +571,9 @@ class Cr12PoseControlSession:
                   'integrator_generation': self.controller_ref.generation,
                   'q_cmd': list(self.submitted_q), 'dq_cmd': list(self.submitted_dq),
                   'trust_initial_q_rad': self.controller_ref.initial_q.tolist()}
+        if self.shared:
+            record.update(control_segment_id=self.control_segment_id,
+                          scanner_task_target=_pose_record(self.scanner_task_target))
         self.recorder.result.setdefault('pose_goals', []).append(record)
         self.recorder.emit('pose_goal_activated', **record)
         return copy.deepcopy(record)
@@ -364,7 +582,17 @@ class Cr12PoseControlSession:
     def prepare_tick(self, boundary=None):
         """Compute and validate one proposal without writing targets."""
         self._require('ready')
-        if not self._goal_submitted:
+        if self.shared:
+            from _cr12_shared_task_profile import SETUP_MAX_STEPS
+            if self._setup_phase == 'SETUP_PENDING':
+                raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Begin the shared setup hold before stepping')
+            if self._setup_phase != 'COMPLETE' and self.index >= SETUP_MAX_STEPS:
+                raise pc.PoseCheckError('SETUP_HOLD_FAIL', 'Shared setup exceeded its controlled budget')
+            if (self._setup_phase == 'COMPLETE' and not self.idle_hold and not self.monitor.reached
+                    and self.index-self.segment_start_step >= self.profile.max_steps):
+                raise pc.PoseCheckError('TIMEOUT', 'Bound physical segment exhausted its fixed budget')
+            self._shared_actual_guard()
+        if not self._goal_submitted and not self.idle_hold:
             raise pc.PoseCheckError('EXECUTOR_PROTOCOL', 'Submit a goal before preparing motion')
         if boundary is not None and tuple(boundary) != _clock(self.sim):
             raise pc.PoseCheckError('PHYSICS_GUARD', 'Prepare boundary differs from the actual clock')
@@ -390,7 +618,9 @@ class Cr12PoseControlSession:
             self.reference_time = (self.index + 1 - self.continuation.goal_start_step) * pc.DT
         if self.integration:
             self.reference_time = (self.index + 1 - self.goal_start_step) * pc.DT
-        self.reference = self.target.reference(self.reference_time)
+        if self.shared:
+            self.reference_time = (self.index + 1 - self.segment_start_step) * pc.DT
+        self.reference = self.target.target.copy() if self.idle_hold else self.target.reference(self.reference_time)
         self.actual_e_r = pc.in_root(self.poses['agv'], self.poses['link_6'])
         self.reference_e_r = pc.in_root(self.poses['agv'], pc.ee_from_scanner(self.reference))
         (self.native_j, _) = _native_jacobian(self.robot, self.mapping)
@@ -456,7 +686,24 @@ class Cr12PoseControlSession:
         (self.q, self.dq) = (self.q_tensor[0].cpu().numpy().copy(), self.dq_tensor[0].cpu().numpy().copy())
         self.sample.update(q=self.q, dq=self.dq)
         _checked_tick_guard(self.sample, self.counts, 'joint', lambda : self.controller_ref.check_actual(self.q, self.dq))
-        self.force = _checked_tick_guard(self.sample, self.counts, 'contact', lambda : _check_contacts(self.contacts, pc.DT))
+        if self.shared:
+            try:
+                self._shared_actual_guard()
+            except BaseException:
+                self.sample['guard_joint'] = 'FAIL'
+                self.counts['joint'] -= 1
+                raise
+        contact_context = dict(getattr(self, 'contact_context', {}))
+        contact_context.update(global_physics_step=self.index+1, physics_clock=list(self.after),
+                               controlled_time_s=self.controlled_time)
+        contact_context.setdefault('run_id', getattr(self.args, 'output_dir', Path('UNKNOWN')).name)
+        contact_context.setdefault('robot_id', self.shared_robot_id if self.shared else
+                                   self.scene.get('robot_id', 0))
+        contact_context.setdefault('phase', self._shared_tick_fields(self.index+1, self.after[1]).get(
+            'execution_phase', 'controlled_pose'))
+        contact_context.setdefault('control_segment_id', self.control_segment_id)
+        self.force = _checked_tick_guard(self.sample, self.counts, 'contact',
+            lambda: _check_contacts(self.contacts, pc.DT, context=contact_context))
         self.poses = _body_poses(self.robot, self.body_ids)
         self.actual_scanner = pc.scanner_from_ee(self.poses['link_6'])
         self.minimum_z = _checked_tick_guard(self.sample, self.counts, 'geometry', lambda : _check_geometry(self.info['colliders'], self.poses, self.config.CONTACT_OFFSET))
@@ -466,7 +713,8 @@ class Cr12PoseControlSession:
         (self.ep, self.er) = pc.pose_error(self.actual_scanner, self.target.target)
         (self.ref_ep, self.ref_er) = pc.pose_error(self.actual_scanner, self.reference)
         self.sample.update(target_position_error_m=self.ep, target_orientation_error_rad=self.er, reference_position_error_m=self.ref_ep, reference_orientation_error_rad=self.ref_er)
-        if self.continue_after_arrival and self.monitor.reached:
+        if ((self.idle_hold and not (self.shared and self._setup_phase in ('SETUP_SETTLING', 'SETUP_HOLD_READY')))
+                or (self.continue_after_arrival and self.monitor.reached)):
             from _cr12_single_view_capture import check_arrived_hold
             check_arrived_hold(self.ep, self.er, self.dq)
         if self.visuals is not None:
@@ -489,7 +737,8 @@ class Cr12PoseControlSession:
                 'pose_reached': self.monitor.reached, 'sample': dict(self.sample),
                 'q_cmd': list(self.submitted_q), 'dq_cmd': list(self.submitted_dq),
                 **({k: self.sample[k] for k in ('goal_id', 'goal_index', 'local_step', 'local_time_s')}
-                   if self.integration or self.continuation is not None else {})}
+                   if self.integration or self.continuation is not None else {}),
+                **self._shared_tick_fields(self.index+1, self.after[1])}
 
     @_fail_closed
     def finish_tick(self, rendered):
@@ -505,14 +754,32 @@ class Cr12PoseControlSession:
             _assert_active(self.app, self.sim)
         _checked_tick_guard(self.sample, self.counts, 'render_clock', render_guard)
         self.stats.update(maximum_forbidden_contact_n=max(self.stats['maximum_forbidden_contact_n'], self.force), maximum_root_translation_m=max(self.stats['maximum_root_translation_m'], self.distance), maximum_root_rotation_rad=max(self.stats['maximum_root_rotation_rad'], self.angle), minimum_arm_collision_z_m=min(self.stats['minimum_arm_collision_z_m'], self.minimum_z), q_min_rad=np.minimum(self.stats['q_min_rad'], self.q).tolist(), q_max_rad=np.maximum(self.stats['q_max_rad'], self.q).tolist(), max_abs_dq_rad_s=np.maximum(self.stats['max_abs_dq_rad_s'], np.abs(self.dq)).tolist(), max_raw_dls_update_rad=max(self.stats['max_raw_dls_update_rad'], self.raw_delta), max_command_step_rad=max(self.stats['max_command_step_rad'], float(np.max(np.abs(self.proposal.dq))) * pc.DT), final_fixed_frame_errors=self.fixed_errors, final_actual_scanner=_pose_record(self.actual_scanner), final_q_rad=self.q.tolist(), final_dq_rad_s=self.dq.tolist(), final_position_error_m=self.ep, final_orientation_error_rad=self.er)
-        if self.continue_after_arrival and self.monitor.reached:
+        if self.shared and self._setup_phase in ('SETUP_SETTLING', 'SETUP_HOLD_READY'):
+            self.observation = self._observe_setup_hold()
+        elif self.idle_hold:
+            self.observation = {'status': 'IDLE_HOLD', 'stable_count': self.stats['stable_samples'],
+                                'stable_span_s': self.stats['stable_span_s']}
+        elif self.continue_after_arrival and self.monitor.reached:
             self.observation = {'status': 'ARRIVED_HOLD', 'stable_count': self.stats['stable_samples'], 'stable_span_s': self.stats['stable_span_s']}
+        elif self.shared:
+            if self.control_segment_kind == 'retreat' and self.ep <= pc.POSITION_TOLERANCE and self.er <= pc.ANGLE_TOLERANCE:
+                from _cr12_shared_task_profile import clear_q
+                pc.check_fixed_neighborhood(self.q, clear_q(self.shared_robot_id))
+            self.observation = self.monitor.observe(self.index+1-self.segment_start_step,
+                self.after[1]-self.segment_start_physics_time, self.actual_scanner,
+                self.reference, self.target.target, self.dq)
         elif self.continuation is not None or self.integration:
             self.observation = self.monitor.observe(self.sample['local_step'], self.sample['local_time_s'], self.actual_scanner, self.reference, self.target.target, self.dq)
         else:
             self.observation = self.monitor.observe(self.index + 1, self.controlled_time, self.actual_scanner, self.reference, self.target.target, self.dq)
         self.sample.update(stable_samples=self.observation['stable_count'], stable_span_s=self.observation['stable_span_s'], status=self.observation['status'])
         self.stats.update(stable_samples=self.observation['stable_count'], stable_span_s=self.observation['stable_span_s'])
+        if self.shared:
+            shared_record = self.recorder.result['shared_execution']
+            shared_record.update(setup_phase=self._setup_phase, control_segment_id=self.control_segment_id,
+                control_segment_kind=self.control_segment_kind, completed_physics_steps=self.index+1,
+                maximum_command_actual_error_rad=max(shared_record.get('maximum_command_actual_error_rad', 0.),
+                    float(np.max(np.abs(np.asarray(self.submitted_q)-self.q)))))
         self._sample_written = True
         finish_sample_trace(self.trace, self.sample, self.recorder, None)
         if (self.index + 1) % 120 == 0:
@@ -550,8 +817,32 @@ class Cr12PoseControlSession:
                         local_step=self.sample['local_step'], local_time_s=self.sample['local_time_s'],
                         q_cmd=list(self.submitted_q), dq_cmd=list(self.submitted_dq),
                         render_count=self.stats['render_calls'])
+        tick.update(self._shared_tick_fields(self.index+1, self.after[1]))
         self._latest_tick = copy.deepcopy(tick)
         self.index += 1
         self._phase = 'ready'
         return tick
+
+    def _observe_setup_hold(self):
+        """Only the strict stable window may converge; all safety guards already ran."""
+        from _cr12_shared_task_profile import SETUP_MAX_STEPS
+        now = self.after[1]
+        stable = bool(self.ep <= pc.POSITION_TOLERANCE and self.er <= pc.ANGLE_TOLERANCE
+                      and np.max(np.abs(self.dq)) <= .01)
+        if self._setup_phase == 'SETUP_HOLD_READY' and not stable:
+            raise pc.PoseCheckError('SETUP_HOLD_FAIL', 'Qualified setup hold was lost before common admission')
+        self._setup_stable_now = stable
+        if stable:
+            if self._setup_stable_start is None:
+                self._setup_stable_start = now
+            self._setup_stable_count += 1
+        else:
+            self._setup_stable_count = 0
+            self._setup_stable_start = None
+        span = 0. if self._setup_stable_start is None else now-self._setup_stable_start
+        if self._setup_stable_count >= 121 and span >= 1.-1e-6:
+            self._setup_phase = 'SETUP_HOLD_READY'
+        elif self.index+1 >= SETUP_MAX_STEPS:
+            raise pc.PoseCheckError('SETUP_HOLD_FAIL', 'No common-ready local stable window within 360 steps')
+        return {'status': self._setup_phase, 'stable_count': self._setup_stable_count, 'stable_span_s': span}
 
